@@ -110,29 +110,6 @@ Make Variables
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
-.. make:var:: SIM_CMD_PREFIX
-
-      Prefix for simulation command invocations.
-
-      This can be used to add environment variables or other commands before the invocations of simulation commands.
-      For example, ``SIM_CMD_PREFIX := LD_PRELOAD="foo.so bar.so"`` can be used to force a particular library to load.
-      Or, ``SIM_CMD_PREFIX := gdb --args`` to run the simulation with the GDB debugger.
-
-      .. versionadded:: 1.6
-
-.. make:var:: SIM_CMD_SUFFIX
-
-    Suffix for simulation command invocations.
-    Typically used to redirect simulator ``stdout`` and ``stderr``:
-
-    .. code-block:: Makefile
-
-        # Prints simulator stdout and stderr to the terminal
-        # as well as capture it all in a log file "sim.log".
-        SIM_CMD_SUFFIX := 2>&1 | tee sim.log
-
-    .. versionadded:: 2.0
-
 .. make:var:: COCOTB_HDL_TIMEUNIT
 
       The default time unit that should be assumed for simulation when not specified by modules in the design.
@@ -190,3 +167,5 @@ Make Variables
     This is only used if :envvar:`GPI_USERS` is not already defined by the user.
 
 The :envvar:`COCOTB_TOPLEVEL` variable is also often used by the Makefile-based build and runner system.
+
+The :envvar:`SIM_CMD_PREFIX` and :envvar:`SIM_CMD_SUFFIX` environment variables are also supported by the Makefile-based build and runner system.

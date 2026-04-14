@@ -44,8 +44,8 @@ from pytest import (
 import cocotb
 import cocotb._shutdown
 import cocotb._test_manager
+import cocotb.simulator
 import cocotb.types._resolve
-from cocotb import simulator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
@@ -582,7 +582,7 @@ class RegressionManager:
             )
 
         cache_key = fixturedef.cache_key(request)
-        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))
+        fixturedef.cached_result = AsyncFixtureCachedResult((setup, cache_key, None))  # type: ignore[assignment]
 
         self._setups.append(setup)
 
@@ -849,7 +849,7 @@ class RegressionManager:
         cocotb._shutdown._shutdown()
 
         # Setup simulator finalization
-        simulator.stop_simulator()
+        cocotb.simulator.stop_simulator()
 
 
 def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:

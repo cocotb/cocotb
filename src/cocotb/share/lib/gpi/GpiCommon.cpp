@@ -137,6 +137,8 @@ void gpi_check_cleanup(void) {
     }
 }
 
+bool gpi_is_finalizing(void) { return gpi_finalizing; }
+
 static void gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
 

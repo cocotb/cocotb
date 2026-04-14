@@ -82,11 +82,11 @@ ifeq ($(TOPLEVEL_LANG),)
 
 ifneq ($(VHDL_SOURCES),)
 ifeq ($(VERILOG_SOURCES),)
-	TOPLEVEL_LANG := vhdl
+    TOPLEVEL_LANG := vhdl
 endif
 else ifneq ($(VERILOG_SOURCES),)
 ifeq ($(VHDL_SOURCES),)
-	TOPLEVEL_LANG := verilog
+    TOPLEVEL_LANG := verilog
 endif
 endif
 

@@ -76,7 +76,7 @@ jobs:
         fetch-depth: 2
 
     - name: setup ccache
-      uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1.2
+      uses: hendrikmuhs/ccache-action@33522472633dbd32578e909b315f5ee43ba878ce # v1.2.22
       if: ${{ startsWith(matrix.os, 'ubuntu') }}
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
@@ -92,7 +92,7 @@ jobs:
       run: sudo apt-get update
 
      # Download distribution artifacts (if any).
-    - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       if: ${{ inputs.download_artifacts }}
       with:
         path: dist
@@ -294,7 +294,7 @@ jobs:
 
     - name: Upload to codecov
       if: inputs.collect_coverage
-      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de  # v5.5.2
+      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
       env:
         # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
         CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc

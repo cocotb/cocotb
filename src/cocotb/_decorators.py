@@ -96,6 +96,7 @@ class Test:
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
+        self.included = not skip
 
     @property
     def fullname(self) -> str:

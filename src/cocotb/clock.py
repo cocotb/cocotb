@@ -18,6 +18,7 @@ from logging import Logger
 from typing import ClassVar, Literal
 
 import cocotb
+import cocotb.simulator
 from cocotb.handle import (
     Deposit,
     Force,
@@ -27,7 +28,6 @@ from cocotb.handle import (
     _trust_inertial,
 )
 from cocotb.simtime import TimeUnit
-from cocotb.simulator import clock_create
 from cocotb.task import Task
 from cocotb.triggers import (
     Event,
@@ -304,7 +304,7 @@ class Clock:
             raise RuntimeError("Starting clock that has already been started.")
 
         if self._impl == "gpi":
-            clkobj = clock_create(self._signal._handle)
+            clkobj = cocotb.simulator.clock_create(self._signal._handle)
             set_action = {
                 Deposit: _GPISetAction.DEPOSIT,
                 Immediate: _GPISetAction.NO_DELAY,

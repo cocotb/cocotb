@@ -26,9 +26,10 @@ import pytest
 import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
+import cocotb.handle
+import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
-from cocotb import simulator
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
@@ -225,6 +226,9 @@ class RegressionManager:
         self._included: list[bool]
         self._regression_terminated: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
+        self._random_test_order = _env.as_bool(
+            "COCOTB_RANDOM_TEST_ORDER", default=False
+        )
         self._random_state: Any
         self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
         self._random_x_resolver_state: Any
@@ -343,22 +347,27 @@ class RegressionManager:
 
         self.log.info("Running tests")
 
+        # if needed, randomize tests before sorting into stages
+        if self._random_test_order:
+            random.shuffle(self._test_queue)
+
         # sort tests into stages
         self._test_queue.sort(key=lambda test: test.stage)
 
-        # mark tests for running
+        # mark tests for running and count included tests
         if self._filters:
-            self._included = [False] * len(self._test_queue)
-            for i, test in enumerate(self._test_queue):
+            self.total_tests = 0
+            for test in self._test_queue:
+                test.included = False
                 for filter in self._filters:
                     if filter.search(test.fullname):
-                        self._included[i] = True
+                        test.included = True
+                        self.total_tests += 1
         else:
-            self._included = [True] * len(self._test_queue)
+            self.total_tests = sum(1 for test in self._test_queue if test.included)
 
         # compute counts
         self.count = 1
-        self.total_tests = sum(self._included)
         if self.total_tests == 0:
             self.log.warning(
                 "No tests left after filtering with: %s",
@@ -378,10 +387,9 @@ class RegressionManager:
         """
         while self._test_queue:
             self._test = self._test_queue.pop(0)
-            included = self._included.pop(0)
 
             # if the test is not included, record and continue
-            if not included:
+            if not self._test.included:
                 self._record_test_excluded()
                 continue
 
@@ -454,6 +462,11 @@ class RegressionManager:
         else:
             return
 
+        # Clean up the write_scheduler
+        if cocotb.handle._apply_writes_cb is not None:
+            cocotb.handle._apply_writes_cb.cancel()
+            cocotb.handle._apply_writes_cb = None
+
         # Write out final log messages
         self._log_test_summary()
 
@@ -464,7 +477,7 @@ class RegressionManager:
         shutdown._shutdown()
 
         # Setup simulator finalization
-        simulator.stop_simulator()
+        cocotb.simulator.stop_simulator()
 
     def _test_complete(self) -> None:
         """Callback given to the test to be called when the test finished."""
@@ -620,9 +633,12 @@ class RegressionManager:
 
     def _get_lineno(self, test: Test) -> int:
         try:
-            return inspect.getsourcelines(test.func)[1]
-        except OSError:
-            return 1
+            return test.func.__code__.co_firstlineno
+        except AttributeError:
+            try:
+                return inspect.getsourcelines(test.func)[1]
+            except OSError:
+                return 1
 
     def _log_test_start(self) -> None:
         """Called by :meth:`_execute` to log that a test is starting."""

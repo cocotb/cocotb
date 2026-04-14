@@ -38,7 +38,8 @@ static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data) {
-    SIM_TO_GPI(VPI, VpiImpl::reason_to_string(cb_data->reason));
+    SIM_TO_GPI(VPI, cb_data->user_data,
+               VpiImpl::reason_to_string(cb_data->reason));
 
     int ret = 0;
 #ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
@@ -63,7 +64,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
         reacting = false;
     }
 #endif
-    GPI_TO_SIM(VPI);
+    GPI_TO_SIM(VPI, cb_data->user_data);
     return ret;
 }
 
@@ -83,6 +84,8 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
 
 int VpiCbHdl::arm() {
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
+    LOG_TRACE("VPI: Registered callback %p for reason %s", this,
+              VpiImpl::reason_to_string(cb_data.reason));
 
     if (!new_hdl) {
         LOG_ERROR(

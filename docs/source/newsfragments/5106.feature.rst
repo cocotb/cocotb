@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_RANDOM_TEST_ORDER` environment variables to enable randomized ordering of cocotb tests within each stage.

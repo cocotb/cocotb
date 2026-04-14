@@ -8,9 +8,9 @@ ifneq ($(filter $(SIM),ius xcelium),)
     COMPILE_ARGS += -v93
 endif
 
-COCOTB_TOPLEVEL := vhdl_zerovector
-COCOTB_TEST_MODULES := test_vhdl_zerovector
-VHDL_SOURCES := vhdl_zerovector.vhdl
+COCOTB_TOPLEVEL := null_ranges_top
+COCOTB_TEST_MODULES := test_null_ranges
+VHDL_SOURCES := null_ranges_pkg.vhdl null_ranges.vhdl
 
 # cocotb inclusions
 include $(shell cocotb-config --makefiles)/Makefile.sim

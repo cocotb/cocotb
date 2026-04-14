@@ -5,10 +5,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import random
-import tempfile
 import time
 import warnings
 from pathlib import Path
@@ -77,9 +77,9 @@ def _process_plusargs() -> None:
 def _process_packages() -> None:
     pkg_dict = {}
 
-    from cocotb import simulator  # noqa: PLC0415
+    import cocotb.simulator  # noqa: PLC0415
 
-    pkgs = simulator.package_iterate()
+    pkgs = cocotb.simulator.package_iterate()
     if pkgs is None:
         cocotb.packages = SimpleNamespace()
         return
@@ -98,6 +98,14 @@ def _process_packages() -> None:
         pkg_dict[name] = handle
 
     cocotb.packages = SimpleNamespace(**pkg_dict)
+
+
+def _get_package_path(pkg: str) -> Path:
+    """Get the filesystem path of a package."""
+    spec = importlib.util.find_spec(pkg)
+    if spec is None or spec.origin is None:
+        raise ImportError(f"Cannot find package {pkg!r}")
+    return Path(spec.origin).parent.absolute()
 
 
 def _start_user_coverage() -> None:
@@ -123,64 +131,35 @@ def _start_user_coverage() -> None:
             ) from None
         else:
             config_filepath: str = _env.as_str("COVERAGE_RCFILE")
-
-            tmp_data_file_controller = tempfile.NamedTemporaryFile(
-                prefix=".coverage.cocotb.", suffix=".tmp"
-            )
-            tmp_data_file = tmp_data_file_controller.name
             if not config_filepath:
-                # Exclude cocotb itself from coverage collection.
+                # Exclude cocotb libraries from coverage collection.
                 log.info(
                     "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
                 )
-                cocotb_package_dir = Path(__file__).parent.absolute()
+                cocotb_package_dir = _get_package_path("cocotb")
+                cocotb_tools_package_dir = _get_package_path("cocotb_tools")
+                pygpi_package_dir = _get_package_path("pygpi")
                 user_coverage = coverage.coverage(
-                    data_file=tmp_data_file,
                     branch=True,
-                    omit=[f"{cocotb_package_dir}/*"],
+                    omit=[
+                        f"{cocotb_package_dir}/*",
+                        f"{cocotb_tools_package_dir}/*",
+                        f"{pygpi_package_dir}/*",
+                    ],
                 )
             else:
                 log.info(
                     "Collecting coverage of user code. Coverage config file supplied."
                 )
                 # Allow the config file to handle all configuration
-                user_coverage = coverage.coverage(
-                    data_file=tmp_data_file, config_file=config_filepath
-                )
+                user_coverage = coverage.coverage(config_file=config_filepath)
+            user_coverage.load()
             user_coverage.start()
 
             def stop_user_coverage() -> None:
-                try:
-                    user_coverage.stop()
-                    log.debug("Writing user coverage data")
-                    user_coverage.save()
-
-                    data_file = (
-                        getattr(user_coverage.config, "data_file", None) or ".coverage"
-                    )
-                    data_dir = Path(data_file).resolve().parent
-                    pattern = str(data_dir / ".coverage*")
-                    files = [
-                        str(p.resolve())
-                        for p in Path(pattern).parent.glob(Path(pattern).name)
-                    ]
-
-                    if files:
-                        final_data_file = ".coverage"
-                        if config_filepath is None:
-                            cocotb_package_dir = Path(__file__).parent.absolute()
-                            combiner = coverage.coverage(
-                                data_file=final_data_file,
-                                branch=True,
-                                omit=[f"{cocotb_package_dir}/*"],
-                            )
-                        else:
-                            combiner = coverage.coverage(
-                                data_file=final_data_file, config_file=config_filepath
-                            )
-                        combiner.combine(data_paths=files, strict=True, keep=True)
-                finally:
-                    tmp_data_file_controller.close()
+                user_coverage.stop()
+                log.debug("Writing user coverage data")
+                user_coverage.save()
 
             cocotb._shutdown.register(stop_user_coverage)
 
@@ -229,11 +208,9 @@ def _setup_root_handle() -> None:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
-    from cocotb import simulator  # noqa: PLC0415
-
-    handles = simulator.root_iterate()
+    handles = cocotb.simulator.root_iterate()
     if not handles:
-        root_handle = simulator.get_root_handle(root_name)
+        root_handle = cocotb.simulator.get_root_handle(root_name)
         if not root_handle:
             raise RuntimeError(f"Can not find root handle {root_name!r}")
         cocotb.top = cocotb.handle._make_sim_object(root_handle)

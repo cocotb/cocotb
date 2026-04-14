@@ -20,7 +20,7 @@ from functools import wraps
 from typing import Callable
 
 import cocotb.simtime
-from cocotb import simulator
+import cocotb.simulator
 from cocotb._ANSI import ANSI
 from cocotb._deprecation import deprecated
 from cocotb.simtime import TimeUnit, get_sim_time
@@ -185,12 +185,12 @@ def _setup_gpi_logger() -> None:
     @wraps(old_setLevel)
     def setLevel(level: int | str) -> None:
         old_setLevel(level)
-        simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
+        cocotb.simulator.set_gpi_log_level(gpi_logger.getEffectiveLevel())
 
     gpi_logger.setLevel = setLevel  # type: ignore[method-assign]
 
     # Initialize PyGPI logging
-    simulator.initialize_logger(_log_from_c, logging.getLogger)
+    cocotb.simulator.initialize_logger(_log_from_c, logging.getLogger)
 
 
 def _configure() -> None:

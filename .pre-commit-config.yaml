@@ -6,7 +6,7 @@ exclude: "^.*/_vendor/"
 repos:
 # ruff with --fix should run before other formatting tools
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.15.5"
+  rev: "v0.15.10"
   hooks:
     # Run the linter.
     - id: "ruff"
@@ -17,7 +17,7 @@ repos:
     - id: ruff-format
 
 - repo: "https://github.com/pre-commit/mirrors-clang-format"
-  rev: "v22.1.0"
+  rev: "v22.1.3"
   hooks:
   - id: "clang-format"
     exclude: "^src/cocotb/share/include/(sv_vpi|vhpi|vpi)_user(_ext)?.h"
@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2026.03.06"
+  rev: "2026.04.11"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
@@ -59,12 +59,19 @@ repos:
   rev: v1.19.1
   hooks:
   - id: mypy
+    args: [--follow-imports=silent]
     additional_dependencies:
     - pytest
+    - pluggy
     - coverage
     - nox
     - nox-uv
-    files: ^(src/cocotb/|src/pygpi/|noxfile.py)
+    files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/pytest/)
+
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.11.6
+  hooks:
+    - id: uv-lock
 
 ci:
   autofix_prs: false

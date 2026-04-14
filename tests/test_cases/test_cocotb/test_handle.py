@@ -103,18 +103,19 @@ async def test_string_ansi_color(dut):
         assert dut.stream_in_string_asciival_sum.value == asciival_sum
 
 
+@cocotb.test
 async def test_delayed_assignment_still_errors(dut):
     """Writing a bad value should fail even if the write is scheduled to happen later"""
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.value = Immediate("1010 not a real binary string")
+        dut.stream_in_data.value = Immediate("1010 not a real binary string")
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = Immediate([])
+        dut.stream_in_data.value = Immediate([])
 
     with pytest.raises(ValueError):
-        dut.stream_in_int.value = "1010 not a real binary string"
+        dut.stream_in_data.value = "1010 not a real binary string"
     with pytest.raises(TypeError):
-        dut.stream_in_int.value = []
+        dut.stream_in_data.value = []
 
 
 @cocotb.xfail(

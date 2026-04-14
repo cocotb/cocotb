@@ -168,6 +168,35 @@ Python Test Runner
 
     This is only used if :envvar:`GPI_USERS` is not already defined by the user.
 
+.. envvar:: SIM_CMD_PREFIX
+
+    Prefix for simulation command invocations.
+
+    This can be used to add environment variables or other commands before the invocations of simulation commands.
+    For example, ``export SIM_CMD_PREFIX='LD_PRELOAD="foo.so bar.so"'`` can be used to force a particular library to load.
+    Or, ``export SIM_CMD_PREFIX='gdb --args'`` to run the simulation with the GDB debugger.
+
+    .. versionadded:: 1.6
+
+    .. versionadded:: 2.1
+        Support for this variable was added to Python Runners.
+
+.. envvar:: SIM_CMD_SUFFIX
+
+    Suffix for simulation command invocations.
+    Typically used to redirect simulator ``stdout`` and ``stderr``:
+
+    .. code-block:: bash
+
+        # Prints simulator stdout and stderr to the terminal
+        # as well as capture it all in a log file "sim.log".
+        export SIM_CMD_SUFFIX="2>&1 | tee sim.log"
+
+    .. versionadded:: 2.0
+
+    .. versionadded:: 2.1
+        Support for this variable was added to Python Runners.
+
 
 .. _api-runner-sim:
 
@@ -960,6 +989,19 @@ Other Runtime Information
 
 .. autodata:: cocotb.is_simulation
 
+.. envvar:: COCOTB_RANDOM_TEST_ORDER
+
+    Type :ref:`env-boolean`
+
+    Default: :data:`False`
+
+    Enable randomizing the order of tests within each stage. To recreate the
+    same test order, the random seed must be set.
+
+    If not set, all tests are ran in the order in which they were discovered.
+
+    .. versionadded:: 2.1
+
 Debugging
 ---------
 
@@ -988,6 +1030,15 @@ Debugging
     If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
     See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
 
+    .. note::
+        Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
+        but continue running the rest of the test suite. From Python 3.14 onwards, ``(q)uit`` will exit the simulator process immediately.
+        To mimic this behavior call :func:`os._exit` from the pdb command line.
+
+        .. code-block::
+
+            (Pdb) import os; os._exit(0)
+
 .. envvar:: COCOTB_ATTACH
 
     Type: :ref:`env-integer`
@@ -1015,11 +1066,10 @@ Debugging
     Default: :data:`False`
 
     Enable to collect Python coverage data for user code.
-    For some simulators, this will also report :term:`HDL` coverage.
-    If :envvar:`COVERAGE_RCFILE` is not set, branch coverage is collected
-    and files in the cocotb package directory are excluded.
+    If :envvar:`COVERAGE_RCFILE` is not set,
+    line and branch coverage is collected and files in the ``cocotb``, ``cocotb_tools``, and ``pygpi`` package directories are excluded.
 
-    This needs the :mod:`coverage` Python module to be installed.
+    This requires the :mod:`coverage` Python module to be installed.
 
     .. versionchanged:: 2.0
 
