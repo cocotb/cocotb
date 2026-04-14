@@ -1108,6 +1108,23 @@ Use ``python -m cocotb_tools.combine_results`` to call the script.
 .. _cocotb-config:
 
 
+The ``cocotb_tools.config`` module
+----------------------------------
+
+.. module:: cocotb_tools.config
+    :synopsis: Tools for querying cocotb configuration and installation details.
+
+.. autodata:: cocotb_tools.config.share_dir
+
+.. autodata:: cocotb_tools.config.libs_dir
+
+.. autodata:: cocotb_tools.config.makefiles_dir
+
+.. autofunction:: cocotb_tools.config.pygpi_entry_point
+
+.. autofunction:: cocotb_tools.config.lib_name_path
+
+
 The ``cocotb-config`` script
 ----------------------------
 
