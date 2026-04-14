@@ -641,7 +641,7 @@ dev = [
     { name = "clang-format" },
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
     { name = "gcovr", specifier = "==8.4" },
-    { name = "mypy", specifier = ">=1.18,!=1.20.0" },
+    { name = "mypy", specifier = ">=1.18,!=1.20.*" },
     { name = "nox" },
     { name = "nox-uv" },
     { name = "prek" },

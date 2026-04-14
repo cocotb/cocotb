@@ -267,7 +267,7 @@ dev = [
     "prek",
     # allows linting the project manually
     "clang-format",
-    "mypy>=1.18,!=1.20.0",  # 1.18 needed for descriptor typing
+    "mypy>=1.18,!=1.20.*",  # 1.18 needed for descriptor typing, 1.20 has type narrowing regressions
     "ruff",
     # allows running tests and doing coverage reporting manually if desired
     {include-group = "dev_test"},
