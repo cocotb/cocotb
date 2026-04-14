@@ -6,15 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Module for querying the cocotb configuration
-
-This module provides information in module global variables and through a
-``main()`` function that is used in the cocotb-config script.
-
-Global variables:
-    share_dir: str, path where the cocotb data is stored
-    makefiles_dir: str, path where the cocotb makefiles are installed
-    libs_dir: str, path where the cocotb interface libraries are located
+Module for querying the cocotb configuration and installation details.
 """
 
 from __future__ import annotations
@@ -37,8 +29,13 @@ if not (base_cocotb_dir.exists() and (base_cocotb_dir / "libs").exists()):
     base_cocotb_dir = Path(cocotb.__file__).parent.resolve()
 
 share_dir = base_cocotb_dir.joinpath("share")
+"""Path to the cocotb share directory, which contains include files and verilator.cpp"""
+
 libs_dir = base_cocotb_dir.joinpath("libs")
+"""Path to the cocotb libs directory, which contains the compiled GPI libraries"""
+
 makefiles_dir = base_tools_dir.joinpath("makefiles")
+"""Path to the cocotb makefiles directory, which contains the Makefile-based build system"""
 
 
 def _get_version() -> str:
@@ -110,15 +107,14 @@ def _help_vars_text() -> str:
 
 
 def pygpi_entry_point() -> str:
+    """Return the PYGPI entry point for use in :envvar:`GPI_USERS`"""
     import cocotb.simulator  # noqa: PLC0415
 
     return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
 
 
 def lib_name(interface: str, simulator: str) -> str:
-    """
-    Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
-    """
+    """Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator."""
 
     interface_name = interface.lower()
     supported_interfaces = ["vpi", "vhpi", "fli"]
