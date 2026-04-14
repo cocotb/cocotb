@@ -240,8 +240,8 @@ def _setup_root_handle() -> None:
 
     else:
         for handle in handles:
-            cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
-                handle
+            cocotb.tops[handle.get_name_string().casefold()] = (
+                cocotb.handle._make_sim_object(handle)
             )
 
         if root_name is not None:
