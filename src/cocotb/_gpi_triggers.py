@@ -13,7 +13,7 @@ import warnings
 from collections.abc import Generator
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, Union
 
 import cocotb
 import cocotb._event_loop
@@ -264,7 +264,9 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
         return f"{type(self).__qualname__}({self.signal!r})"
 
 
-class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
+class RisingEdge(
+    _EdgeBase[Union["cocotb.handle.LogicObject", "cocotb.handle.LogicArrayObject"]]
+):
     """Fires on the rising edge of *signal*, on a transition to ``1``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -286,14 +288,18 @@ class RisingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     _edge_type = simulator.RISING
 
     def __new__(cls, signal: cocotb.handle.LogicObject) -> RisingEdge:
-        if not (isinstance(signal, cocotb.handle.LogicObject)):
+        if not isinstance(
+            signal, (cocotb.handle.LogicObject, cocotb.handle.LogicArrayObject)
+        ):
             raise TypeError(
-                f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal.rising_edge
 
 
-class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
+class FallingEdge(
+    _EdgeBase[Union["cocotb.handle.LogicObject", "cocotb.handle.LogicArrayObject"]]
+):
     """Fires on the falling edge of *signal*, on a transition to ``0``.
 
     Only valid for scalar ``logic`` or ``bit``-typed signals.
@@ -315,9 +321,11 @@ class FallingEdge(_EdgeBase["cocotb.handle.LogicObject"]):
     _edge_type = simulator.FALLING
 
     def __new__(cls, signal: cocotb.handle.LogicObject) -> FallingEdge:
-        if not (isinstance(signal, cocotb.handle.LogicObject)):
+        if not isinstance(
+            signal, (cocotb.handle.LogicObject, cocotb.handle.LogicArrayObject)
+        ):
             raise TypeError(
-                f"{cls.__qualname__} requires a scalar LogicObject. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal.falling_edge
 

@@ -1,0 +1,1 @@
+Added support for :class:`~cocotb.triggers.RisingEdge` and :class:`~cocotb.triggers.FallingEdge` for instances of :class:`~cocotb.handle.LogicArrayObject` with only one bit.
