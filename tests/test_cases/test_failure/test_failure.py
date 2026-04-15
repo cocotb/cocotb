@@ -13,27 +13,31 @@ from __future__ import annotations
 import cocotb
 
 
-@cocotb.test()
+@cocotb.test
 async def test_fail(_: object) -> None:
     assert False
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.xfail()
+@cocotb.test
 async def test_pass_expect_fail(_: object) -> None:
     assert True
 
 
-@cocotb.test(expect_error=Exception)
+@cocotb.xfail(raises=Exception)
+@cocotb.test
 async def test_pass_expect_error(_: object) -> None:
     assert True
 
 
-@cocotb.test(expect_error=ValueError)
+@cocotb.xfail(raises=ValueError)
+@cocotb.test
 async def test_wrong_error(_: object) -> None:
     raise TypeError
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.xfail()
+@cocotb.test
 async def test_expect_fail_but_errors(_: object) -> None:
     raise Exception()
 
@@ -43,16 +47,19 @@ async def test_exception_with_nonprintable_characters(_: object) -> None:
     raise Exception("This is bad! \x00\x0b\x80")
 
 
-@cocotb.test(expect_error=TypeError)
+@cocotb.xfail(raises=TypeError)
+@cocotb.test
 async def test_expect_error_get_failure(dut: object) -> None:
     assert False
 
 
-@cocotb.test(expect_error=Exception)
+@cocotb.xfail(raises=Exception)
+@cocotb.test
 async def test_end_test_with_expect_error(_: object) -> None:
     cocotb.end_test()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.xfail()
+@cocotb.test
 async def test_end_test_with_expect_fail(_: object) -> None:
     cocotb.end_test()

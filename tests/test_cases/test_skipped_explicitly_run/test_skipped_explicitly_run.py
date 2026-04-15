@@ -10,7 +10,8 @@ import cocotb
 skipped_file_name = "ran_skipped_test~"
 
 
-@cocotb.test(skip=True)
+@cocotb.skipif(True)
+@cocotb.test
 async def test_skipped(dut: object) -> None:
     """Touch a file so we can check that this test has run."""
     pathlib.Path(skipped_file_name).touch()

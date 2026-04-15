@@ -292,19 +292,14 @@ async def test_clock_cycles_forked(dut):
     await b
 
 
-@cocotb.test(
-    timeout_time=100,
-    timeout_unit="ns",
-    expect_error=(  # gh-2344
-        SimTimeoutError
-        if (
-            LANGUAGE in ["verilog"]
-            and SIM_NAME.startswith(("riviera", "aldec"))
-            and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04")
-        )
-        else ()
-    ),
+@cocotb.xfail(
+    LANGUAGE in ["verilog"]
+    and SIM_NAME.startswith(("riviera", "aldec"))
+    and RivieraVersion(cocotb.SIM_VERSION) < RivieraVersion("2023.04"),
+    raises=SimTimeoutError,
+    reason="gh-2344",
 )
+@cocotb.test(timeout_time=100, timeout_unit="ns")
 async def test_both_edge_triggers(dut):
     async def wait_rising_edge():
         await RisingEdge(dut.clk)
@@ -390,8 +385,11 @@ async def test_edge_logic_vector(dut):
     await with_timeout(ValueChange(dut.stream_in_data), 20, "ns")
 
 
-# icarus doesn't support integer inputs/outputs
-@cocotb.test(skip=SIM_NAME.startswith("icarus"))
+@cocotb.skipif(
+    SIM_NAME.startswith("icarus"),
+    reason="icarus doesn't support integer inputs/outputs",
+)
+@cocotb.test
 async def test_edge_non_logic_handles(dut):
     dut.stream_in_int.value = 0
 

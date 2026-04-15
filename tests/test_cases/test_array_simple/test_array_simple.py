@@ -24,9 +24,12 @@ def _check_value(tlog, hdl, expected):
 
 
 # GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(
-    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    raises=Exception,
+    reason="GHDL unable to put values on nested array types (gh-2588)",
 )
+@cocotb.test
 async def test_1dim_array_handles(dut):
     """Test getting and setting array values using the handle of the full array."""
 
@@ -47,11 +50,12 @@ async def test_1dim_array_handles(dut):
 
 # GHDL unable to put values on nested array types (gh-2588)
 # iverilog flattens multi-dimensional unpacked arrays (gh-2595)
-@cocotb.test(
-    expect_error=Exception
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
-    else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")),
+    raises=Exception,
+    reason="GHDL unable to put values on nested array types (gh-2588); iverilog flattens multi-dimensional unpacked arrays (gh-2595)",
 )
+@cocotb.test
 async def test_ndim_array_handles(dut):
     """Test getting and setting multi-dimensional array values using the handle of the full array."""
 
@@ -67,9 +71,12 @@ async def test_ndim_array_handles(dut):
 
 
 # GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(
-    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    raises=Exception,
+    reason="GHDL unable to put values on nested array types (gh-2588)",
 )
+@cocotb.test
 async def test_1dim_array_indexes(dut):
     """Test getting and setting values of array indexes."""
 
@@ -111,11 +118,12 @@ async def test_1dim_array_indexes(dut):
 
 # GHDL unable to put values on nested array types (gh-2588)
 # iverilog flattens multi-dimensional unpacked arrays (gh-2595)
-@cocotb.test(
-    expect_error=Exception
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
-    else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")),
+    raises=Exception,
+    reason="GHDL unable to put values on nested array types (gh-2588); iverilog flattens multi-dimensional unpacked arrays (gh-2595)",
 )
+@cocotb.test
 async def test_ndim_array_indexes(dut):
     """Test getting and setting values of multi-dimensional array indexes."""
 
@@ -143,16 +151,27 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][28], 0xEF)
 
 
-# GHDL unable to access record signals (gh-2591)
-# Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
-# Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
-@cocotb.test(
-    expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl", "verilator"))
-    or (cocotb.SIM_NAME.lower().startswith("riviera") and LANGUAGE == "verilog")
-    else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to access record signals (gh-2591)",
 )
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("icarus"),
+    raises=AttributeError,
+    reason="Icarus doesn't support structs (gh-2592)",
+)
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("verilator"),
+    raises=AttributeError,
+    reason="Verilator doesn't support structs (gh-1275)",
+)
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("riviera") and LANGUAGE == "verilog",
+    raises=AttributeError,
+    reason="Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)",
+)
+@cocotb.test
 async def test_struct_unpacked(dut):
     """Test setting and getting values of unpacked structs."""
     cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
@@ -164,7 +183,7 @@ async def test_struct_unpacked(dut):
     _check_value(tlog, dut.inout_if.a_in, 0)
 
 
-@cocotb.test()
+@cocotb.test
 async def test_exceptions(dut):
     """Test that correct Exceptions are raised."""
     with pytest.raises(TypeError):

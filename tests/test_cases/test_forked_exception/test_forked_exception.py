@@ -17,7 +17,8 @@ from cocotb.triggers import Timer
 class MyException(Exception): ...
 
 
-@cocotb.test(expect_error=MyException)
+@cocotb.xfail(raises=MyException)
+@cocotb.test
 async def test_fail(_):
     async def fails():
         await Timer(10, "ns")

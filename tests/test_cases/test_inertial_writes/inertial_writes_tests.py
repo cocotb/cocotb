@@ -35,9 +35,8 @@ riviera_vhpi_trust_inertial = (
 )
 
 
-@cocotb.test(
-    skip=riviera_vhpi_trust_inertial and not simulator_test,
-)
+@cocotb.skipif(riviera_vhpi_trust_inertial and not simulator_test)
+@cocotb.test
 async def test_writes_on_timer_seen_on_edge(dut):
     # steady state
     dut.clk.value = 0
@@ -62,13 +61,12 @@ else:
     expect_fail = True
 
 
-# Riviera and Questa on VHDL designs seem to apply inertial writes in this state immediately,
-# presumably because it's the NBA application region.
-# This test will fail because the ReadWrite write applicator task does inertial writes of its own.
-@cocotb.test(
-    expect_fail=expect_fail,
-    skip=riviera_vhpi_trust_inertial and not simulator_test,
+@cocotb.skipif(riviera_vhpi_trust_inertial and not simulator_test)
+@cocotb.xfail(
+    expect_fail,
+    reason="Riviera and Questa on VHDL designs seem to apply inertial writes immediately, presumably because it's the NBA application region",
 )
+@cocotb.test
 async def test_read_back_in_readwrite(dut):
     # steady state
     dut.clk.value = 0
@@ -97,11 +95,12 @@ elif "vcs" in SIM_NAME:
     expect_fail = True
 
 
-# Icarus, Questa VPI, and Xcelium VHPI inertial writes aren't actually inertial.
-@cocotb.test(
-    expect_fail=expect_fail,
-    skip=riviera_vhpi_trust_inertial and not simulator_test,
+@cocotb.skipif(riviera_vhpi_trust_inertial and not simulator_test)
+@cocotb.xfail(
+    expect_fail,
+    reason="Icarus, Questa VPI, and Xcelium VHPI inertial writes aren't actually inertial",
 )
+@cocotb.test
 async def test_writes_dont_update_hdl_this_delta(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 

@@ -23,7 +23,8 @@ async def clk_in_coroutine(dut):
         await RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def clk_in_hdl(dut):
     dut.d.value = 0
     await RisingEdge(dut.clk)

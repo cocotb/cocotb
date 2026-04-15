@@ -18,8 +18,11 @@ from cocotb.handle import (
 )
 
 
-# GHDL discovers enum as `vpiNet` (gh-2600)
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    reason="GHDL discovers enum as vpiNet (gh-2600)",
+)
+@cocotb.test
 async def check_enum_object(dut):
     """
     Enumerations currently behave as normal signals
@@ -29,10 +32,12 @@ async def check_enum_object(dut):
     assert isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject)
 
 
-# GHDL unable to access signals in generate loops (gh-2594)
-@cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    raises=IndexError,
+    reason="GHDL unable to access signals in generate loops (gh-2594)",
 )
+@cocotb.test
 async def check_objects(dut):
     """
     Check the types of objects that are returned

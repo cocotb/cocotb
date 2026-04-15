@@ -22,8 +22,10 @@ from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
-# identifiers starting with `_` are illegal in VHDL
-@cocotb.test(skip=LANGUAGE in ("vhdl"))
+@cocotb.test
+@cocotb.skipif(
+    LANGUAGE in ("vhdl"), reason="identifiers starting with `_` are illegal in VHDL"
+)
 async def test_id_deprecated(dut):
     with pytest.warns(DeprecationWarning):
         dut._id("_underscore_name", extended=False)
@@ -53,7 +55,8 @@ async def test_testfactory_deprecated(dut):
     assert tf_warns[0].category is DeprecationWarning
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+@cocotb.test
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
 async def test_real_handle_casts_deprecated(dut):
     dut.stream_in_real.value = 5.03
     await Timer(1, "ns")
@@ -61,7 +64,8 @@ async def test_real_handle_casts_deprecated(dut):
         assert float(dut.stream_in_real) == 5.03
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+@cocotb.test
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith("icarus"))
 async def test_int_handle_casts_deprecated(dut):
     dut.stream_in_int.value = 100
     await Timer(1, "ns")
@@ -79,7 +83,8 @@ async def test_logic_handle_casts_deprecated(dut):
         assert str(dut.stream_in_data) == "10110011"
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+@cocotb.test
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
 async def test_string_handle_casts_deprecated(dut):
     dut.stream_in_string.value = b"sample"
     await Timer(1, "ns")
@@ -221,7 +226,8 @@ async def test_units_deprecated(dut: Any) -> None:
         )
 
 
-@cocotb.test(skip=sys.version_info < (3, 7))
+@cocotb.test
+@cocotb.skipif(sys.version_info < (3, 7))
 async def test_results_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
         from cocotb.result import TestSuccess  # noqa: F401, PLC0415
@@ -231,7 +237,8 @@ async def test_results_deprecated(_: Any) -> None:
         from cocotb.result import SimTimeoutError  # noqa: F401, PLC0415
 
 
-@cocotb.test(skip=sys.version_info < (3, 7))
+@cocotb.test
+@cocotb.skipif(sys.version_info < (3, 7))
 async def test_triggers_Join_import_deprecated(_: Any) -> None:
     with pytest.warns(DeprecationWarning):
         from cocotb.triggers import Join  # noqa: F401, PLC0415
@@ -357,13 +364,15 @@ async def test_pass_test_in_xfail_assert(dut: object) -> None:
         cocotb.pass_test("Finished test early")
 
 
-@cocotb.test(expect_error=TypeError)
+@cocotb.test
+@cocotb.xfail(raises=TypeError)
 async def test_pass_test_in_expect_error(dut: object) -> None:
     with pytest.warns(DeprecationWarning):
         cocotb.pass_test("Finished test early")
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pass_test_in_expect_fail(dut: object) -> None:
     with pytest.warns(DeprecationWarning):
         cocotb.pass_test("Finished test early")
