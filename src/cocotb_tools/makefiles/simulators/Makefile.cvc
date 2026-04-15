@@ -30,31 +30,23 @@ endif
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
-	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
     $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp
 else
     $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
-        COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+	$(SIM_CMD_PREFIX) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 endif
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
     debug:  $(CUSTOM_SIM_DEPS)
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
-        COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(SIM_CMD_PREFIX) gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 else
     debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
-        COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        gdb --args $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS)
+	gdb --args $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(COCOTB_PLUSARGS)
 endif
 
 

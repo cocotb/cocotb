@@ -34,6 +34,12 @@ COCOTB_MAKEFILES_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles
 
 include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 
+ # Evaluate deprecated variables once here, so we don't have to do it in every simulator Makefile
+COCOTB_TEST_MODULES := $(call deprecate,MODULE,COCOTB_TEST_MODULES)
+COCOTB_TESTCASE     := $(call deprecate,TESTCASE,COCOTB_TESTCASE)
+COCOTB_TOPLEVEL     := $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+COCOTB_PLUSARGS     := $(call deprecate,PLUSARGS,COCOTB_PLUSARGS)
+
 PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
 ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
     $(error Unknown Python architecture: $(PYTHON_ARCH))
@@ -67,8 +73,7 @@ COCOTB_RESULTS_FILE ?= results.xml
 COCOTB_HDL_TIMEUNIT ?= 1ns
 COCOTB_HDL_TIMEPRECISION ?= 1ps
 
-export COCOTB_RESULTS_FILE
-
+# export COCOTB_RESULTS_FILE
 
 $(SIM_BUILD):
 	mkdir -p $@
@@ -119,7 +124,7 @@ endif
 endif
 GPI_USERS := $(LIBPYTHON_LOC);$(shell $(PYTHON_BIN) -m cocotb_tools.config --pygpi-entry-point)
 endif
-export GPI_USERS
+# export GPI_USERS
 
 define check_vhdl_sources
 if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
@@ -144,7 +149,7 @@ else
   COCOTB_TRUST_INERTIAL_WRITES ?= 0
 endif
 
-export COCOTB_TRUST_INERTIAL_WRITES
+# export COCOTB_TRUST_INERTIAL_WRITES
 
 
 # Universal
@@ -198,6 +203,14 @@ clean::
 	@$(RM) -rf dsim.*
 	@$(RM) -rf metrics.db
 	@$(RM) -rf file.vcd
+
+# Auto-export all COCOTB_, GPI_, and PYGPI_ variables to the simulator subshells.
+# We filter out COCOTB_PLUSARGS because plusargs are passed as direct command-line
+# arguments to the simulator, not as environment variables.
+export $(filter-out COCOTB_PLUSARGS,$(filter COCOTB_%,$(.VARIABLES)))
+export $(filter GPI_%,$(.VARIABLES))
+export $(filter PYGPI_%,$(.VARIABLES))
+export TOPLEVEL_LANG
 
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
