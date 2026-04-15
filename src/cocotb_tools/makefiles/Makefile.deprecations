@@ -20,6 +20,18 @@ ifneq ($(TOPLEVEL),)
 endif
 endif
 
+ifneq ($(COCOTB_TEST_MODULES),$(MODULE))
+ifneq ($(MODULE),)
+    COCOTB_TEST_MODULES := $(MODULE)
+endif
+endif
+
+ifneq ($(COCOTB_TESTCASE),$(TESTCASE))
+ifneq ($(TESTCASE),)
+    COCOTB_TESTCASE := $(TESTCASE)
+endif
+endif
+
 ifneq ($(COCOTB_USER_COVERAGE),$(COVERAGE))
 ifneq ($(COVERAGE),)
     COCOTB_USER_COVERAGE := $(COVERAGE)

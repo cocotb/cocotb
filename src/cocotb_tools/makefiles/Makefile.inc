@@ -146,6 +146,12 @@ endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
 
+export COCOTB_TEST_MODULES
+export COCOTB_TESTCASE
+export COCOTB_TEST_FILTER
+export COCOTB_TOPLEVEL
+export TOPLEVEL_LANG
+export GPI_EXTRA
 
 # Universal
 clean::
