@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from subprocess import run
 
 import pytest
 
@@ -14,15 +13,9 @@ from cocotb_tools.sim_versions import IcarusVersion
 
 SIM = os.getenv("SIM", "icarus").lower()
 
-if SIM == "icarus":
-    icarus_version = run(
-        ["iverilog", "-V"], capture_output=True, text=True, check=True
-    ).stdout
-
 
 @pytest.mark.skipif(
-    SIM == "icarus"
-    and IcarusVersion.from_commandline(icarus_version) < IcarusVersion("12.0"),
+    SIM == "icarus" and IcarusVersion.from_commandline() < IcarusVersion("12.0"),
     reason="Icarus v11.0 treats integers as regs and ports cannot be of type reg",
 )
 def test_integers_runner():
