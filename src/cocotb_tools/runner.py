@@ -948,10 +948,8 @@ class Icarus(Runner):
             [
                 *self._get_sim_cmd_prefix(),
                 "vvp",
-                "-M",
-                str(cocotb_tools.config.libs_dir),
                 "-m",
-                cocotb_tools.config.lib_name("vpi", "icarus"),
+                cocotb_tools.config.lib_name_path("vpi", "icarus").as_posix(),
                 *self.test_args,
                 str(self.sim_file),
                 *plusargs,

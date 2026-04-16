@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 import cocotb
+import cocotb.clock
 import cocotb.triggers
 from cocotb.handle import Immediate, StringObject
 from cocotb.triggers import FallingEdge, Timer, ValueChange
@@ -458,3 +459,28 @@ async def test_handle_str_with_separators(dut: Any) -> None:
     dut.stream_in_data.value = "__01010011__"
     await Timer(1, "ns")
     assert dut.stream_in_data.value == LogicArray("01010011")
+
+
+@cocotb.test
+@cocotb.skipif(
+    SIM_NAME.startswith("modelsim") and LANGUAGE == "verilog",
+    reason="Questa legacy flow doesn't support value change callbacks on vectors.",
+)
+async def test_edge_on_vectors(dut: Any) -> None:
+    """Test that RisingEdge/FallingEdge works on 1-bit LogicArrayObject and fails on multi-bit LogicArrayObject."""
+
+    assert len(dut.stream_in_data) > 1
+    with pytest.raises(TypeError):
+        # RisingEdge on multi-bit signal
+        await cocotb.triggers.RisingEdge(dut.stream_in_data)
+    with pytest.raises(TypeError):
+        # FallingEdge on multi-bit signal
+        await cocotb.triggers.FallingEdge(dut.stream_in_data)
+
+    assert len(dut.one_bit_vector) == 1
+
+    cocotb.clock.Clock(dut.one_bit_vector, 10, "ns").start()
+
+    # Test that edges on 1-bit signal don't raise an error
+    await cocotb.triggers.RisingEdge(dut.one_bit_vector)
+    await cocotb.triggers.FallingEdge(dut.one_bit_vector)

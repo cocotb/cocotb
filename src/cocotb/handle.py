@@ -1397,6 +1397,24 @@ class LogicArrayObject(
         # Backwards compatibility. Always wrap negative values.
         return (2 ** len(self)) - 1
 
+    @cached_property
+    def rising_edge(self) -> RisingEdge:
+        """A trigger which fires whenever the value changes to a ``1``."""
+        if len(self) != 1:
+            raise TypeError(f"Can't get RisingEdge on {len(self)}-bit signal")
+        if self.is_const:
+            raise TypeError("Can't get RisingEdge on immutable signal")
+        return RisingEdge._make(self)
+
+    @cached_property
+    def falling_edge(self) -> FallingEdge:
+        """A trigger which fires whenever the value changes to a ``0``."""
+        if len(self) != 1:
+            raise TypeError(f"Can't get FallingEdge on {len(self)}-bit signal")
+        if self.is_const:
+            raise TypeError("Can't get FallingEdge on immutable signal")
+        return FallingEdge._make(self)
+
 
 class PackedObject(LogicArrayObject):
     """A packed Verilog struct, union, or vector simulation object.

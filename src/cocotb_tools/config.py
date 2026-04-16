@@ -115,9 +115,9 @@ def pygpi_entry_point() -> str:
     return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
 
 
-def lib_name(interface: str, simulator: str) -> str:
+def lib_name_path(interface: str, simulator: str) -> Path:
     """
-    Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
+    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
     """
 
     interface_name = interface.lower()
@@ -157,9 +157,7 @@ def lib_name(interface: str, simulator: str) -> str:
     else:
         library_name = simulator_name
 
-    if library_name == "icarus":
-        lib_ext = ""
-    elif os.name == "nt":
+    if os.name == "nt":
         lib_ext = ".dll"
     else:
         lib_ext = ".so"
@@ -170,14 +168,8 @@ def lib_name(interface: str, simulator: str) -> str:
     else:
         lib_prefix = "lib"
 
-    return lib_prefix + "cocotb" + interface_name + "_" + library_name + lib_ext
-
-
-def lib_name_path(interface: str, simulator: str) -> Path:
-    """
-    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
-    """
-    return libs_dir / lib_name(interface, simulator)
+    lib_name = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
+    return libs_dir / lib_name
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -213,12 +205,6 @@ def _get_parser() -> argparse.ArgumentParser:
         "--lib-dir",
         action="store_true",
         help="Print the absolute path to the interface libraries location",
-    )
-    group.add_argument(
-        "--lib-name",
-        help="Print the name of interface library for given interface (VPI/VHPI/FLI) and simulator",
-        nargs=2,
-        metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
         "--lib-name-path",
@@ -259,8 +245,6 @@ def main() -> None:
         print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
-    elif args.lib_name:
-        print(lib_name(*args.lib_name))
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
     elif args.pygpi_entry_point:
