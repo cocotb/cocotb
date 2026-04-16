@@ -133,7 +133,7 @@ endif
 	@echo "exit" >> $@
 endif
 
-# explicity exporting GPI_EXTRA
+# explicitly exporting GPI_EXTRA
 export GPI_EXTRA
 
 # Note it's the redirection of the output rather than the 'do' command
