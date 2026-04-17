@@ -24,7 +24,7 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 @cocotb.test
 @cocotb.skipif(
-    LANGUAGE in ("vhdl"), reason="identifiers starting with `_` are illegal in VHDL"
+    LANGUAGE == "vhdl", reason="identifiers starting with `_` are illegal in VHDL"
 )
 async def test_id_deprecated(dut):
     with pytest.warns(DeprecationWarning):
