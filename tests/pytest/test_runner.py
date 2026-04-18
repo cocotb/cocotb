@@ -11,7 +11,14 @@ import pytest
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb_tools.runner import VHDL, _as_tcl_value, get_runner
+from cocotb.types import Logic, LogicArray
+from cocotb_tools.runner import (
+    VHDL,
+    _as_tcl_value,
+    as_sv_literal,
+    as_vhdl_literal,
+    get_runner,
+)
 
 pytestmark = pytest.mark.simulator_required
 
@@ -37,7 +44,49 @@ def test_special_char():
     assert _as_tcl_value("Test \n end\ttest\r") == "Test\\ \\n\\ end\\\ttest\\\r"
 
 
-string_define_value = "path/to/some/(random quote)/file.wow'"
+string_define_value = '"path/to/some/(random quote)/file.wow"'
+
+
+def test_sv_literal_conversion():
+    assert as_vhdl_literal(123) == "123"
+    assert as_vhdl_literal(67.99) == "67.99"
+    assert as_sv_literal(True) == "1'b1"
+    assert as_sv_literal(False) == "1'b0"
+    assert as_sv_literal(Logic("1")) == "1'b1"
+    assert as_sv_literal(LogicArray("01XZ")) == "4'b01XZ"
+    assert as_sv_literal("test") == '"test"'
+    assert as_sv_literal("'\"\\\n") == '"\'\\"\\\\\\n"'
+
+    for invalid_logic in ("W", "L", "H", "-", "U"):
+        with pytest.raises(ValueError):
+            as_sv_literal(LogicArray(invalid_logic))
+        with pytest.raises(ValueError):
+            as_sv_literal(Logic(invalid_logic))
+
+    with pytest.raises(TypeError):
+        as_sv_literal(object())
+    with pytest.raises(TypeError):
+        as_sv_literal(None)
+    with pytest.raises(TypeError):
+        as_sv_literal([])
+
+
+def test_vhdl_literal_conversion():
+    assert as_vhdl_literal(123) == "123"
+    assert as_vhdl_literal(67.99) == "67.99"
+    assert as_vhdl_literal(True) == "true"
+    assert as_vhdl_literal(False) == "false"
+    assert as_vhdl_literal(Logic("1")) == "1"
+    assert as_vhdl_literal(LogicArray("UX01ZWHL-")) == "UX01ZWHL-"
+    assert as_vhdl_literal("test") == '"test"'
+    assert as_vhdl_literal("'\"\\") == '"\'""\\"'
+
+    with pytest.raises(TypeError):
+        as_vhdl_literal(object())
+    with pytest.raises(TypeError):
+        as_vhdl_literal(None)
+    with pytest.raises(TypeError):
+        as_vhdl_literal([])
 
 
 @cocotb.test()
