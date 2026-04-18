@@ -416,6 +416,8 @@ class Runner(ABC):
             Users must explicitly call :func:`~cocotb_tools.runner.as_vhdl_literal` or
             :func:`~cocotb_tools.runner.as_sv_literal` to convert Python values to HDL literals.
         """
+        # We don't get anything by printing this if the build fails
+        __tracebackhide__ = True
 
         self.clean: bool = clean
         self.build_dir = get_abs_path(build_dir)
@@ -528,7 +530,6 @@ class Runner(ABC):
             The absolute location of the results XML file which can be
             defined by the *results_xml* argument.
         """
-
         __tracebackhide__ = True  # Hide the traceback when using pytest
 
         if build_dir is not None:
@@ -716,9 +717,13 @@ class Runner(ABC):
             # TODO: log forwarding
 
             stderr = None if stdout is None else subprocess.STDOUT
-            subprocess.run(
-                cmd, cwd=cwd, env=self.env, check=True, stdout=stdout, stderr=stderr
+            result = subprocess.run(
+                cmd, cwd=cwd, env=self.env, check=False, stdout=stdout, stderr=stderr
             )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"Command failed with return code: {result.returncode}"
+                )
 
     def rm_build_folder(self, build_dir: Path) -> None:
         if build_dir.is_dir():
