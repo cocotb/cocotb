@@ -1,0 +1,1 @@
+Removed implicit conversion of ``defines`` in :meth:`Runner.build <cocotb_tools.runner.Runner.build>` to literals. If users need to convert Python objects to literals for use in ``defines`` or ``parameters``, they must explicitly call the new :func:`~cocotb_tools.runner.as_vhdl_literal` or :func:`~cocotb_tools.runner.as_sv_literal` functions.
