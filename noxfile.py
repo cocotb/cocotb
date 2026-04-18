@@ -196,6 +196,7 @@ def dev_test_sim(
     ]
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--doctest-modules",
         "--cov=cocotb",
@@ -211,6 +212,7 @@ def dev_test_sim(
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--cov=cocotb",
         "--cov-branch",
@@ -229,17 +231,20 @@ def dev_test_sim(
         "examples/matrix_multiplier",
         "examples/mixed_language",
     ]
-    session.run(
-        "pytest",
-        "-v",
-        *pytest_example_tree,
-        env=env,
-    )
+    for example in pytest_example_tree:
+        with session.chdir(example):
+            session.run(
+                "pytest",
+                "-s",
+                "-v",
+                env=env,
+            )
 
     # We need to run it separately to avoid loading pytest cocotb plugin for other tests
     session.log(f"Running tests for pytest plugin against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "tests/pytest_plugin",
         "--cocotb-simulator",
@@ -282,6 +287,7 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.log("Running simulator-agnostic tests with pytest")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--cov=cocotb",
         "--cov-branch",
@@ -510,6 +516,7 @@ def release_test_sim(
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "-k",
         "simulator_required",
@@ -525,6 +532,7 @@ def release_test_nosim(session: nox.Session) -> None:
     session.log("Running simulator-agnostic tests")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "-k",
         "not simulator_required",
