@@ -52,7 +52,7 @@ The :envvar:`COCOTB_RESULTS_ATTACHMENTS` environment variable is a comma-separat
 pytest Plugin
 -------------
 
-Set the ``junit_logging`` option to ``system-out`` or ``all``.
+Setting the ``junit_logging`` pytest INI config option to ``system-out`` or ``all`` is required for attachments to be added when using the pytest plugin.
 
 .. TODO Why does this work?
 
@@ -66,7 +66,7 @@ Set the ``junit_logging`` option to ``system-out`` or ``all``.
 Outputting Relative Paths
 =========================
 
-The :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable can be used to convert all absolute paths reported in the generated XML file to relative ones including XML attributes, properties and text.
+The :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable can be used to convert all absolute paths reported in the generated XML file to relative ones, including XML attributes, properties and text.
 
 Makefiles and cocotb Runner
 ---------------------------
