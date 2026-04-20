@@ -421,9 +421,6 @@ class Runner(ABC):
 
         self.clean: bool = clean
         self.build_dir = get_abs_path(build_dir)
-        if self.clean:
-            self.rm_build_folder(self.build_dir)
-        self.build_dir.mkdir(parents=True, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
         # is written without a copy. This is much more concise and leads to
@@ -461,6 +458,11 @@ class Runner(ABC):
         self.waves = _env.as_bool("WAVES", waves)
 
         self._set_env_build()
+
+        if self.clean:
+            self.rm_build_folder(self.build_dir)
+            self.always = True
+        self.build_dir.mkdir(parents=True, exist_ok=True)
 
         cmds: Sequence[_Command] = self._build_command()
         self._execute(cmds, cwd=self.cwd)
