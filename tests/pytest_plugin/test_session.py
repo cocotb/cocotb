@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from pytest import FixtureRequest, fixture
 
+import cocotb
 from cocotb_tools.pytest.hdl import HDL
 
 DESIGNS: Path = Path(__file__).parent.parent.resolve() / "designs"
@@ -33,10 +34,14 @@ def my_hdl_project_fixture(hdl_session: HDL, request: FixtureRequest) -> HDL:
             DESIGNS / "sample_module" / "sample_module.vhdl",
         )
     else:
-        hdl_session.sources = (
-            DESIGNS / "array_module" / "array_module.sv",
-            DESIGNS / "sample_module" / "sample_module.sv",
-        )
+        hdl_session.sources = (DESIGNS / "sample_module" / "sample_module.sv",)
+        # Icarus does not support unpacked structs (gh-2592), so omit
+        # array_module.sv from the build; test_array_module is skipped to match.
+        if not hdl_session.simulator.startswith("icarus"):
+            hdl_session.sources = (
+                DESIGNS / "array_module" / "array_module.sv",
+                *hdl_session.sources,
+            )
 
     if hdl_session.simulator == "questa":
         hdl_session.build_args = ["+acc"]
@@ -71,6 +76,10 @@ def sample_module_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
 
 
 @pytest.mark.cocotb_runner
+@pytest.mark.skipif(
+    cocotb.SIM_NAME.lower().startswith("icarus"),
+    reason="Icarus does not support unpacked structs (gh-2592)",
+)
 def test_array_module(array_module: HDL) -> None:
     """Run HDL simulator to test ``array_module``."""
     # TODO: Not all runners are supporting build_dir != test_dir :( For now, run only build stage
