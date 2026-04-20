@@ -109,7 +109,7 @@ jobs:
 
     - name: Install msys2 (Windows)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
-      uses: msys2/setup-msys2@v2.31.0
+      uses: msys2/setup-msys2@e9898307ac31d1a803454791be09ab9973336e1c  # v2.31.0
       with:
         msystem: MINGW64
         update: true
