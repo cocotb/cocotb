@@ -233,9 +233,9 @@ class SimTimeContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         try:
             record.created_sim_time = get_sim_time()
-        except RecursionError:
-            # get_sim_time may try to log - if that happens, we can't
-            # attach a simulator time to this message.
+        except (RecursionError, RuntimeError):
+            # RecursionError: get_sim_time may try to log.
+            # RuntimeError: No simulator is loaded. Happens when default_config() is called outside of simulator process.
             record.created_sim_time = None
         return True
 

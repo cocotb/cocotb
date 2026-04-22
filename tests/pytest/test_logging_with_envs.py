@@ -90,3 +90,20 @@ def test_logging_log_prefix(
             assert caplog.text.rstrip() == f"{value}test message"
         else:
             assert LOG.match(caplog.text)
+
+
+def test_default_config_no_simulator(caplog: LogCaptureFixture) -> None:
+    """Logging after ``default_config`` outside a simulator must not raise.
+
+    Exercises the ``RuntimeError`` branch of
+    :meth:`cocotb.logging.SimTimeContextFilter.filter`, which is hit when
+    ``cocotb.simulator.get_sim_time`` is called with no simulator loaded.
+    """
+    cocotb.logging.default_config()
+
+    with caplog.at_level(INFO):
+        caplog.clear()
+        getLogger("cocotb").info("test message")
+
+    assert caplog.records
+    assert all(record.created_sim_time is None for record in caplog.records)
