@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+import logging
 import re
+from collections.abc import Iterator
 from logging import INFO, getLogger
 from random import randint
 
@@ -15,6 +17,22 @@ from pytest import LogCaptureFixture, MonkeyPatch
 
 import cocotb.logging
 import cocotb.simulator
+
+
+@pytest.fixture(autouse=True)
+def _restore_root_handler_filters() -> Iterator[None]:
+    """Undo filters added to root logger handlers by ``cocotb.logging._configure``.
+
+    Without this, the ``SimTimeContextFilter`` installed by ``_configure`` leaks
+    into later tests and calls ``get_sim_time`` with no simulator loaded.
+    """
+    saved = [(h, list(h.filters)) for h in logging.getLogger().handlers]
+    try:
+        yield
+    finally:
+        for handler, filters in saved:
+            handler.filters = filters
+
 
 # X.XX{step,fs,ps,ns,us,ms,sec} <LEVEL> <name> (<file>.py:<line> in <function>)? <message>
 LOG: re.Pattern[str] = re.compile(
