@@ -324,6 +324,7 @@ dev_test = [
     "IPython",
     "pexpect",
     "pytest-cov",
+    "psutil",
 ]
 coverage_report = [
     "coverage[toml]>=7.2",
