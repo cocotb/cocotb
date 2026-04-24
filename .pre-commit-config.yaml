@@ -67,6 +67,7 @@ repos:
     - nox
     - nox-uv
     files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/pytest/)
+    language_version: "3.11"
 
 - repo: https://github.com/astral-sh/uv-pre-commit
   rev: 0.11.7
