@@ -146,7 +146,7 @@ int VpiCbHdl::run() {
 // sims do not. So we remove all callbacks here after firing because Verilator
 // doesn't seem to mind (other sims do).
 #ifdef VERILATOR
-    // Remove recurring callback once fired
+    // Remove recurring callback once fired for Verilator using vpi_remove_cb
     auto err = vpi_remove_cb(get_handle<vpiHandle>());
     // LCOV_EXCL_START
     if (!err) {
@@ -159,6 +159,10 @@ int VpiCbHdl::run() {
     else {
         delete this;
     }
+#elif defined(IUS) || defined(VCS)
+    // For IUS/Xcelium and VCS: use vpi_free_object to clean up callback handle
+    vpi_free_object(get_handle<vpiHandle>());
+    delete this;
 #else
     // For other simulators: VPI spec says one-shot callbacks auto-cleanup
     // their handle after firing. We just need to delete the C++ object.
