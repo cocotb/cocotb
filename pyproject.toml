@@ -331,3 +331,6 @@ release_test = [
 # We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
 docs = {requires-python = ">=3.11"}
 release_build_wheel = {requires-python = ">=3.11"}
+
+[tool.uv]
+exclude-newer = "1 week"
