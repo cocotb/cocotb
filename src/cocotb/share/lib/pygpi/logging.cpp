@@ -23,6 +23,8 @@ static PyObject *m_get_logger = nullptr;
 static gpi_log_handler_ftype fallback_log_handler = nullptr;
 static void *fallback_log_userdata = nullptr;
 
+static bool exception_passthrough = false;
+
 static void fallback_handler(const char *name, enum gpi_log_level level,
                              const char *pathname, const char *funcname,
                              long lineno, const char *msg, ...) {
@@ -176,9 +178,12 @@ static void pygpi_log_handler(void *, const char *name,
         function_arg, NULL);
     if (handler_ret == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        if (!exception_passthrough) {
+            PyErr_Print();
+            fallback_handler(name, level, pathname, funcname, lineno,
+                             log_buff.data());
+        }
+        return;
         // LCOV_EXCL_STOP
     }
     Py_DECREF(handler_ret);
@@ -202,6 +207,9 @@ void pygpi_logging_initialize() {
     // Default to using the fallback handler until configured
     gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
     gpi_set_log_handler(pygpi_log_handler, nullptr);
+
+    const char *val = getenv("GPI_LOG_EXCEPTION_PASSTHROUGH");
+    exception_passthrough = val && !(strcmp(val, "0") == 0);
 }
 
 void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
