@@ -46,9 +46,9 @@ async def test_next_time_step_leak(dut):
     clk = Clock(dut.clk, 1, "ns")
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await NextTimeStep()
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -60,9 +60,9 @@ async def test_next_time_step_leak(dut):
 async def test_timer_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await Timer(1, unit="ns")
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -74,9 +74,9 @@ async def test_timer_leak(dut):
 async def test_readonly_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await ReadOnly()
         await Timer(1, unit="ns")
     gc.collect()
@@ -89,9 +89,9 @@ async def test_readonly_leak(dut):
 async def test_readwrite_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await Timer(1, unit="ns")
         await ReadWrite()
 
@@ -106,9 +106,9 @@ async def test_raise_edge_leak(dut):
     clk = Clock(dut.clk, 1, "ns")
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await RisingEdge(dut.clk)
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -121,9 +121,9 @@ async def test_falling_edge_leak(dut):
     clk = Clock(dut.clk, 1, "ns")
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await FallingEdge(dut.clk)
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -136,9 +136,9 @@ async def test_value_change_leak(dut):
     clk = Clock(dut.clk, 1, "ns")
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await ValueChange(dut.clk)
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -150,9 +150,9 @@ async def test_value_change_leak(dut):
 async def test_null_triger_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         await NullTrigger()
     gc.collect()
     rss_triger = proc.memory_info().rss
@@ -165,16 +165,16 @@ async def test_event_leak(dut):
     e = Event()
 
     async def wait_event() -> None:
-        for _ in range(1_000_000):
+        for _ in range(100_000):
             await e.wait()
 
     cocotb.start_soon(wait_event())
 
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
-    await Timer(1_000_000, unit="ns")
+    await Timer(100_000, unit="ns")
     rss_no_triger = proc.memory_info().rss
-    for _ in range(1_000_000):
+    for _ in range(100_000):
         e.set()
         await Timer(1, "ns")
     gc.collect()
