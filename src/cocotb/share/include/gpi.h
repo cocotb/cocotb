@@ -558,19 +558,34 @@ typedef void (*gpi_log_handler_ftype)(void *userdata, const char *name,
                                       const char *funcname, long lineno,
                                       const char *msg, va_list args);
 
-/** Retrieve the current log handler.
- * @param handler   Location to return current log handler function.
- * @param userdata  Location to return log handler userdata.
+/** Type of a log level enabled handler function.
+ * @param userdata  Private implementation data registered with this function
+ * @param name      Name of the logger
+ * @param level     Level at which to log the message
+ * @return          True if the logger is enabled at the given log level
  */
-GPI_EXPORT void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    void **userdata);
+typedef bool (*gpi_log_level_enabled_handler_ftype)(void *userdata,
+                                                    const char *name,
+                                                    enum gpi_log_level level);
+
+/** Retrieve the current log handler.
+ * @param handler           Location to return current log handler function.
+ * @param log_level_enabled Location to return current log level enabled handler
+ *                          function.
+ * @param userdata          Location to return log handler userdata.
+ */
+GPI_EXPORT void gpi_get_log_handler(
+    gpi_log_handler_ftype *handler,
+    gpi_log_level_enabled_handler_ftype *log_level_enabled, void **userdata);
 
 /** Set custom log handler
- * @param handler   Logger handler function.
- * @param userdata  Data passed to the above functions.
+ * @param handler           Logger handler function.
+ * @param log_level_enabled Log level enabled handler function.
+ * @param userdata          Data passed to the above functions.
  */
-GPI_EXPORT void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    void *userdata);
+GPI_EXPORT void gpi_set_log_handler(
+    gpi_log_handler_ftype handler,
+    gpi_log_level_enabled_handler_ftype log_level_enabled, void *userdata);
 
 /** Set minimum logging level of the native logger.
  *

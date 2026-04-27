@@ -17,10 +17,14 @@
 static int pygpi_log_level = GPI_NOTSET;
 
 static PyObject *m_log_func = nullptr;
+static PyObject *m_log_level_enabled_func = nullptr;
+
 static std::map<std::string, PyObject *> m_logger_map;
 static PyObject *m_get_logger = nullptr;
 
 static gpi_log_handler_ftype fallback_log_handler = nullptr;
+static gpi_log_level_enabled_handler_ftype fallback_log_level_enabled_handler =
+    nullptr;
 static void *fallback_log_userdata = nullptr;
 
 static void fallback_handler(const char *name, enum gpi_log_level level,
@@ -184,6 +188,66 @@ static void pygpi_log_handler(void *, const char *name,
     Py_DECREF(handler_ret);
 }
 
+static bool pygpi_log_level_enabled_handler(void *, const char *name,
+                                            enum gpi_log_level level) {
+    // Always pass through messages when NOTSET to let Python make the decision.
+    // Otherwise, skip logs using the local log level for better performance.
+    if (pygpi_log_level != GPI_NOTSET && level < pygpi_log_level) {
+        return false;
+    }
+
+    // If we haven't configured yet, use the fallback log handler
+    if (!m_log_level_enabled_func) {
+        return fallback_log_level_enabled_handler(fallback_log_userdata, name,
+                                                  level);
+    }
+
+    // before the log buffer to ensure it isn't clobbered.
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    DEFER(PyGILState_Release(gstate));
+
+    PyObject *level_arg = PyLong_FromLong(level);  // New reference
+    if (level_arg == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_log_level_enabled_handler(fallback_log_userdata, name,
+                                                  level);
+        // LCOV_EXCL_STOP
+    }
+    DEFER(Py_DECREF(level_arg));
+
+    PyObject *logger;
+    const auto lookup = m_logger_map.find(name);
+    if (lookup == m_logger_map.end()) {
+        logger = PyObject_CallFunction(m_get_logger, "s", name);  // incs a ref
+        // LCOV_EXCL_START
+        if (!logger) {
+            PyErr_Print();
+            return fallback_log_level_enabled_handler(fallback_log_userdata,
+                                                      name, level);
+        }
+        // LCOV_EXCL_STOP
+        m_logger_map[name] = logger;  // steal that ref
+    } else {
+        logger = lookup->second;
+    }
+
+    // Log function args are logger_name, level, filename, lineno, msg, function
+    PyObject *handler_ret =
+        PyObject_CallFunctionObjArgs(m_log_func, logger, level_arg, NULL);
+    if (handler_ret == NULL) {
+        // LCOV_EXCL_START
+        PyErr_Print();
+        return fallback_log_level_enabled_handler(fallback_log_userdata, name,
+                                                  level);
+        // LCOV_EXCL_STOP
+    }
+
+    auto res = PyObject_IsTrue(handler_ret);
+    Py_DECREF(handler_ret);
+    return res;
+}
+
 void pygpi_log(enum gpi_log_level level, const char *pathname,
                const char *funcname, long lineno, const char *fmt, ...) {
     va_list argp;
@@ -200,22 +264,33 @@ void pygpi_logging_set_level(enum gpi_log_level level) {
 
 void pygpi_logging_initialize() {
     // Default to using the fallback handler until configured
-    gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
-    gpi_set_log_handler(pygpi_log_handler, nullptr);
+    gpi_get_log_handler(&fallback_log_handler,
+                        &fallback_log_level_enabled_handler,
+                        &fallback_log_userdata);
+    gpi_set_log_handler(pygpi_log_handler, pygpi_log_level_enabled_handler,
+                        nullptr);
 }
 
-void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
+void pygpi_logging_configure(PyObject *log_func,
+                             PyObject *log_level_enabled_func,
+                             PyObject *get_logger) {
     Py_INCREF(log_func);
+    Py_INCREF(log_level_enabled_func);
     Py_INCREF(get_logger);
     m_log_func = log_func;
+    m_log_level_enabled_func = log_level_enabled_func;
     m_get_logger = get_logger;
 }
 
 void pygpi_logging_finalize() {
-    gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
+    gpi_set_log_handler(fallback_log_handler,
+                        fallback_log_level_enabled_handler,
+                        fallback_log_userdata);
     Py_XDECREF(m_log_func);
+    Py_XDECREF(m_log_level_enabled_func);
     Py_XDECREF(m_get_logger);
     m_log_func = nullptr;
+    m_log_level_enabled_func = nullptr;
     m_get_logger = nullptr;
     for (auto &elem : m_logger_map) {
         Py_DECREF(elem.second);
