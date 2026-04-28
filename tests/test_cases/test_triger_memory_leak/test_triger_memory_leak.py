@@ -38,7 +38,7 @@ from cocotb.triggers import (
 
 proc = psutil.Process(os.getpid())
 # diff less than n * 4k for ASLR, if use THP, maybe lessthan n * 2MB
-MEMORY_LEAK_TH = 2**16
+MEMORY_LEAK_TH = 2**21
 
 
 @cocotb.test()
