@@ -159,7 +159,7 @@ int VpiCbHdl::run() {
     else {
         delete this;
     }
-#elif defined(IUS) || defined(VCS)
+#elif defined(IUS) || defined(VCS) || defined(ALDEC)
     // For IUS/Xcelium and VCS: use vpi_free_object to clean up callback handle
     vpi_free_object(get_handle<vpiHandle>());
     delete this;
