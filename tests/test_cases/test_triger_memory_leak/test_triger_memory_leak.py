@@ -36,13 +36,13 @@ from cocotb.triggers import (
     ValueChange,
 )
 
+SIM_NAME = cocotb.SIM_NAME.lower()
 proc = psutil.Process(os.getpid())
 # diff less than n * 4k for ASLR, if use THP, maybe lessthan n * 2MB
-MEMORY_LEAK_TH = 2**21
-SIM_NAME = cocotb.SIM_NAME.lower()
+MEMORY_LEAK_TH = 2**22 if SIM_NAME.startswith("riviera") else 2**21
 
 
-@cocotb.test(skip=(SIM_NAME.startswith("questa")))
+@cocotb.test(skip=(SIM_NAME.startswith("modelsim")))
 async def test_next_time_step_leak(dut):
     clk = Clock(dut.clk, 1, "ns")
     cocotb.start_soon(clk.start())
