@@ -14,6 +14,6 @@ clean::
 else
 
 include ../../designs/sample_module/Makefile
-COCOTB_TEST_MODULES:=test_triger_memory_leak
+COCOTB_TEST_MODULES:=test_trigger_memory_leak
 
 endif
