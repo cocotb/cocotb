@@ -9,6 +9,7 @@ import pytest
 
 import cocotb
 from cocotb._decorators import _repr, _reprs
+from cocotb.regression import _format_test_arguments
 
 
 class MyEnum(Enum):
@@ -50,3 +51,34 @@ def test_parametrize_bad_args():
         cocotb.parametrize((("not valid", "valid"), [(1, 2), (3, 4)]))
     with pytest.raises(ValueError):
         cocotb.parametrize((("a", "b"), [(1, 2, "too", "many", "args"), (3, 4)]))
+
+
+def test_format_test_arguments_empty():
+    assert _format_test_arguments((), {}) == ""
+
+
+def test_format_test_arguments_kwargs_only():
+    assert (
+        _format_test_arguments((), {"x": 1, "y": "z"}) == "\n    Parameters: x=1, y='z'"
+    )
+
+
+def test_format_test_arguments_args_only():
+    assert _format_test_arguments(("first", 2), {}) == "\n    Parameters: 'first', 2"
+
+
+def test_format_test_arguments_args_and_kwargs():
+    assert (
+        _format_test_arguments(("first",), {"x": 1, "y": "z"})
+        == "\n    Parameters: 'first', x=1, y='z'"
+    )
+
+
+def test_format_test_arguments_complex_values():
+    # Long strings, lists, and other non-simple values use full repr.
+    assert (
+        _format_test_arguments(
+            (), {"validFraction": 0.872467184172418, "numPackets": 500}
+        )
+        == "\n    Parameters: validFraction=0.872467184172418, numPackets=500"
+    )

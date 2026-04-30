@@ -1,0 +1,1 @@
+Test arguments and keyword arguments are now logged on test start, making the parameter values used by :func:`cocotb.parametrize` and :class:`~cocotb.regression.TestFactory` visible in the simulation log.

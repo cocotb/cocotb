@@ -17,6 +17,7 @@ import re
 import sys
 import time
 import warnings
+from collections.abc import Mapping, Sequence
 from enum import Enum, auto
 from importlib import import_module
 from typing import Any, cast
@@ -136,6 +137,15 @@ def _format_doc(docstring: str | None) -> str:
     else:
         brief = docstring.split("\n")[0]
         return f"\n    {brief}"
+
+
+def _format_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
+    """Format positional and keyword arguments of a test for human-readable logging."""
+    parts = [repr(a) for a in args]
+    parts.extend(f"{k}={v!r}" for k, v in kwargs.items())
+    if not parts:
+        return ""
+    return "\n    Parameters: " + ", ".join(parts)
 
 
 class RegressionMode(DocEnum):
@@ -645,13 +655,14 @@ class RegressionManager:
         hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_TEST
         hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.info(
-            "%srunning%s %s (%d/%d)%s",
+            "%srunning%s %s (%d/%d)%s%s",
             hilight_start,
             hilight_end,
             self._test.fullname,
             self.count,
             self.total_tests,
             _format_doc(self._test.doc),
+            _format_test_arguments(self._test.args, self._test.kwargs),
         )
 
     def _record_test_excluded(self) -> None:
