@@ -375,10 +375,83 @@ Discovering Tests
 
     .. versionadded:: 2.0
 
-Test Management
-===============
+.. _test-pass-fail:
+
+Test Pass and Fail Conditions
+=============================
 
 .. currentmodule:: None
+
+When cocotb runs a test, the test ends with one of the following outcomes:
+``pass``, ``fail``, ``skipped``, or ``expected fail`` (also known as ``xfail``).
+The outcome is determined by what the test coroutine or any running :class:`~cocotb.task.Task` does.
+
+.. _test-pass:
+
+Passing tests
+-------------
+
+A test is considered to have ``passed`` if any of the following occur:
+
+* The main test coroutine returns without raising an :exc:`!Exception`.
+* The test coroutine, or any running :class:`~cocotb.task.Task`, calls :func:`cocotb.end_test`.
+* The main test coroutine raises a :exc:`~asyncio.CancelledError`,
+  or :keyword:`await`\ s a :class:`~cocotb.task.Task` that is cancelled and does not handle the cancellation.
+
+.. _test-fail:
+
+Failing tests
+-------------
+
+A test is considered to have ``failed`` if the main test coroutine, or any running :class:`~cocotb.task.Task`, does any of the following:
+
+* Fails an :keyword:`assert` statement (raises :exc:`AssertionError`).
+* Raises any other :exc:`!Exception` besides :exc:`!CancelledError`.
+* Fails a :func:`pytest.raises`, :func:`pytest.warns`, or :func:`pytest.deprecated_call` check.
+* Calls :func:`pytest.fail`.
+
+When a test fails, a stack trace is printed.
+If :mod:`pytest` is installed and :keyword:`assert` statements are used,
+a more informative stack trace is printed which includes the values that caused the assertion to fail.
+
+.. _test-skip:
+
+Skipping tests
+--------------
+
+A test can be skipped statically before it runs by passing the ``skip`` argument to :deco:`cocotb.test`,
+or by using the :deco:`cocotb.skipif` decorator.
+See :ref:`writing-tests` for details.
+
+A test can also be ended with a ``skipped`` outcome from inside the test coroutine, or any running :class:`~cocotb.task.Task`,
+by calling :func:`pytest.skip`.
+
+.. _test-xfail:
+
+Expected failures
+-----------------
+
+A test can be marked as expected to fail before it runs by passing the ``expect_fail`` or ``expect_error`` arguments to :deco:`cocotb.test`,
+or by using the :deco:`cocotb.xfail` decorator.
+See :ref:`writing-tests` for details.
+
+A test can also be ended with an ``expected fail`` outcome from inside the test coroutine, or any running :class:`~cocotb.task.Task`,
+by calling :func:`pytest.xfail`.
+
+Forcing a test to end
+---------------------
+
+The following functions, when called from the test coroutine or any running :class:`~cocotb.task.Task`,
+will end the test immediately with a given outcome.
+They can be used in places where it is awkward to apply the equivalent decorator,
+for example because the condition is only known at runtime.
+
+* :func:`cocotb.end_test` ends the test as if it returned normally.
+  Any :deco:`cocotb.xfail` decorator, or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test`, are still respected,
+  so the final outcome can be ``pass``, ``fail``, or ``expected fail``.
+* :func:`pytest.skip` ends the test with a ``skipped`` outcome.
+* :func:`pytest.xfail` ends the test with an ``expected fail`` outcome.
+* :func:`pytest.fail` ends the test with a ``failed`` outcome.
 
 .. autofunction:: cocotb.end_test
 
