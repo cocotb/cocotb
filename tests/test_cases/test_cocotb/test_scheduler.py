@@ -325,9 +325,11 @@ async def test_last_scheduled_write_wins(dut):
     assert dut.stream_in_data.value == 2
 
 
-# GHDL unable to put values on nested array types (gh-2588)
-@cocotb.test(
-    expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+@cocotb.test
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("ghdl"),
+    raises=Exception,
+    reason="GHDL unable to put values on nested array types (gh-2588)",
 )
 async def test_last_scheduled_write_wins_array(dut):
     """
@@ -786,7 +788,8 @@ async def test_cancel_task(_: object) -> None:
     assert task.done()
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
+@cocotb.xfail(raises=RuntimeError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()
 
@@ -812,7 +815,8 @@ async def test_invalid_operations_task(_):
         task.exception()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_multiple_concurrent_test_fails(_) -> None:
     async def call_error(thing: Awaitable[Any]) -> None:
         await thing
@@ -925,7 +929,8 @@ async def test_joins_in_first(_) -> None:
     assert j is task1.complete
 
 
-@cocotb.test(expect_error=MyException)
+@cocotb.test
+@cocotb.xfail(raises=MyException)
 async def test_start_after_create(_) -> None:
     async def fail():
         raise MyException()
@@ -958,7 +963,8 @@ async def test_start_again_while_pending(_) -> None:
     await a
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
+@cocotb.xfail(raises=RuntimeError)
 async def test_test_end_cancellation_error(_) -> None:
     """Test that test-end Cancellation causes test failure."""
 
@@ -1063,7 +1069,8 @@ async def test_task_local_variables(_: object) -> None:
     await task
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
+@cocotb.xfail(raises=RuntimeError)
 async def test_Task_ignored_CancelledError_return(_: object) -> None:
     async def bad() -> None:
         try:
@@ -1076,7 +1083,8 @@ async def test_Task_ignored_CancelledError_return(_: object) -> None:
     task.cancel()
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.test
+@cocotb.xfail(raises=RuntimeError)
 async def test_Task_ignored_CancelledError_await(_: object) -> None:
     async def bad() -> None:
         try:

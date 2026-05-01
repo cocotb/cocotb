@@ -13,6 +13,7 @@ async def test_max_failures(dut: object) -> None:
     assert False, "This test should fail immediately due to max failures limit."
 
 
-@cocotb.test(expect_error=RegressionTerminated)
+@cocotb.xfail(raises=RegressionTerminated)
+@cocotb.test
 async def test_should_not_run(dut: object) -> None:
     """This test should not run because the previous test should have already caused the test suite to fail."""

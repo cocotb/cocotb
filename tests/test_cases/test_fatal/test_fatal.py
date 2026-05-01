@@ -8,6 +8,7 @@ from cocotb.regression import SimFailure
 from cocotb.triggers import Timer
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_fatal(_):
     await Timer(100, "ns")

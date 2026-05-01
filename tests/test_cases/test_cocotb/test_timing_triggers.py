@@ -61,11 +61,15 @@ async def test_function_reentrant_clock(dut):
         await timer
 
 
-# Xcelium/VHDL does not correctly report the simulator precision.
-# See also https://github.com/cocotb/cocotb/issues/3419
-# NVC does not support setting precision and always uses 1 fs
-# (https://github.com/nickg/nvc/issues/607).
-@cocotb.test(skip=(LANGUAGE == "vhdl" and SIM_NAME.startswith(("xmsim", "nvc"))))
+@cocotb.skipif(
+    LANGUAGE == "vhdl" and SIM_NAME.startswith("xmsim"),
+    reason="Xcelium/VHDL does not correctly report the simulator precision (gh-3419)",
+)
+@cocotb.skipif(
+    LANGUAGE == "vhdl" and SIM_NAME.startswith("nvc"),
+    reason="NVC does not support setting precision and always uses 1 fs",
+)
+@cocotb.test
 async def test_timer_with_units(dut):
     # The following test assumes a time precision of 1ps. Update the simulator
     # invocation if this assert hits!
@@ -288,8 +292,11 @@ async def test_timer_round_mode(_):
     )
 
 
-# Riviera VHPI ReadOnly in ValueChange moves to next time step (gh-4119)
-@cocotb.test(expect_fail=SIM_NAME.startswith("riviera") and INTF == "vhpi")
+@cocotb.xfail(
+    SIM_NAME.startswith("riviera") and INTF == "vhpi",
+    reason="Riviera VHPI ReadOnly in ValueChange moves to next time step (gh-4119)",
+)
+@cocotb.test
 async def test_readonly_in_valuechange(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     await RisingEdge(dut.clk)
@@ -305,8 +312,11 @@ async def test_readonly_in_timer(dut):
         await ReadOnly()
 
 
-# Riviera VHPI ReadOnly in ReadWrite moves to next time step (gh-4120)
-@cocotb.test(expect_fail=SIM_NAME.startswith("riviera") and INTF == "vhpi")
+@cocotb.xfail(
+    SIM_NAME.startswith("riviera") and INTF == "vhpi",
+    reason="Riviera VHPI ReadOnly in ReadWrite moves to next time step (gh-4120)",
+)
+@cocotb.test
 async def test_readonly_in_readwrite(dut):
     cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
     await RisingEdge(dut.clk)
@@ -354,7 +364,8 @@ async def test_readonly_in_readonly(_) -> None:
         await ReadOnly()
 
 
-@cocotb.test(skip=SIM_NAME.startswith("modelsim"))
+@cocotb.skipif(SIM_NAME.startswith("modelsim"))
+@cocotb.test
 async def test_next_time_step(_) -> None:
     """Test Timer causes NextTimeStep to wake up after Timer fires."""
 

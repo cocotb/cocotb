@@ -12,19 +12,13 @@ import cocotb
 from cocotb.handle import HierarchyObject, LogicArrayObject
 
 
-# Riviera-PRO 2019.10 does not detect packages over GPI:
-#   AttributeError: 'types.SimpleNamespace' object has no attribute
-#   'cocotb_package_pkg_1'
-@cocotb.test(
-    expect_error=(
-        AttributeError
-        if (
-            cocotb.SIM_NAME.lower().startswith("riviera")
-            and cocotb.SIM_VERSION.startswith("2019.10")
-        )
-        else ()
-    )
+@cocotb.xfail(
+    cocotb.SIM_NAME.lower().startswith("riviera")
+    and cocotb.SIM_VERSION.startswith("2019.10"),
+    raises=AttributeError,
+    reason="Riviera-PRO 2019.10 does not detect packages over GPI",
 )
+@cocotb.test
 async def test_package_access(_) -> None:
     """Test package parameter access"""
 
@@ -93,7 +87,8 @@ async def test_package_access(_) -> None:
     assert pkg2.eleven_int.value == 11
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith("riviera"))
+@cocotb.test
 async def test_dollar_unit(dut):
     """Test $unit scope"""
 

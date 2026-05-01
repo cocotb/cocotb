@@ -112,9 +112,11 @@ async def test_gpi_clock_error_already_started(dut):
     clk.stop()
 
 
-# Xcelium/VHDL does not correctly report the simulator precision.
-# See also https://github.com/cocotb/cocotb/issues/3419
-@cocotb.test(skip=(LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim")))
+@cocotb.skipif(
+    LANGUAGE == "vhdl" and cocotb.SIM_NAME.startswith("xmsim"),
+    reason="Xcelium/VHDL does not correctly report the simulator precision (gh-3419)",
+)
+@cocotb.test
 async def test_clocks_with_other_number_types(dut):
     # The following test assumes a time precision of at least 0.1ns.
     # Update the simulator invocation if this assert hits!
@@ -189,9 +191,14 @@ async def test_bad_set_action(dut: Any) -> None:
         Clock(dut.clk, 10, "ns", set_action=1)
 
 
-# Immediate isn't truly immediate on every simulator,
-# and checking just one is sufficient to know it works.
-@cocotb.test(skip=not cocotb.SIM_NAME.lower().startswith("verilator"))
+@cocotb.skipif(
+    not cocotb.SIM_NAME.lower().startswith("verilator"),
+    reason=(
+        "Immediate isn't truly immediate on every simulator,"
+        " and checking just one is sufficient to know it works"
+    ),
+)
+@cocotb.test
 async def test_set_action(dut: Any) -> None:
     c = Clock(dut.clk, 10, "ns", set_action=Immediate)
 
