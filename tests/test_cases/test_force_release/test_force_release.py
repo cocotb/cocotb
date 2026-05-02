@@ -12,7 +12,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release
 from cocotb.triggers import ClockCycles, Timer
-from cocotb_tools.sim_versions import GhdlVersion, RivieraVersion
+from cocotb_tools.sim_versions import GhdlVersion, QuestaVersion, RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 SIM_VERSION = cocotb.SIM_VERSION
@@ -21,7 +21,13 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 questa_fli = (
     SIM_NAME.startswith("modelsim")
     and LANGUAGE == "vhdl"
-    and os.getenv("VHDL_GPI_INTERFACE", "") == "fli"
+    and os.getenv("VHDL_GPI_INTERFACE", "vhpi") == "fli"
+)
+
+questa_vhpi = (
+    SIM_NAME.startswith("modelsim")
+    and LANGUAGE == "vhdl"
+    and os.getenv("VHDL_GPI_INTERFACE", "vhpi") == "vhpi"
 )
 
 riviera_vpi_below_2024_10 = (
@@ -120,8 +126,15 @@ async def test_hdl_writes_dont_overwrite_force_registered(dut) -> None:
     assert dut.stream_out_data_registered.value == 4
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("verilator"))
+@cocotb.test
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(
+    questa_vhpi and QuestaVersion(SIM_VERSION) < "2022.4",
+    reason="Forcing multiple values in the same cycle chooses the oldest value, not the newest",
+)
 async def test_multiple_force_in_same_cycle(dut) -> None:
     """Tests multiple Force in the same eval cycle write the last value."""
     await reset(dut)
