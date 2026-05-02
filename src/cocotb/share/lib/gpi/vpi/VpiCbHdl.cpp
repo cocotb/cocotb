@@ -146,7 +146,7 @@ int VpiCbHdl::run() {
 // sims do not. So we remove all callbacks here after firing because Verilator
 // doesn't seem to mind (other sims do).
 #ifdef VERILATOR
-    // Remove recurring callback once fired
+    // Remove recurring callback once fired for Verilator using vpi_remove_cb
     auto err = vpi_remove_cb(get_handle<vpiHandle>());
     // LCOV_EXCL_START
     if (!err) {
@@ -159,6 +159,10 @@ int VpiCbHdl::run() {
     else {
         delete this;
     }
+#elif defined(IUS) || defined(VCS) || defined(ALDEC)
+    // For IUS/Xcelium and VCS: use vpi_free_object to clean up callback handle
+    vpi_free_object(get_handle<vpiHandle>());
+    delete this;
 #else
     // For other simulators: VPI spec says one-shot callbacks auto-cleanup
     // their handle after firing. We just need to delete the C++ object.
@@ -222,7 +226,25 @@ int VpiValueCbHdl::run() {
         else {
             delete this;
         }
-    }  // else Don't remove and let it fire again.
+    }
+#if defined(MODELSIM) || defined(ALDEC)
+    // Avoid memory leak by removing and re-registering again.
+    else {
+        auto err = vpi_remove_cb(get_handle<vpiHandle>());
+        // LCOV_EXCL_START
+        if (!err) {
+            LOG_DEBUG("VPI: Unable to remove callback");
+            check_vpi_error();
+            // If we fail to remove the callback, put it in a removed state so
+            // if it fires we can squash it.
+            m_removed = true;
+        }
+        // LCOV_EXCL_STOP
+        else {
+            this->arm();
+        }
+    }
+#endif  // else Don't remove and let it fire again.
 
     return res;
 }
