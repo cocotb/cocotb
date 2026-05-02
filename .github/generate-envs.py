@@ -386,16 +386,7 @@ for version in verilator_versions:
         },
     ]
 
-nvc_versions = (
-    "r1.11.0",
-    "r1.12.2",
-    "r1.13.3",
-    "r1.14.2",
-    "r1.15.2",
-    "r1.16.0",  # First version with --preserve-case
-    "r1.17.1",
-    "r1.18.2",
-)
+nvc_versions = ()
 for version in nvc_versions:
     ENVS += [
         {
