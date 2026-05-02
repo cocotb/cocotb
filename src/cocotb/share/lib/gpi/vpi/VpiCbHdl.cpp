@@ -226,7 +226,25 @@ int VpiValueCbHdl::run() {
         else {
             delete this;
         }
-    }  // else Don't remove and let it fire again.
+    }
+#if defined(MODELSIM) || defined(ALDEC)
+    // Avoid memory leak by removing and re-registering again.
+    else {
+        auto err = vpi_remove_cb(get_handle<vpiHandle>());
+        // LCOV_EXCL_START
+        if (!err) {
+            LOG_DEBUG("VPI: Unable to remove callback");
+            check_vpi_error();
+            // If we fail to remove the callback, put it in a removed state so
+            // if it fires we can squash it.
+            m_removed = true;
+        }
+        // LCOV_EXCL_STOP
+        else {
+            this->arm();
+        }
+    }
+#endif  // else Don't remove and let it fire again.
 
     return res;
 }

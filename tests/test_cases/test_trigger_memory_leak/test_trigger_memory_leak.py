@@ -39,7 +39,7 @@ from cocotb.triggers import (
 SIM_NAME = cocotb.SIM_NAME.lower()
 proc = psutil.Process(os.getpid())
 # diff less than n * 4k for ASLR, if use THP, maybe lessthan n * 2MB
-MEMORY_LEAK_TH = 2**22 if SIM_NAME.startswith("riviera") else 2**21
+MEMORY_LEAK_TH = 2**23 if SIM_NAME.startswith("modelsim") else 2**21
 
 
 @cocotb.test(skip=(SIM_NAME.startswith("modelsim")))
