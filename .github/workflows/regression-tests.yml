@@ -77,11 +77,11 @@ jobs:
 
     - name: setup ccache
       uses: hendrikmuhs/ccache-action@33522472633dbd32578e909b315f5ee43ba878ce # v1.2.22
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
     - name: setup ccache path
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       run: |
         echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
 
