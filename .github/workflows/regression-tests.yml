@@ -77,15 +77,13 @@ jobs:
 
     - name: setup ccache
       uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
     - name: setup ccache path
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       run: |
         echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
-
-     # Use the ccache cache for all compilers.
 
     - name: Update package index (ubuntu)
       if: startsWith(matrix.os, 'ubuntu')
