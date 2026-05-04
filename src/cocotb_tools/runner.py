@@ -1257,13 +1257,7 @@ class Nvc(Runner):
     def __init__(self) -> None:
         super().__init__()
 
-        version_str = subprocess.run(
-            ["nvc", "--version"],
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
-        ).stdout
-        version = NvcVersion.from_commandline(version_str)
+        version = NvcVersion.from_commandline()
         if version > NvcVersion("1.16"):
             self._preserve_case = ["--preserve-case"]
         else:

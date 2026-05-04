@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -93,13 +92,7 @@ def test_wave_dump():
 
 skip_saif_dump_test = True
 if sim == "verilator":
-    sim_version_str = subprocess.run(
-        ["verilator", "--version"],
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-    ).stdout
-    sim_version = VerilatorVersion.from_commandline(sim_version_str)
+    sim_version = VerilatorVersion.from_commandline()
     if sim_version >= VerilatorVersion("5.042"):
         skip_saif_dump_test = False
 
