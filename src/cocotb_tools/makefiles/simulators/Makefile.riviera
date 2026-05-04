@@ -36,7 +36,7 @@ ACOM_ARGS += $(COMPILE_ARGS)
 ASIM_ARGS += $(SIM_ARGS)
 
 # Plusargs need to be passed to ASIM command not vsimsa
-ASIM_ARGS += $(call deprecate,PLUSARGS,COCOTB_PLUSARGS)
+ASIM_ARGS += $(COCOTB_PLUSARGS)
 
 ifdef RTL_LIBRARY
     $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
@@ -133,12 +133,15 @@ endif
 	@echo "exit" >> $@
 endif
 
+# explicitly exporting GPI_EXTRA
+export GPI_EXTRA
+
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) $(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl $(SIM_CMD_SUFFIX)
+	set -o pipefail; \
+	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl $(SIM_CMD_SUFFIX)
 
 	$(call check_results)

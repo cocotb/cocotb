@@ -113,6 +113,11 @@ define make_lib
   -makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -end
 endef
 
+# explicitly exporting required variables
+export GPI_EXTRA
+export VHDL_GPI_INTERFACE
+export COCOTB__QUESTA_MODE=qisqrun
+
 $(COCOTB_RESULTS_FILE):
 	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
@@ -122,13 +127,6 @@ $(COCOTB_RESULTS_FILE):
 	mkdir -p $(SIM_BUILD)
 
 	set -o pipefail; \
-	  COCOTB_TEST_MODULES=$(COCOTB_TEST_MODULES) \
-	  COCOTB_TESTCASE=$(COCOTB_TESTCASE) \
-	  COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
-	  COCOTB_TOPLEVEL=$(COCOTB_TOPLEVEL) \
-	  GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	  VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE) \
-	  COCOTB__QUESTA_MODE=qisqrun \
 	  $(SIM_CMD_PREFIX) $(QRUN_CMD) $(RUN_ARGS) -outdir $(SIM_BUILD) \
 	  $(foreach LIB, $(VHDL_LIB_ORDER), $(make_lib)) \
 	  -makelib $(TOPLEVEL_LIBRARY) $(VERILOG_SOURCES) $(VHDL_SOURCES) $(VLOG_ARGS) $(VCOM_ARGS) -end \

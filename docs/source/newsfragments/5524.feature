@@ -1,0 +1,1 @@
+Exported COCOTB_TEST_FILTER, COCOTB_TEST_MODULES, and COCOTB_RANDOM_SEED and other such variables in Makefile.inc to make them available during simulator runs. Also refactored the simulator Makefiles to reflect this change.
