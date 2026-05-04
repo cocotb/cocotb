@@ -412,7 +412,7 @@ class Runner(ABC):
     def test(
         self,
         test_module: str | Sequence[str],
-        hdl_toplevel: str,
+        hdl_toplevel: str | None = None,
         hdl_toplevel_library: str = "top",
         hdl_toplevel_lang: str | None = None,
         gpi_interfaces: list[str] | None = None,
@@ -439,7 +439,7 @@ class Runner(ABC):
         Args:
             test_module: Name(s) of the Python module(s) containing the tests to run.
                 Can be a comma-separated list.
-            hdl_toplevel: Name of the HDL toplevel module.
+            hdl_toplevel: Name of the HDL toplevel module. Required if not passed to :meth:`build`.
             hdl_toplevel_library: The library name for HDL toplevel module.
             hdl_toplevel_lang: Language of the HDL toplevel module.
             gpi_interfaces: List of GPI interfaces to use, with the first one being the entry point.
@@ -496,8 +496,11 @@ class Runner(ABC):
         # is written without a copy. This is much more concise and leads to
         # a better docstring than using `None` as a default in the parameters
         # list.
-        self.sim_hdl_toplevel = hdl_toplevel
-        self.hdl_toplevel_library: str = hdl_toplevel_library
+        self.sim_hdl_toplevel = (
+            self.hdl_toplevel if hdl_toplevel is None else hdl_toplevel
+        )
+        if self.sim_hdl_toplevel is None:
+            raise ValueError("Must specify hdl_toplevel in either build() or test()")
         self.hdl_toplevel_lang = self._check_hdl_toplevel_lang(hdl_toplevel_lang)
         if gpi_interfaces:
             self.gpi_interfaces = gpi_interfaces
