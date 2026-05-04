@@ -1,0 +1,1 @@
+Moved the reference description of test pass and fail conditions from :ref:`writing_tbs` to :ref:`test-pass-fail` in the library reference, and added documentation for ending a test with :func:`cocotb.end_test`, :func:`pytest.skip`, :func:`pytest.xfail`, and :func:`pytest.fail`.
