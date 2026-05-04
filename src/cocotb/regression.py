@@ -17,6 +17,7 @@ import re
 import sys
 import time
 import warnings
+from collections.abc import Mapping, Sequence
 from enum import Enum, auto
 from importlib import import_module
 from typing import Any, cast
@@ -136,6 +137,21 @@ def _format_doc(docstring: str | None) -> str:
     else:
         brief = docstring.split("\n")[0]
         return f"\n    {brief}"
+
+
+def _repr_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
+    """Format positional and keyword arguments of a test for reports."""
+    parts = [repr(a) for a in args]
+    parts.extend(f"{k}={v!r}" for k, v in kwargs.items())
+    return ", ".join(parts)
+
+
+def _format_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
+    """Format positional and keyword arguments of a test for human-readable logging."""
+    test_arguments = _repr_test_arguments(args, kwargs)
+    if not test_arguments:
+        return ""
+    return "\n    Parameters: " + test_arguments
 
 
 class RegressionMode(DocEnum):
@@ -645,14 +661,22 @@ class RegressionManager:
         hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_TEST
         hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         self.log.info(
-            "%srunning%s %s (%d/%d)%s",
+            "%srunning%s %s (%d/%d)%s%s",
             hilight_start,
             hilight_end,
             self._test.fullname,
             self.count,
             self.total_tests,
             _format_doc(self._test.doc),
+            _format_test_arguments(self._test.args, self._test.kwargs),
         )
+
+    def _add_test_arguments_property(self) -> None:
+        test_arguments = _repr_test_arguments(self._test.args, self._test.kwargs)
+        if test_arguments:
+            self.xunit.add_testcase_property(
+                name="test_arguments", value=bin_xml_escape(test_arguments)
+            )
 
     def _record_test_excluded(self) -> None:
         """Called by :meth:`_execute` when a test is excluded by filters."""
@@ -668,6 +692,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_skipped()
 
         # do not log anything, nor save details for the summary
@@ -706,6 +731,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_skipped()
 
         # save details for summary
@@ -749,6 +775,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_failure(msg="Test initialization failed")
 
         # save details for summary
@@ -804,6 +831,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
 
         # update running passed/failed/skipped counts
         self.passed += 1
@@ -845,6 +873,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
 
         # update running passed/failed/skipped counts
         self.passed += 1
@@ -895,6 +924,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
         self.xunit.add_failure(
             error_type=type(result).__name__, error_msg=bin_xml_escape(result)
         )
