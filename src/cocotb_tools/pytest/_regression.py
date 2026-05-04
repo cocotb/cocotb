@@ -49,6 +49,7 @@ import cocotb.types._resolve
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
+from cocotb._xunit_reporter import bin_xml_escape
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb_tools.pytest._fixture import (
     AsyncFixtureCachedResult,
@@ -66,6 +67,14 @@ When = Literal["setup", "call", "teardown"]
 
 class SimFailure(BaseException):
     """A Test failure due to simulator failure. Used internally."""
+
+
+def _format_test_arguments(item: Item) -> str:
+    callspec: Any = getattr(item, "callspec", None)
+    if callspec is None:
+        return ""
+
+    return ", ".join(f"{name}={value!r}" for name, value in callspec.params.items())
 
 
 def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
@@ -679,6 +688,7 @@ class RegressionManager:
           `ns`, `us`, `ms` or `sec` (seconds).
         * `runner_nodeid`: Node identifier of cocotb runner (test to run simulator by pytest parent process).
         * `random_seed`: Value of seed used for randomization.
+        * `test_arguments`: Arguments used for parametrized tests.
 
         Above properties are accessible from generated test report and they will be available from
         various generated test report outputs like JUnit XML report.
@@ -704,6 +714,10 @@ class RegressionManager:
             "runner_nodeid": self._nodeid,  # identify cocotb runner
             "random_seed": self._seed,
         }
+
+        test_arguments = _format_test_arguments(item)
+        if test_arguments:
+            properties["test_arguments"] = bin_xml_escape(test_arguments)
 
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport
         # __init__(self, ..., **extra) constructor is doing the same

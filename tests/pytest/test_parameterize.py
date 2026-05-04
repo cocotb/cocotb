@@ -4,12 +4,17 @@
 from __future__ import annotations
 
 from enum import Enum
+from types import SimpleNamespace
 
 import pytest
 
 import cocotb
 from cocotb._decorators import _repr, _reprs
-from cocotb.regression import _format_test_arguments
+from cocotb._xunit_reporter import XUnitReporter
+from cocotb.regression import _format_test_arguments, _repr_test_arguments
+from cocotb_tools.pytest._regression import (
+    _format_test_arguments as _format_pytest_test_arguments,
+)
 
 
 class MyEnum(Enum):
@@ -55,6 +60,7 @@ def test_parametrize_bad_args():
 
 def test_format_test_arguments_empty():
     assert _format_test_arguments((), {}) == ""
+    assert _repr_test_arguments((), {}) == ""
 
 
 def test_format_test_arguments_kwargs_only():
@@ -72,6 +78,7 @@ def test_format_test_arguments_args_and_kwargs():
         _format_test_arguments(("first",), {"x": 1, "y": "z"})
         == "\n    Parameters: 'first', x=1, y='z'"
     )
+    assert _repr_test_arguments(("first",), {"x": 1, "y": "z"}) == "'first', x=1, y='z'"
 
 
 def test_format_test_arguments_complex_values():
@@ -82,3 +89,29 @@ def test_format_test_arguments_complex_values():
         )
         == "\n    Parameters: validFraction=0.872467184172418, numPackets=500"
     )
+
+
+def test_xunit_testcase_arguments_property():
+    reporter = XUnitReporter()
+    testsuite = reporter.add_testsuite(name="suite")
+    testcase = reporter.add_testcase(testsuite, name="case")
+
+    reporter.add_testcase_property(
+        testcase, name="test_arguments", value=_repr_test_arguments((), {"x": 1})
+    )
+
+    properties = testcase.find("properties")
+    assert properties is not None
+    assert [(prop.attrib["name"], prop.attrib["value"]) for prop in properties] == [
+        ("test_arguments", "x=1")
+    ]
+
+
+def test_pytest_format_test_arguments_empty():
+    assert _format_pytest_test_arguments(SimpleNamespace()) == ""
+
+
+def test_pytest_format_test_arguments_from_callspec():
+    item = SimpleNamespace(callspec=SimpleNamespace(params={"x": 1, "y": "z"}))
+
+    assert _format_pytest_test_arguments(item) == "x=1, y='z'"

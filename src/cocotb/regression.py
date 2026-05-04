@@ -139,13 +139,19 @@ def _format_doc(docstring: str | None) -> str:
         return f"\n    {brief}"
 
 
-def _format_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
-    """Format positional and keyword arguments of a test for human-readable logging."""
+def _repr_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
+    """Format positional and keyword arguments of a test for reports."""
     parts = [repr(a) for a in args]
     parts.extend(f"{k}={v!r}" for k, v in kwargs.items())
-    if not parts:
+    return ", ".join(parts)
+
+
+def _format_test_arguments(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
+    """Format positional and keyword arguments of a test for human-readable logging."""
+    test_arguments = _repr_test_arguments(args, kwargs)
+    if not test_arguments:
         return ""
-    return "\n    Parameters: " + ", ".join(parts)
+    return "\n    Parameters: " + test_arguments
 
 
 class RegressionMode(DocEnum):
@@ -665,6 +671,13 @@ class RegressionManager:
             _format_test_arguments(self._test.args, self._test.kwargs),
         )
 
+    def _add_test_arguments_property(self) -> None:
+        test_arguments = _repr_test_arguments(self._test.args, self._test.kwargs)
+        if test_arguments:
+            self.xunit.add_testcase_property(
+                name="test_arguments", value=bin_xml_escape(test_arguments)
+            )
+
     def _record_test_excluded(self) -> None:
         """Called by :meth:`_execute` when a test is excluded by filters."""
 
@@ -679,6 +692,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_skipped()
 
         # do not log anything, nor save details for the summary
@@ -717,6 +731,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_skipped()
 
         # save details for summary
@@ -760,6 +775,7 @@ class RegressionManager:
             sim_time_ns=repr(0),
             ratio_time=repr(0),
         )
+        self._add_test_arguments_property()
         self.xunit.add_failure(msg="Test initialization failed")
 
         # save details for summary
@@ -815,6 +831,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
 
         # update running passed/failed/skipped counts
         self.passed += 1
@@ -856,6 +873,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
 
         # update running passed/failed/skipped counts
         self.passed += 1
@@ -906,6 +924,7 @@ class RegressionManager:
             sim_time_ns=repr(sim_time_ns),
             ratio_time=repr(ratio_time),
         )
+        self._add_test_arguments_property()
         self.xunit.add_failure(
             error_type=type(result).__name__, error_msg=bin_xml_escape(result)
         )
