@@ -260,8 +260,11 @@ When cocotb tests complete execution, they end with one of four outcomes:
 ``pass``, ``fail``, ``skipped``, or ``expected fail``.
 A reference of the conditions that produce each outcome is given in :ref:`test-pass-fail`.
 
-In short, the main test coroutine simply returns to indicate a passing test,
+In short, the main test coroutine normally returns to indicate a passing test,
 and raises an :exc:`!Exception` (typically by failing an :keyword:`assert` statement) to indicate a failing test.
+Expected-failure settings such as :deco:`cocotb.xfail`,
+or the ``expect_fail`` and ``expect_error`` arguments to :deco:`cocotb.test`,
+can change the final outcome.
 
 .. code-block:: python
 
@@ -302,7 +305,8 @@ a running test can be ended explicitly using one of the following functions:
   Any :deco:`cocotb.xfail` decorator, or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test`, are still respected.
 * :func:`pytest.skip` to end the test with a ``skipped`` outcome.
 * :func:`pytest.xfail` to end the test with an ``expected fail`` outcome (considered a pass).
-* :func:`pytest.fail` to end the test with a ``failed`` outcome.
+* :func:`pytest.fail` to end the test like a failing :keyword:`assert` statement.
+  Expected-failure settings are still respected.
 
 These functions can be called from any :class:`~cocotb.task.Task` and will end the test immediately.
 They are typically used when the conditions under which a test should be skipped, expected to fail, or ended early

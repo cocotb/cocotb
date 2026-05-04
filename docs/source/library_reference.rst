@@ -391,24 +391,36 @@ The outcome is determined by what the test coroutine or any running :class:`~coc
 Passing tests
 -------------
 
-A test is considered to have ``passed`` if any of the following occur:
+A test is considered to have ``passed`` if it completes successfully
+and no expected-failure or expected-error condition is set.
+Successful completion occurs if any of the following happen:
 
 * The main test coroutine returns without raising an :exc:`!Exception`.
 * The test coroutine, or any running :class:`~cocotb.task.Task`, calls :func:`cocotb.end_test`.
 * The main test coroutine raises a :exc:`~asyncio.CancelledError`,
   or :keyword:`await`\ s a :class:`~cocotb.task.Task` that is cancelled and does not handle the cancellation.
 
+If an expected-failure or expected-error condition is set,
+successful completion is instead reported as ``failed`` because the expected failure or error did not occur.
+
 .. _test-fail:
 
 Failing tests
 -------------
 
-A test is considered to have ``failed`` if the main test coroutine, or any running :class:`~cocotb.task.Task`, does any of the following:
+A test is considered to have ``failed`` if it completes successfully when it was expected to fail or error,
+or if the main test coroutine, or any running :class:`~cocotb.task.Task`,
+produces an unexpected failure or error.
+Unexpected failures and errors include:
 
 * Fails an :keyword:`assert` statement (raises :exc:`AssertionError`).
 * Raises any other :exc:`!Exception` besides :exc:`!CancelledError`.
 * Fails a :func:`pytest.raises`, :func:`pytest.warns`, or :func:`pytest.deprecated_call` check.
 * Calls :func:`pytest.fail`.
+
+A matching ``expect_fail`` or ``expect_error`` argument to :deco:`cocotb.test`,
+or a matching :deco:`cocotb.xfail` decorator,
+changes the final outcome to ``expected fail`` instead.
 
 When a test fails, a stack trace is printed.
 If :mod:`pytest` is installed and :keyword:`assert` statements are used,
@@ -451,7 +463,9 @@ for example because the condition is only known at runtime.
   so the final outcome can be ``pass``, ``fail``, or ``expected fail``.
 * :func:`pytest.skip` ends the test with a ``skipped`` outcome.
 * :func:`pytest.xfail` ends the test with an ``expected fail`` outcome.
-* :func:`pytest.fail` ends the test with a ``failed`` outcome.
+* :func:`pytest.fail` ends the test like a failing :keyword:`assert` statement.
+  Expected-failure conditions are still respected,
+  so the final outcome can be ``fail`` or ``expected fail``.
 
 .. autofunction:: cocotb.end_test
 
