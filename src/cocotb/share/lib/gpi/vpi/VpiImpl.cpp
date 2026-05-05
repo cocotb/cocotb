@@ -202,8 +202,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         }
         type = vpi_get(vpiType, actual_hdl);
         vpi_free_object(actual_hdl);
-        LOG_DEBUG("VPI: Resolved vpiRefObj %s to type %d",
-                  fq_name.c_str(), type);
+        LOG_DEBUG("VPI: Resolved vpiRefObj %s to type %d", fq_name.c_str(), 
+		  type);
     }
 
     /* What sort of instance is this ?*/
