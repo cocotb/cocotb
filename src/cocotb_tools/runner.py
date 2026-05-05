@@ -36,6 +36,8 @@ from typing import (
 import find_libpython
 
 import cocotb_tools.config
+from cocotb.types._logic import Logic
+from cocotb.types._logic_array import LogicArray
 from cocotb_tools import _env
 from cocotb_tools.check_results import get_results
 from cocotb_tools.sim_versions import NvcVersion
@@ -48,9 +50,6 @@ PathLike: TypeAlias = Union["os.PathLike[str]", str]
 
 _Command: TypeAlias = list[str]
 
-_magic_re = re.compile(r"([\\{}])")
-_space_re = re.compile(r"([\s])", re.ASCII)
-
 
 MAX_PARALLEL_BUILD_JOBS: int = 4
 """The maximum number of parallel build threads in calls to :meth:`.Runner.build`.
@@ -62,6 +61,10 @@ Set this variable to globally change the number of parallel build jobs.
 
 def _get_max_parallel_build_jobs() -> int:
     return min(MAX_PARALLEL_BUILD_JOBS, multiprocessing.cpu_count())
+
+
+_magic_re = re.compile(r"([\\{}])")
+_space_re = re.compile(r"([\s])", re.ASCII)
 
 
 def _as_tcl_value(value: str) -> str:
@@ -91,13 +94,54 @@ for i in range(32):
 _sv_escape_translate_table = str.maketrans(_sv_escapes)
 
 
-def _as_sv_literal(value: object) -> str:
-    if isinstance(value, (int, float)):
+def _sv_escape_string(value: str) -> str:
+    if any(ord(c) >= 128 for c in value):
+        warnings.warn(
+            f"String {value!r} contains non-ASCII characters which may not be supported in SystemVerilog"
+        )
+    return '"' + value.translate(_sv_escape_translate_table) + '"'
+
+
+_vhdl_escape_translate_table = str.maketrans({'"': '""'})
+
+
+def _vhdl_escape_string(value: str) -> str:
+    if any(ord(c) < 32 or ord(c) >= 127 for c in value):
+        warnings.warn(
+            f"String {value!r} contains control characters which may not be supported in VHDL"
+        )
+    return '"' + value.translate(_vhdl_escape_translate_table) + '"'
+
+
+def as_sv_literal(value: int | float | bool | str | LogicArray | Logic) -> str:
+    """Convert a Python object into a SystemVerilog literal."""
+    if isinstance(value, bool):
+        return "1'b1" if value else "1'b0"
+    elif isinstance(value, (int, float)):
+        return str(value)
+    elif isinstance(value, (LogicArray, Logic)):
+        value_str = str(value)
+        if any(c not in {"0", "1", "X", "Z"} for c in value_str):
+            raise ValueError(f"Invalid logic value: {value}")
+        return f"{len(value_str)}'b{value_str}"
+    elif isinstance(value, str):
+        return _sv_escape_string(value)
+    else:
+        raise TypeError(
+            f"Cannot convert {type(value).__name__} to SystemVerilog literal"
+        )
+
+
+def as_vhdl_literal(value: int | float | bool | str | LogicArray | Logic) -> str:
+    """Convert a Python object into a VHDL literal."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    elif isinstance(value, (int, float, LogicArray, Logic)):
         return str(value)
     elif isinstance(value, str):
-        return '"' + value.translate(_sv_escape_translate_table) + '"'
+        return _vhdl_escape_string(value)
     else:
-        raise TypeError("Can't serialize this type as an SV literal")
+        raise TypeError(f"Cannot convert {type(value).__name__} to VHDL literal")
 
 
 def _shlex_join(split_command: Iterable[str]) -> str:
@@ -346,6 +390,8 @@ class Runner(ABC):
             sources: Language-agnostic list of source files to build.
             includes: Verilog include directories.
             defines: Defines to set.
+                String values are not quoted or escaped automatically, but taken literally to allow for manual formatting.
+                Any non-string values are converted to strings with the default formatter.
             parameters: Verilog parameters or VHDL generics.
             build_args: Extra build arguments for the simulator.
             hdl_toplevel: The name of the HDL toplevel module.
@@ -361,13 +407,20 @@ class Runner(ABC):
         .. deprecated:: 2.0
 
             Uses of the *verilog_sources* and *vhdl_sources* parameters should be replaced with the language-agnostic *sources* argument.
+
+        .. versionchanged:: 2.0
+            *defines* are implicitly converted to HDL literals.
+
+        .. versionchanged:: 2.0
+            *defines* are no longer implicitly converted to HDL literals.
+            Users must explicitly call :func:`~cocotb_tools.runner.as_vhdl_literal` or
+            :func:`~cocotb_tools.runner.as_sv_literal` to convert Python values to HDL literals.
         """
+        # We don't get anything by printing this if the build fails
+        __tracebackhide__ = True
 
         self.clean: bool = clean
         self.build_dir = get_abs_path(build_dir)
-        if self.clean:
-            self.rm_build_folder(self.build_dir)
-        self.build_dir.mkdir(parents=True, exist_ok=True)
 
         # note: to avoid mutating argument defaults, we ensure that no value
         # is written without a copy. This is much more concise and leads to
@@ -405,6 +458,11 @@ class Runner(ABC):
         self.waves = _env.as_bool("WAVES", waves)
 
         self._set_env_build()
+
+        if self.clean:
+            self.rm_build_folder(self.build_dir)
+            self.always = True
+        self.build_dir.mkdir(parents=True, exist_ok=True)
 
         cmds: Sequence[_Command] = self._build_command()
         self._execute(cmds, cwd=self.cwd)
@@ -454,6 +512,8 @@ class Runner(ABC):
             waves: Record signal traces. Overridden by the :envvar:`WAVES` environment variable.
             gui: Run with simulator GUI. Overridden by the :envvar:`GUI` environment variable.
             parameters: Verilog parameters or VHDL generics.
+                String values are not quoted or escaped automatically, but taken literally to allow for manual formatting.
+                Any non-string values are converted to strings with the default formatter.
             build_dir: Directory the build step has been run in.
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
@@ -472,7 +532,6 @@ class Runner(ABC):
             The absolute location of the results XML file which can be
             defined by the *results_xml* argument.
         """
-
         __tracebackhide__ = True  # Hide the traceback when using pytest
 
         if build_dir is not None:
@@ -660,9 +719,13 @@ class Runner(ABC):
             # TODO: log forwarding
 
             stderr = None if stdout is None else subprocess.STDOUT
-            subprocess.run(
-                cmd, cwd=cwd, env=self.env, check=True, stdout=stdout, stderr=stderr
+            result = subprocess.run(
+                cmd, cwd=cwd, env=self.env, check=False, stdout=stdout, stderr=stderr
             )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"Command failed with return code: {result.returncode}"
+                )
 
     def rm_build_folder(self, build_dir: Path) -> None:
         if build_dir.is_dir():
@@ -830,7 +893,7 @@ class Icarus(Runner):
         return [f"-I{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"-D{name}={_as_sv_literal(value)}" for name, value in defines.items()]
+        return [f"-D{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [
@@ -850,7 +913,9 @@ class Icarus(Runner):
             f.write("+timescale+{}/{}\n".format(*self.timescale))
 
     def _create_iverilog_dump_file(self) -> None:
-        dumpfile_path = _as_sv_literal(str(self.build_dir / f"{self.hdl_toplevel}.fst"))
+        dumpfile_path = _sv_escape_string(
+            str(self.build_dir / f"{self.hdl_toplevel}.fst")
+        )
         with open(self.iverilog_dump_file, "w") as f:
             f.write("module cocotb_iverilog_dump();\n")
             f.write("initial begin\n")
@@ -976,9 +1041,7 @@ class Questa(Runner):
         return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [
-            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
-        ]
+        return [f"+define+{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
@@ -1366,25 +1429,7 @@ class AldecBase(Runner):
         return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [
-            f"+define+{name}={self._as_define_value(value)}"
-            for name, value in defines.items()
-        ]
-
-    def _as_define_value(self, value: object) -> str:
-        if isinstance(value, int):
-            return str(value)
-        elif isinstance(value, str):
-            for char in value:
-                if ord(char) < 32 or ord(char) >= 255 or char in '\\"':
-                    # Control characters are generally not supported.
-                    # Not sure if there's any way to escape quotes or backslashes.
-                    raise ValueError(
-                        f"Character {char!r} not supported in define value"
-                    )
-            return '\\"\\\\"' + value + '\\\\"\\"'
-        else:
-            raise TypeError("Can't serialize this type as an SV literal")
+        return [f"'+define+{name}={value}'" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
@@ -1631,7 +1676,7 @@ class Verilator(Runner):
         return [f"-I{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [f"-D{name}={_as_sv_literal(value)}" for name, value in defines.items()]
+        return [f"-D{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-G{name}={value}" for name, value in parameters.items()]
@@ -1749,24 +1794,9 @@ class Xcelium(Runner):
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [
-            f"-define {name}={self._as_define_value(value)}"
+            f"-define {name}={_sv_escape_string(format(value))}"
             for name, value in defines.items()
         ]
-
-    def _as_define_value(self, value: object) -> str:
-        if isinstance(value, int):
-            return str(value)
-        elif isinstance(value, str):
-            for char in value:
-                if ord(char) < 32 or ord(char) >= 255 or char == '"':
-                    # Control characters are generally not supported.
-                    # Not sure if there's any way to escape quotes.
-                    raise ValueError(
-                        f"Character {char!r} not supported in define value"
-                    )
-            return '"\\"' + value.replace("\\", "\\\\") + '\\""'
-        else:
-            raise TypeError("Can't serialize this type as an SV literal")
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f'-gpg "{name} => {value}"' for name, value in parameters.items()]
@@ -1936,9 +1966,7 @@ class Vcs(Runner):
         return [f"+incdir+{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [
-            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
-        ]
+        return [f"+define+{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         if self.hdl_toplevel is None:
@@ -2038,15 +2066,10 @@ class Dsim(Runner):
         return [f"+incdir+{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        return [
-            f"+define+{name}={_as_sv_literal(value)}" for name, value in defines.items()
-        ]
+        return [f"+define+{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
-        return [
-            f"-defparam {name}={_as_sv_literal(value)}"
-            for name, value in parameters.items()
-        ]
+        return [f"-defparam {name}={value}" for name, value in parameters.items()]
 
     @property
     def sim_file(self) -> Path:

@@ -133,6 +133,10 @@ Python Test Runner
 
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
 
+.. autofunction:: as_vhdl_literal
+
+.. autofunction:: as_sv_literal
+
 .. envvar:: GUI
 
     Type: :ref:`env-boolean`
