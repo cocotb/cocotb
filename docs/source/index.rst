@@ -144,6 +144,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
    install_devel
    custom_flows
    extensions
+   junit
    upgrade-2.0
    update_indexing
    rotating_logger
@@ -200,6 +201,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
 
    building
    Python Code Library Reference <library_reference>
+   JUnit Tests Report Reference <junit_reference>
    GPI Library Reference <library_reference_c>
    simulator_support
    platform_support

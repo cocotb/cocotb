@@ -8,6 +8,6 @@ COCOTB_TEST_MODULES := test_skip
 .PHONY: override_for_this_test
 override_for_this_test:
 	$(MAKE) all
-	test $$(grep '<skipped />' $(COCOTB_RESULTS_FILE) | wc -l) -eq 4
+	test $$(grep '<skipped.*/>' $(COCOTB_RESULTS_FILE) | wc -l) -eq 4
 
 include ../../designs/sample_module/Makefile

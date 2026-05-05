@@ -1,0 +1,1 @@
+Added the :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable as a hint for :ref:`junit` how to convert absolute paths to relative ones.

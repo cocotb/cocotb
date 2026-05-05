@@ -1,0 +1,1 @@
+Removed support for undocumented ``COCOTB_RESULT_TESTSUITE`` environment variable. Name of test suite will be based on name of the cocotb test module.

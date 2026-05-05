@@ -99,6 +99,8 @@ class RegressionManager:
         test_modules: Iterable[str] | None = None,
         invocation_dir: Path | str | None = None,
         seed: int | None = None,
+        relative_to: Path | str | None = None,
+        attachments: Iterable[Path | str] | None = None,
     ) -> None:
         """Create new instance of regression manager for cocotb tests.
 
@@ -112,6 +114,8 @@ class RegressionManager:
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
             seed: Initialization value for the random number generator. If not provided, use current timestamp.
+            relative_to: If provided, all absolute paths will be converted to relative ones.
+            attachments: List of file attachments to be included in created test reports.
         """
         self._toplevel: str = toplevel
         """Name of top level."""
@@ -148,6 +152,11 @@ class RegressionManager:
         self._random_x_resolver_state: Any = (
             cocotb.types._resolve._randomResolveRng.getstate()
         )
+        relative_to_path = relative_to or invocation_dir
+        self._relative_to: Path = (
+            Path(relative_to_path).resolve() if relative_to_path else Path.cwd()
+        )
+        self._attachments: list[Path] = self._normalize_paths(attachments)
 
         pluginmanager = PytestPluginManager()
 
@@ -693,16 +702,23 @@ class RegressionManager:
         report: TestReport = yield  # get generated test report from other plugins
 
         sim_time_stop: float = get_sim_time(self._sim_time_unit)
+        sim_time_duration: float = sim_time_stop - self._sim_time_start
+        sim_time_ratio: float = (
+            (report.duration / sim_time_duration) if sim_time_duration else 0.0
+        )
 
         # Additional properties that will be included with generated test report
         properties: dict[str, Any] = {
             "cocotb": True,
             "sim_time_start": self._sim_time_start,
             "sim_time_stop": sim_time_stop,
-            "sim_time_duration": sim_time_stop - self._sim_time_start,
+            "sim_time_duration": sim_time_duration,
+            "sim_time_ratio": sim_time_ratio,
             "sim_time_unit": self._sim_time_unit,
             "runner_nodeid": self._nodeid,  # identify cocotb runner
             "random_seed": self._seed,
+            "file": self._normalize_path(report.location[0]),
+            "line": report.location[1],
         }
 
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport
@@ -711,6 +727,22 @@ class RegressionManager:
 
         # Make properties available in generated test reports like JUnit XML report
         report.user_properties.extend(properties.items())
+
+        # Add file attachments to test report, this will be included in JUnit XML report
+        for attachment in self._attachments:
+            report.user_properties.append(("attachment", attachment))
+            # pytest --override-ini=junit_logging=system-out|all ...
+            report.sections.append(("Captured stdout", f"[[ATTACHMENT|{attachment}]]"))
+
+        # If test failed, add COCOTB_RANDOM_SEED to captured stderr so that it will appear in JUnit XML
+        # FIXME: the pytest internal junitxml plugin fails to report this correctly (gh-5226)
+        if report.failed:
+            # pytest --override-ini=junit_logging=system-err|all ...
+            message: str = f"Test failed with COCOTB_RANDOM_SEED={cocotb.RANDOM_SEED}"
+            report.sections.append(("Captured stderr", message))
+
+        # Add file attachments for other plugins
+        report.__dict__.update({"attachments": self._attachments})
 
         return report
 
@@ -850,6 +882,24 @@ class RegressionManager:
 
         # Setup simulator finalization
         cocotb.simulator.stop_simulator()
+
+    def _normalize_path(self, path: Path | str) -> Path:
+        """Resolves absolute path to path relative to COCOTB_RELATIVE_TO if possible."""
+
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        if path.is_absolute():
+            try:
+                return path.resolve().relative_to(self._relative_to)
+            except ValueError:
+                return path.resolve()
+
+        return path
+
+    def _normalize_paths(self, paths: Iterable[Path | str] | None) -> list[Path]:
+        """Resolves a list of paths to paths relative to COCOTB_RELATIVE_TO if possible."""
+        return [self._normalize_path(path) for path in paths or () if path]
 
 
 def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:
