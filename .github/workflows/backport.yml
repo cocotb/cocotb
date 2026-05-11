@@ -43,7 +43,7 @@ jobs:
 
       - name: Backport Action
         if: fromJSON(steps.check_labels.outputs.matched) > 0
-        uses: sorenlouv/backport-github-action@9460b7102fea25466026ce806c9ebf873ac48721  # v11.0.0
+        uses: sorenlouv/backport-github-action@85813678d776774a19ec5af56bd3a04305946f8a  # v12.0.0
         with:
           # GITHUB_TOKEN is available by default, but the powers it has are
           # configurable. Follow the GitHub documentation at
