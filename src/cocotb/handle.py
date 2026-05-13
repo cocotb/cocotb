@@ -869,7 +869,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         | Force[ValueSetT]
         | Freeze
         | Release
-        | Immediate[ValueSetT],
+        | Immediate[ValueSetT]
+        | _OldImmediate[ValueSetT],
     ) -> None:
         if isinstance(current_gpi_trigger(), ReadOnly):
             raise RuntimeError("Attempting settings a value during the ReadOnly phase.")
@@ -933,9 +934,9 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             This could result in a change in behavior because prior to version 2.0 this function did not set values immediately.
         """
         if isinstance(value, Deposit):
-            value = _OldImmediate(value.value)  # type: ignore
+            value = _OldImmediate(value.value)
         elif not isinstance(value, (Force, Freeze, Release, Immediate)):
-            value = _OldImmediate(value)  # type: ignore
+            value = _OldImmediate(value)
         self.value = value
 
     @cached_property
