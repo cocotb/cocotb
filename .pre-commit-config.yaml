@@ -60,13 +60,14 @@ repos:
   hooks:
   - id: mypy
     args: [--follow-imports=silent]
+    pass_filenames: false
     additional_dependencies:
     - pytest
     - pluggy
     - coverage
     - nox
     - nox-uv
-    files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/pytest/)
+    files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/pytest/).*\.py$
     language_version: "3.11"
 
 - repo: https://github.com/astral-sh/uv-pre-commit
