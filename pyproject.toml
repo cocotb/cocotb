@@ -250,6 +250,8 @@ warn_unused_ignores = true
 implicit_reexport = false
 show_error_codes = true
 pretty = true
+allow_redefinition = true
+mypy_path = "src/"
 
 # TODO add lower bounds and justifications
 [dependency-groups]
