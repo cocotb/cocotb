@@ -72,11 +72,18 @@ def configure_test_env(session: nox.Session) -> None:
     # the site module.
     session.env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
 
+    # Unset LD_LIBRARY_PATH to prevent issues during build.
+    # We are using the system compiler, so we should use the system's library.
+    ld_library_path = session.env.pop("LD_LIBRARY_PATH", None)
+
     # Test with debug enabled, but log level still set low. That way we can test the code
     # without slowing everything down by emitting roughly 1 million logs.
     session.env["COCOTB_SCHEDULER_DEBUG"] = "1"
     session.env["GPI_DEBUG"] = "1"
     session.env["PYGPI_DEBUG"] = "1"
+
+    if ld_library_path is not None:
+        session.env["LD_LIBRARY_PATH"] = ld_library_path
 
 
 def stringify_dict(d: dict[str, str]) -> str:
