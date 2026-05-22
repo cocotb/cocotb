@@ -63,6 +63,17 @@ class XUnitReporter:
         self.last_property = SubElement(testsuite, "property", kwargs)
         return self.last_property
 
+    def add_testcase_property(
+        self, testcase: Element | None = None, **kwargs: str
+    ) -> Element:
+        if testcase is None:
+            testcase = self.last_testcase
+        properties = testcase.find("properties")
+        if properties is None:
+            properties = SubElement(testcase, "properties")
+        self.last_property = SubElement(properties, "property", kwargs)
+        return self.last_property
+
     def add_failure(self, testcase: Element | None = None, **kwargs: str) -> None:
         if testcase is None:
             testcase = self.last_testcase
