@@ -55,7 +55,7 @@ On every rising edge of ``clk``, in order of precedence:
 * The counter is incremented if the ``ena`` signal is high.
 * Otherwise, the counter holds its value.
 
-.. image:: ../diagrams/counter.svg
+.. image:: ../diagrams/svg/counter.svg
 
 
 Building your Design and Running Simulations
