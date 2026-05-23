@@ -57,9 +57,12 @@ async def reset(dut) -> None:
     await Timer(1, "ns")
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-# Release doesn't work on GHDL < 5 (gh-3830)
-@cocotb.test(expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5)
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(ghdl_before_5, reason="Release doesn't work on GHDL < 5 (gh-3830)")
+@cocotb.test
 async def test_hdl_writes_dont_overwrite_force_combo(dut) -> None:
     """Test Forcing then later Releasing a combo signal."""
     await reset(dut)
@@ -86,14 +89,16 @@ async def test_hdl_writes_dont_overwrite_force_combo(dut) -> None:
     assert dut.stream_out_data_comb.value == 3
 
 
-# Release doesn't work on Riviera-PRO (VHPI) until version 2022.10.
-# Release doesn't work on GHDL < 5 (gh-3830)
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith("verilator")
-    or riviera_before_2022_10
-    or ghdl_before_5
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
 )
+@cocotb.xfail(
+    riviera_before_2022_10,
+    reason="Release doesn't work on Riviera-PRO (VHPI) until version 2022.10",
+)
+@cocotb.xfail(ghdl_before_5, reason="Release doesn't work on GHDL < 5 (gh-3830)")
+@cocotb.test
 async def test_hdl_writes_dont_overwrite_force_registered(dut) -> None:
     """Test Forcing then Releasing a registered output."""
     await reset(dut)
@@ -120,8 +125,11 @@ async def test_hdl_writes_dont_overwrite_force_registered(dut) -> None:
     assert dut.stream_out_data_registered.value == 4
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-@cocotb.test(expect_fail=SIM_NAME.startswith("verilator"))
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.test
 async def test_multiple_force_in_same_cycle(dut) -> None:
     """Tests multiple Force in the same eval cycle write the last value."""
     await reset(dut)
@@ -141,9 +149,12 @@ async def test_multiple_force_in_same_cycle(dut) -> None:
     assert dut.stream_out_data_comb.value == 9
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-# Release doesn't work on GHDL < 5 (gh-3830)
-@cocotb.test(expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5)
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(ghdl_before_5, reason="Release doesn't work on GHDL < 5 (gh-3830)")
+@cocotb.test
 async def test_multiple_release_in_same_cycle(dut) -> None:
     """Tests multiple Force in the same eval cycle write the last value."""
     await reset(dut)
@@ -168,14 +179,20 @@ async def test_multiple_release_in_same_cycle(dut) -> None:
     assert dut.stream_out_data_comb.value == 1
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-# Release doesn't work on GHDL < 5 (gh-3830)
-# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
-# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith("verilator") or questa_fli or ghdl_before_5,
-    skip=riviera_vpi_below_2024_10,
+@cocotb.skipif(
+    riviera_vpi_below_2024_10,
+    reason="Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(ghdl_before_5, reason="Release doesn't work on GHDL < 5 (gh-3830)")
+@cocotb.xfail(
+    questa_fli,
+    reason="Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)",
+)
+@cocotb.test
 async def test_deposit_on_forced(dut) -> None:
     """Test Deposits following a Force don't overwrite the value on combo signals."""
     await reset(dut)
@@ -199,13 +216,19 @@ async def test_deposit_on_forced(dut) -> None:
     assert dut.stream_out_data_comb.value == 46
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith("verilator") or questa_fli,
-    skip=riviera_vpi_below_2024_10,
+@cocotb.skipif(
+    riviera_vpi_below_2024_10,
+    reason="Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(
+    questa_fli,
+    reason="Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)",
+)
+@cocotb.test
 async def test_deposit_then_force_in_same_cycle(dut) -> None:
     """Tests a Force and Deposit in the same cycle results in Force winning."""
     await reset(dut)
@@ -224,13 +247,20 @@ async def test_deposit_then_force_in_same_cycle(dut) -> None:
     assert dut.stream_out_data_comb.value == 1
 
 
-# Force/Release doesn't work on Verilator (gh-3831)
-# Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)
-# Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)
-@cocotb.test(
-    expect_fail=SIM_NAME.startswith("verilator") or ghdl_before_5 or questa_fli,
-    skip=riviera_vpi_below_2024_10,
+@cocotb.skipif(
+    riviera_vpi_below_2024_10,
+    reason="Riviera's VPI < 2024.10 stacktraces when overwriting forced signal with normal deposit (gh-3832)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    reason="Force/Release doesn't work on Verilator (gh-3831)",
+)
+@cocotb.xfail(ghdl_before_5, reason="Release doesn't work on GHDL < 5 (gh-3830)")
+@cocotb.xfail(
+    questa_fli,
+    reason="Questa's FLI allows overwriting forced signal with normal deposit (gh-3833)",
+)
+@cocotb.test
 async def test_force_then_deposit_in_same_cycle(dut) -> None:
     """Tests a Force and Deposit in the same cycle results in Force winning."""
     await reset(dut)

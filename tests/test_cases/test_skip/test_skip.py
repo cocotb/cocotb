@@ -33,6 +33,7 @@ async def test_skipif_deco(_: object) -> None:
     assert False  # This test should not be run
 
 
-@cocotb.test(skip=True)
+@cocotb.skipif(True)
+@cocotb.test
 async def test_skip_arg(_: object) -> None:
     assert False  # This test should not be run

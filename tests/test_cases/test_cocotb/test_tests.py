@@ -20,7 +20,8 @@ import cocotb
 from cocotb.triggers import NullTrigger, SimTimeoutError, Timer
 
 
-@cocotb.test(expect_error=NameError)
+@cocotb.test
+@cocotb.xfail(raises=NameError)
 async def test_error(dut):
     """Error in the test"""
     await Timer(100, "ns")
@@ -28,7 +29,8 @@ async def test_error(dut):
 
 
 # just to be sure...
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_async_test_can_fail(dut):
     assert False
 
@@ -39,22 +41,26 @@ async def test_immediate_test(dut):
     return
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_assertion_is_failure(dut):
     assert False
 
 
-@cocotb.test(expect_error=MyException)
+@cocotb.test
+@cocotb.xfail(raises=MyException)
 async def test_expect_particular_exception(dut):
     raise MyException()
 
 
-@cocotb.test(expect_error=(MyException, ValueError))
+@cocotb.test
+@cocotb.xfail(raises=(MyException, ValueError))
 async def test_expect_exception_list(dut):
     raise MyException()
 
 
-@cocotb.test(expect_error=SimTimeoutError, timeout_time=1, timeout_unit="ns")
+@cocotb.test(timeout_time=1, timeout_unit="ns")
+@cocotb.xfail(raises=SimTimeoutError)
 async def test_timeout_testdec_fail(dut):
     await Timer(10, "ns")
 
@@ -112,13 +118,15 @@ async def test_empty_docstring(dut) -> None:
     """"""
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_raises_fail(dut):
     with pytest.raises(AssertionError):
         assert True
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_warns_fail(dut):
     def test_func():
         pass
@@ -127,7 +135,8 @@ async def test_pytest_warns_fail(dut):
         test_func()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_deprecated_call_fail(dut):
     def test_func():
         pass
@@ -136,7 +145,8 @@ async def test_pytest_deprecated_call_fail(dut):
         test_func()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_raises_fail_in_task(dut):
     async def test_func():
         with pytest.raises(AssertionError):
@@ -146,7 +156,8 @@ async def test_pytest_raises_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_warns_fail_in_task(dut):
     def inner_func():
         pass
@@ -159,7 +170,8 @@ async def test_pytest_warns_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test
+@cocotb.xfail()
 async def test_pytest_deprecated_call_fail_in_task(dut):
     def inner_func():
         pass
@@ -172,12 +184,14 @@ async def test_pytest_deprecated_call_fail_in_task(dut):
     await NullTrigger()
 
 
-@cocotb.test(expect_error=MyBaseException)
+@cocotb.test
+@cocotb.xfail(raises=MyBaseException)
 async def test_base_exception_expect_fail(dut):
     raise MyBaseException
 
 
-@cocotb.test(expect_error=MyBaseException)
+@cocotb.test
+@cocotb.xfail(raises=MyBaseException)
 async def test_base_exception_in_task_expect_fail(dut):
     async def test_func():
         raise MyBaseException

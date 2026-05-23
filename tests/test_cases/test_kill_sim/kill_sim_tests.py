@@ -15,18 +15,21 @@ def make_failure_file() -> None:
     open("test_failed", "w").close()
 
 
-@cocotb.test(expect_error=SystemExit)
+@cocotb.xfail(raises=SystemExit)
+@cocotb.test
 async def test_sys_exit(_: Any) -> None:
     sys.exit(1)
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=SystemExit)
+@cocotb.xfail(raises=SystemExit)
+@cocotb.test
 async def test_task_sys_exit(_: Any) -> None:
     async def coro() -> None:
         sys.exit(1)
@@ -36,35 +39,41 @@ async def test_task_sys_exit(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_task_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=SystemExit)
+@cocotb.xfail(raises=SystemExit)
+@cocotb.test
 async def test_trigger_sys_exit(_: Any) -> None:
     await Timer(1)
     sys.exit(1)
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_trigger_sys_exit_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=KeyboardInterrupt)
+@cocotb.xfail(raises=KeyboardInterrupt)
+@cocotb.test
 async def test_keyboard_interrupt(_: Any) -> None:
     raise KeyboardInterrupt  # Analogous to Ctrl-C
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_keyboard_interrupt_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=KeyboardInterrupt)
+@cocotb.xfail(raises=KeyboardInterrupt)
+@cocotb.test
 async def test_task_keyboard_interrupt(_: Any) -> None:
     async def coro() -> None:
         raise KeyboardInterrupt  # Analogous to Ctrl-C
@@ -74,18 +83,21 @@ async def test_task_keyboard_interrupt(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_task_keyboard_interrupt_sim_continued(_: Any) -> None:
     make_failure_file()
 
 
-@cocotb.test(expect_error=KeyboardInterrupt)
+@cocotb.xfail(raises=KeyboardInterrupt)
+@cocotb.test
 async def test_trigger_keyboard_interrupt(_: Any) -> None:
     await Timer(1)
     raise KeyboardInterrupt  # Analogous to Ctrl-C
     make_failure_file()
 
 
-@cocotb.test(expect_error=SimFailure)
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_trigger_keyboard_interrupt_sim_continued(_: Any) -> None:
     make_failure_file()

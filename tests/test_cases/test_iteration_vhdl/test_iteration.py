@@ -41,7 +41,8 @@ def total_object_count():
     return 0
 
 
-@cocotb.test(skip=(total_object_count() == 0))
+@cocotb.skipif(total_object_count() == 0)
+@cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
 

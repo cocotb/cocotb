@@ -33,18 +33,22 @@ riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
 ) < RivieraVersion("2025.04")
 
 
-# GHDL is unable to access signals in generate loops (gh-2594)
-# Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
-# VCS is unable to access signals in generate loops (gh-4328)
-@cocotb.test(
-    expect_error=IndexError
-    if SIM_NAME.startswith("ghdl")
-    else AttributeError
-    if SIM_NAME.startswith("verilator")
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=IndexError,
+    reason="GHDL is unable to access signals in generate loops (gh-2594)",
 )
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator"),
+    raises=AttributeError,
+    reason="Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)",
+)
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS is unable to access signals in generate loops (gh-4328)",
+)
+@cocotb.test
 async def pseudo_region_access(dut):
     """Test that pseudo-regions are accessible before iteration"""
 
@@ -55,46 +59,57 @@ async def pseudo_region_access(dut):
     dut.genblk1[0]
 
 
-def verilog_test(skip=False, **kwargs):
-    return cocotb.test(skip=skip or LANGUAGE in ["vhdl"], **kwargs)
-
-
 verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion(
     cocotb.SIM_VERSION
 ) < VerilatorVersion("5.024")
 
 
-# VCS is unable to access signals in generate loops (gh-4328)
-@verilog_test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
+@cocotb.xfail(
+    verilator_less_than_5024,
+    raises=AttributeError,
+    reason="Verilator before 5.024 doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)",
 )
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS is unable to access signals in generate loops (gh-4328)",
+)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_cond_scope(dut):
     assert dut.cond_scope.scoped_sub._path == f"{dut._path}.cond_scope.scoped_sub"
 
 
-@verilog_test(expect_error=AttributeError)
+@cocotb.xfail(raises=AttributeError)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_bad_var(dut):
     print(dut.cond_scope_else_asdf._path)
 
 
-# VCS is unable to access signals in generate loops (gh-4328)
-@verilog_test(expect_error=IndexError if "vcs" in SIM_NAME else ())
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=IndexError,
+    reason="VCS is unable to access signals in generate loops (gh-4328)",
+)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_arr_scope(dut):
     assert dut.arr[1].arr_sub._path == f"{dut._path}.arr[1].arr_sub"
 
 
-# VCS is unable to access signals in generate loops
-@verilog_test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
+@cocotb.xfail(
+    verilator_less_than_5024,
+    raises=AttributeError,
+    reason="Verilator before 5.024 doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)",
 )
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS is unable to access signals in generate loops",
+)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_nested_scope(dut):
     assert (
         dut.outer_scope[1].inner_scope[1]._path
@@ -102,28 +117,37 @@ async def test_nested_scope(dut):
     )
 
 
-# VCS is unable to access signals in generate loops
-@verilog_test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else (),
+@cocotb.xfail(
+    verilator_less_than_5024,
+    raises=AttributeError,
+    reason="Verilator before 5.024 doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)",
 )
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS is unable to access signals in generate loops",
+)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_scoped_params(dut):
     assert dut.cond_scope.scoped_param.value == 1
     assert dut.outer_scope[1].outer_param.value == 2
     assert dut.outer_scope[1].inner_scope[1].inner_param.value == 3
 
 
-@verilog_test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else (),
-    expect_fail=SIM_NAME.startswith("riviera"),
+@cocotb.xfail(
+    verilator_less_than_5024,
+    raises=AttributeError,
+    reason="Verilator before 5.024 doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)",
 )
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS is unable to access signals in generate loops",
+)
+@cocotb.xfail(SIM_NAME.startswith("riviera"))
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_intf_array(dut):
     assert len(dut.intf_arr) == 2
     for i, intf in enumerate(dut.intf_arr):
@@ -136,10 +160,12 @@ questa_vhpi = (
 )
 
 
-@cocotb.test(
-    # Questa VHPI reports vhpiIsUpP incorrectly (gh-4236)
-    expect_error=IndexError if questa_vhpi else ()
+@cocotb.xfail(
+    questa_vhpi,
+    raises=IndexError,
+    reason="Questa VHPI reports vhpiIsUpP incorrectly (gh-4236)",
 )
+@cocotb.test
 async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
 
@@ -161,11 +187,13 @@ class ScopeModuleMissingError(Exception):
     pass
 
 
-# VCS is unable to access signals in generate loops
-@verilog_test(
-    expect_error=AttributeError if "vcs" in SIM_NAME else ScopeMissingError,
-    skip=verilator_less_than_5024,
+@cocotb.xfail(
+    raises=AttributeError if "vcs" in SIM_NAME else ScopeMissingError,
+    reason="VCS is unable to access signals in generate loops",
 )
+@cocotb.skipif(verilator_less_than_5024)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def test_both_conds(dut):
     """
     Xcelium returns invalid scopes with vpi_handle_by_name(), which will segfault if iterated
@@ -208,7 +236,8 @@ async def access_signal(dut):
     assert dut.stream_in_data.value == 1
 
 
-@cocotb.test(skip=LANGUAGE in ["vhdl"])
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def access_type_bit_verilog(dut):
     """Access type bit in SystemVerilog"""
     await Timer(1, "step")
@@ -228,7 +257,8 @@ async def access_type_bit_verilog(dut):
     assert dut.mybits_uninitialized.value == 0b11, "The assigned value was incorrect"
 
 
-@cocotb.test(skip=LANGUAGE in ["vhdl"])
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def access_type_bit_verilog_metavalues(dut):
     """Access type bit in SystemVerilog with metavalues that the type does not support.
 
@@ -255,30 +285,35 @@ async def access_type_bit_verilog_metavalues(dut):
         assert dut.mybits.value == "00"
 
 
-# Riviera < 2025.04 discovers integers as nets (gh-2597)
-# GHDL discovers integers as nets (gh-2596)
-# Icarus does not support integer signals (gh-2598)
-@cocotb.test(
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-    expect_fail=(riviera_before_2025_04 and LANGUAGE in ["verilog"])
-    or SIM_NAME.startswith(("ghdl", "verilator")),
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    raises=AttributeError,
+    reason="Icarus does not support integer signals (gh-2598)",
 )
+@cocotb.xfail(
+    (riviera_before_2025_04 and LANGUAGE in ["verilog"])
+    or SIM_NAME.startswith(("ghdl", "verilator")),
+    reason="Riviera < 2025.04 discovers integers as nets (gh-2597), GHDL discovers integers as nets (gh-2596)",
+)
+@cocotb.test
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
     assert isinstance(dut.stream_in_int, IntegerObject)
 
 
-@cocotb.test(skip=LANGUAGE in ["verilog"])
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.test
 async def access_ulogic(dut):
     """Access a std_ulogic as enum"""
     dut.stream_in_valid
 
 
-# GHDL discovers generics as vpiParameter (gh-2722)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL discovers generics as vpiParameter (gh-2722)",
 )
+@cocotb.test
 async def access_constant_integer(dut):
     """
     Access a constant integer
@@ -287,11 +322,12 @@ async def access_constant_integer(dut):
     assert dut.isample_module1.EXAMPLE_WIDTH.value == 7
 
 
-# GHDL discovers generics as vpiParameter (gh-2722)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL discovers generics as vpiParameter (gh-2722)",
 )
+@cocotb.test
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     constant_string = dut.isample_module1.EXAMPLE_STRING
@@ -299,11 +335,12 @@ async def access_constant_string_vhdl(dut):
     assert constant_string.value == b"TESTING"
 
 
-# GHDL discovers strings as vpiNetArray (gh-2584)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL discovers strings as vpiNetArray (gh-2584)",
 )
+@cocotb.test
 async def test_writing_string_undersized(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"cocotb"
@@ -313,11 +350,12 @@ async def test_writing_string_undersized(dut):
     assert dut.stream_out_string.value == test_string
 
 
-# GHDL discovers strings as vpiNetArray (gh-2584)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL discovers strings as vpiNetArray (gh-2584)",
 )
+@cocotb.test
 async def test_writing_string_oversized(dut):
     assert isinstance(dut.stream_in_string, StringObject)
     test_string = b"longer_than_the_array"
@@ -329,10 +367,9 @@ async def test_writing_string_oversized(dut):
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"] or SIM_NAME.startswith("riviera"),
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-)
+@cocotb.skipif(LANGUAGE in ["vhdl"] or SIM_NAME.startswith("riviera"))
+@cocotb.xfail(SIM_NAME.startswith("icarus"), raises=AttributeError)
+@cocotb.test
 async def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
 
@@ -345,10 +382,9 @@ async def access_const_string_verilog(dut):
     assert dut.STRING_CONST.value != b"TESTING_CONST"
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-    expect_error=AttributeError if SIM_NAME.startswith("icarus") else (),
-)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.xfail(SIM_NAME.startswith("icarus"), raises=AttributeError)
+@cocotb.test
 async def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
 
@@ -361,22 +397,23 @@ async def access_var_string_verilog(dut):
     assert dut.STRING_VAR.value == b"MODIFIED"
 
 
-# GHDL discovers generics as vpiParameter (gh-2722)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL discovers generics as vpiParameter (gh-2722)",
 )
+@cocotb.test
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
     assert isinstance(dut.isample_module1.EXAMPLE_BOOL, IntegerObject)
     assert bool(dut.isample_module1.EXAMPLE_BOOL.value) is True
 
 
-# GHDL discovers booleans as vpiNet (gh-2596)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_fail=SIM_NAME.startswith("ghdl"),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"), reason="GHDL discovers booleans as vpiNet (gh-2596)"
 )
+@cocotb.test
 async def access_boolean(dut):
     """Test access to a boolean"""
     assert isinstance(dut.stream_out_bool, IntegerObject)
@@ -387,7 +424,8 @@ async def access_boolean(dut):
     assert curr_val != dut.stream_out_bool.value
 
 
-@cocotb.test(skip=LANGUAGE in ["vhdl"])
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
     assert isinstance(dut.register_array[1], LogicArrayObject)
@@ -396,20 +434,21 @@ async def access_internal_register_array(dut):
     assert dut.register_array[1].value == 4
 
 
-@cocotb.test(
-    skip=LANGUAGE in ["vhdl"],
-    expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else (),
-)
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.xfail(SIM_NAME.startswith(("icarus", "verilator")), raises=AttributeError)
+@cocotb.test
 async def access_gate(dut) -> None:
     """Test access to a gate Object"""
     assert isinstance(dut.test_and_gate, HierarchyObject)
 
 
-# GHDL is unable to access record types (gh-2591)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL is unable to access record types (gh-2591)",
 )
+@cocotb.test
 async def custom_type(dut):
     """
     Test iteration over a custom type
@@ -430,7 +469,8 @@ async def custom_type(dut):
     assert expected_outer == outer_count
 
 
-@cocotb.test(skip=LANGUAGE in ["vhdl"])
+@cocotb.skipif(LANGUAGE in ["vhdl"])
+@cocotb.test
 async def type_check_verilog(dut):
     """
     Test if types are recognized
@@ -463,11 +503,13 @@ async def type_check_verilog(dut):
             assert handle._type == expected
 
 
-# GHDL cannot find signal in "block" statement, may be related to (gh-2594)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason='GHDL cannot find signal in "block" statement, may be related to (gh-2594)',
 )
+@cocotb.test
 async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
 
@@ -475,7 +517,8 @@ async def access_block_vhdl(dut):
     dut.isample_module1.SAMPLE_BLOCK.clk_inv
 
 
-@cocotb.test(skip=LANGUAGE in ["verilog"])
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.test
 async def discover_all_in_component_vhdl(dut):
     """Access a non local indexed name"""
 
@@ -523,7 +566,8 @@ async def discover_all_in_component_vhdl(dut):
         assert total_count == 9
 
 
-@cocotb.test(expect_error=ValueError)
+@cocotb.xfail(raises=ValueError)
+@cocotb.test
 async def test_invalid_discovery_method(dut):
     """Try accessing with an enum value for GPIDiscovery out of bounds."""
     dut._handle.get_handle_by_name("testsignal", 5)

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 import cocotb
 from cocotb.clock import Clock
@@ -25,8 +26,11 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
-# GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)
-@cocotb.test(skip=SIM_NAME.startswith("ghdl"))
+@cocotb.skipif(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)",
+)
+@cocotb.test
 async def test_read_write(dut):
     """Test handle inheritance"""
 
@@ -150,16 +154,18 @@ async def test_read_write(dut):
         assert dut.port_cmplx_out[1].b[2].value == 0x55
 
 
-# GHDL unable to access signals in generate loops (gh-2594)
-# VCS is unable to access signals in generate loops through VPI (#4328).
-@cocotb.test(
-    expect_error=IndexError
-    if SIM_NAME.startswith("ghdl")
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=IndexError,
+    reason="GHDL unable to access signals in generate loops (gh-2594)",
 )
-async def test_gen_loop(dut):
+@cocotb.xfail(
+    "vcs" in SIM_NAME,
+    raises=AttributeError,
+    reason="VCS unable to access signals in generate loops through VPI (#4328)",
+)
+@cocotb.test
+async def test_gen_loop(dut: Any) -> None:
     """Test accessing Generate Loops"""
     tlog = logging.getLogger("cocotb.test")
 
@@ -328,11 +334,13 @@ async def test_discover_all(dut):
     assert total == pass_total
 
 
-# GHDL unable to access std_logic_vector generics (gh-2593)
-@cocotb.test(
-    skip=(LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")),
-    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
+@cocotb.skipif(LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera"))
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    raises=AttributeError,
+    reason="GHDL unable to access std_logic_vector generics (gh-2593)",
 )
+@cocotb.test
 async def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
 
@@ -359,8 +367,11 @@ async def test_direct_constant_indexing(dut):
     assert isinstance(dut.const_cmplx[1].b[1], LogicArrayObject)
 
 
-# GHDL unable to index multi-dimensional arrays (gh-2587)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL unable to index multi-dimensional arrays (gh-2587)",
+)
+@cocotb.test
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
@@ -396,7 +407,8 @@ async def test_direct_signal_indexing(dut):
     assert isinstance(dut.sig_rec.b[1], LogicArrayObject)
 
 
-@cocotb.test(skip=(LANGUAGE in ["verilog"]))
+@cocotb.skipif(LANGUAGE in ["verilog"])
+@cocotb.test
 async def test_extended_identifiers(dut):
     """Test accessing extended identifiers"""
 

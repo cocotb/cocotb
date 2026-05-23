@@ -211,7 +211,8 @@ async def test_Lock_fair_scheduling(_) -> None:
         await ReadOnly()
 
 
-@cocotb.test(expect_error=RuntimeError)
+@cocotb.xfail(raises=RuntimeError)
+@cocotb.test
 async def test_Lock_multiple_users_acquire_triggers(_) -> None:
     """Ensure that multiple Tasks using the same Lock.acquire() Triggers is not possible."""
 

@@ -9,18 +9,16 @@ from cocotb.regression import SimFailure
 from cocotb.triggers import RisingEdge
 
 
-@cocotb.test(
-    skip=cocotb.SIM_NAME.lower().startswith("riviera"),  # gh-1859
-    expect_error=SimFailure,
-)
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith("riviera"), reason="gh-1859")
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_sim_failure_a(dut):
     # invoke a deadlock, as nothing is driving this clock
     await RisingEdge(dut.clk)
 
 
-@cocotb.test(
-    skip=cocotb.SIM_NAME.lower().startswith("riviera"),  # gh-1859
-    expect_error=SimFailure,
-)
+@cocotb.skipif(cocotb.SIM_NAME.lower().startswith("riviera"), reason="gh-1859")
+@cocotb.xfail(raises=SimFailure)
+@cocotb.test
 async def test_sim_failure_b(dut):
     assert False, "This test should never run"
