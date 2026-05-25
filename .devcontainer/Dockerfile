@@ -41,6 +41,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Install UV from the official uv container image.
 COPY --from=uv /uv /uvx /usr/local/bin/
 
+# In a Dev Container, the venv tends to be in the git repository, which is
+# mounted from the host and hence a different mount than the cache directory.
+# Avoid the warning about uv being unable to use hardlinks in such an
+# environment.
+ENV UV_LINK_MODE=copy
+
 # Install Verilator from official Verilator container image.
 COPY --from=verilator /usr/local/share/verilator /usr/local/share/verilator
 COPY --from=verilator /usr/local/bin/verilator* /usr/local/bin/

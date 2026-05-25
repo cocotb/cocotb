@@ -2,12 +2,11 @@
 set -eo pipefail
 
 # Create and activate a virtual environment.
-python3 -m venv --prompt cocotb-devenv .venv
+uv venv --allow-existing --prompt cocotb-devenv .venv
 . .venv/bin/activate
 
-# Install prerequisites and development tools.
-pre-commit install
-pip3 install nox pytest
+# Install development dependencies and build cocotb.
+bear -- uv sync --dev
 
-# Install cocotb in editable mode.
-bear -- pip3 install -e .
+# Install prerequisites and development tools.
+prek install --overwrite
