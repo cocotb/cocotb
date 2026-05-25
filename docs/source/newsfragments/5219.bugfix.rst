@@ -1,0 +1,1 @@
+Generated JUnit XML tests results file is now compatible with `Jenkins xUnit schema version 2 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.4.0/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_.
