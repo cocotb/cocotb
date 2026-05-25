@@ -68,12 +68,6 @@ def env_vars_for_sim_test(
 def configure_test_env(session: nox.Session) -> None:
     """Set environment variables for any kind of test run."""
 
-    # Load a commercial simulator modulefile if needed.
-    # This must be here so cocotb can be built without the modulefile loaded as they can
-    # sometimes monkey with paths in ways that break builds.
-    if modulefile := os.getenv("MODULEFILE"):
-        session.run("module", "load", modulefile, external=True)
-
     # Do not fail on DeprecationWarning caused by virtualenv, which might come from
     # the site module.
     session.env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"

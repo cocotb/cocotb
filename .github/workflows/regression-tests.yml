@@ -275,9 +275,11 @@ jobs:
       continue-on-error: ${{matrix.may-fail || false}}
       timeout-minutes: 40
       run: |
+        if [ "${{matrix.self-hosted}}" == "true" ]; then
+          module load "${{ matrix.sim-version }}"
+        fi
         nox -k "${{ inputs.test_task }} and ${{ matrix.sim }} and ${{ matrix.lang }}"
       env:
-        MODULEFILE: ${{ matrix.self-hosted && matrix.sim-version || '' }}
         COCOTB_ANSI_OUTPUT: 1
 
     # codecov
