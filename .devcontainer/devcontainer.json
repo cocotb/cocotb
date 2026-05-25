@@ -7,6 +7,9 @@
 	},
 	"postCreateCommand": ".devcontainer/post-create.sh",
 	"postAttachCommand": "less .devcontainer/README.md",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:3": {}
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
