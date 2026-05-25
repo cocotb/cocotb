@@ -103,19 +103,7 @@ Running Individual Tests Locally
 Each test under ``/tests/test_cases/*/`` and ``/examples/*/tests/`` can be run individually.
 This is particularly useful if you want to run a particular test that fails the regression.
 
-First you must install cocotb from source by navigating to the project root directory and issuing the following command:
-
-.. code:: bash
-
-   python -m pip install .
-
-On Windows, you must instead install cocotb from source like so:
-
-.. code:: bash
-
-   python -m pip install --global-option build_ext --global-option --compiler=mingw32 .
-
-Once that has been done, you can navigate to the directory containing the test you wish to run.
+First, navigate to the directory containing the test you wish to run.
 Then you may issue an :ref:`make <building>` command.
 For example, if you want to test with Icarus using Verilog sources:
 
