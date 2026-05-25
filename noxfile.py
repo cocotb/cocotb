@@ -450,12 +450,14 @@ def release_install_from_sdist(session: nox.Session) -> None:
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
     if not sdists:
         session.error(
-            f"No potential sdist found in the {dist_dir!r} directory. Run the 'release_build_sdist' session first!"
+            f"No potential sdist found in the {dist_dir!r} directory. "
+            f"Run the 'release_build_sdist' session first!"
         )
     elif len(sdists) > 1:
         session.error(
             f"More than one potential sdist found in the {dist_dir!r} "
-            f"directory. Run the 'release_clean' session first!"
+            f"directory: {', '.join(str(p) for p in sdists)}. "
+            f"Run the 'release_clean' session first!"
         )
     sdist_path = sdists[0]
     assert sdist_path.is_file()
