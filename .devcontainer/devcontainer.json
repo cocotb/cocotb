@@ -21,6 +21,9 @@
 			"type": "volume"
 		}
 	],
+	"remoteEnv": {
+		"PATH": "/usr/lib/ccache:${containerEnv:PATH}"
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
