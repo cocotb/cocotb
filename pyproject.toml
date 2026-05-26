@@ -51,6 +51,11 @@ Documentation = "https://docs.cocotb.org"
 Repository = "https://github.com/cocotb/cocotb"
 Issues = "https://github.com/cocotb/cocotb/issues"
 
+[tool.setuptools]
+# Rely solely on the package_data entries in setup.py to avoid discovering
+# "packages" like `cocotb._vendor` which we don't want to be found.
+include-package-data = false
+
 [tool.setuptools-git-versioning]
 enabled = true
 version_file = "VERSION"
