@@ -1,1 +1,0 @@
-Added the :class:`~cocotb.handle.PackedObject` type for Verilog packed vectors, structs, and unions.
