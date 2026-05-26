@@ -29,9 +29,9 @@
 			"extensions": [
 				"github.vscode-github-actions",
 				"llvm-vs-code-extensions.vscode-clangd",
+				"lramseyer.vaporview",
 				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"lramseyer.vaporview"
+				"ms-python.vscode-pylance"
 			],
 			"settings": {
 				"tasks": {
