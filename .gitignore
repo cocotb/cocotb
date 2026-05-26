@@ -7,6 +7,9 @@
 # C objects
 *.o
 
+# Windows build artifacts
+*.rc
+
 # Python and C++ code coverage
 .cov.*
 .coverage
