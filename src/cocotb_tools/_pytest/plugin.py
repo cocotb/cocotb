@@ -39,20 +39,20 @@ from pytest import (
 import cocotb
 import cocotb.handle
 from cocotb.handle import SimHandleBase
-from cocotb_tools.pytest import hookspecs
-from cocotb_tools.pytest._compat import (
+from cocotb_tools._pytest import hookspecs
+from cocotb_tools._pytest._compat import (
     cocotb_decorator_as_pytest_marks,
     is_cocotb_decorator,
 )
-from cocotb_tools.pytest._controller import Controller
-from cocotb_tools.pytest._logging import Logging
-from cocotb_tools.pytest._option import (
+from cocotb_tools._pytest._controller import Controller
+from cocotb_tools._pytest._logging import Logging
+from cocotb_tools._pytest._option import (
     Option,
     add_options_to_parser,
     populate_ini_to_options,
 )
-from cocotb_tools.pytest.hdl import _SIMULATORS, HDL
-from cocotb_tools.pytest.mark import _register_markers
+from cocotb_tools._pytest.hdl import _SIMULATORS, HDL
+from cocotb_tools._pytest.mark import _register_markers
 from cocotb_tools.runner import Runner, get_runner
 
 _ENTRY_POINT: str = ",".join(
@@ -60,7 +60,7 @@ _ENTRY_POINT: str = ",".join(
         "cocotb_tools._coverage:start_cocotb_library_coverage",
         "cocotb.logging:_configure",
         "cocotb._init:init_package_from_simulation",
-        "cocotb_tools.pytest._init:run_regression",
+        "cocotb_tools._pytest._init:run_regression",
     )
 )
 if TYPE_CHECKING:
@@ -318,7 +318,7 @@ _OPTIONS: tuple[Option, ...] = (
             This is also used by simulators that support more than one interface
             (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
             When set to ``auto``, value will be automatically evaluated based on selected HDL simulator or
-            list of HDL source files provided during build stage in :py:meth:`cocotb_tools.pytest.hdl.HDL.build` or
+            list of HDL source files provided during build stage in :py:meth:`cocotb_tools._pytest.hdl.HDL.build` or
             :py:meth:`cocotb_tools.runner.Runner.build` methods.
         """,
     ),
@@ -452,22 +452,22 @@ def hdl_session(request: FixtureRequest) -> HDL:
         It can be useful to build the whole HDL project with different HDL modules at once not per test.
 
     It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
-    from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+    from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
 
-    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.build()` method
-    from **non-async** test functions. This method will invoke build step from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.build()` method
+    from **non-async** test functions. This method will invoke build step from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
 
     Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
     to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
 
-    Please refer to available public members of :py:class:`~cocotb_tools.pytest.hdl.HDL` that can be used to define own HDL design.
+    Please refer to available public members of :py:class:`~cocotb_tools._pytest.hdl.HDL` that can be used to define own HDL design.
 
     Example usage:
 
     .. code:: python
 
         import pytest
-        from cocotb_tools.pytest.hdl import HDL
+        from cocotb_tools._pytest.hdl import HDL
 
 
         @pytest.fixture(scope="session")
@@ -537,23 +537,23 @@ def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
         It can help to build HDL module per test and run tests for defined HDL top level.
 
     It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
-    from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+    from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
 
-    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.build()` method and
-    test by invoking the :py:meth:`~cocotb_tools.pytest.hdl.HDL.test()` method from **non-async** test functions.
-    These methods will invoke build and test steps from :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner` member.
+    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.build()` method and
+    test by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.test()` method from **non-async** test functions.
+    These methods will invoke build and test steps from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
 
     Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
     to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
 
-    Please refer to available public members of :py:class:`~cocotb_tools.pytest.hdl.HDL` that can be used to define own HDL design.
+    Please refer to available public members of :py:class:`~cocotb_tools._pytest.hdl.HDL` that can be used to define own HDL design.
 
     Example usage:
 
     .. code:: python
 
         import pytest
-        from cocotb_tools.pytest.hdl import HDL
+        from cocotb_tools._pytest.hdl import HDL
 
 
         @pytest.fixture(name="my_hdl_module")
@@ -615,7 +615,7 @@ def pytest_addhooks(pluginmanager: PytestPluginManager) -> None:
 
 @hookimpl(trylast=True)
 def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL:
-    """Create new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`.
+    """Create new instance of :py:class:`cocotb_tools._pytest.hdl.HDL`.
 
     Args:
         request: The pytest fixture request object.

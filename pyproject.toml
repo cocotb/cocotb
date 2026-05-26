@@ -249,7 +249,7 @@ skip = ["*.svg"]
 
 [tool.mypy]
 python_version = "3.11"
-packages = ["cocotb", "pygpi", "cocotb_tools.pytest"]
+packages = ["cocotb", "pygpi", "cocotb_tools._pytest"]
 modules = ["noxfile"]
 disallow_untyped_defs = true
 disallow_any_unimported = true

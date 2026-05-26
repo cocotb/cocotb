@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from pytest import FixtureRequest, hookspec
 
-from cocotb_tools.pytest.hdl import HDL
+from cocotb_tools._pytest.hdl import HDL
 from cocotb_tools.runner import Runner
 
 
 @hookspec(firstresult=True)
 def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL | None:
-    """Create new instance of :py:class:`cocotb_tools.pytest.hdl.HDL`.
+    """Create new instance of :py:class:`cocotb_tools._pytest.hdl.HDL`.
 
     .. note::
 

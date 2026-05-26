@@ -50,11 +50,11 @@ from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
 from cocotb.simtime import TimeUnit, get_sim_time
-from cocotb_tools.pytest._fixture import (
+from cocotb_tools._pytest._fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
-from cocotb_tools.pytest._test import RunningTestSetup
+from cocotb_tools._pytest._test import RunningTestSetup
 
 RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds

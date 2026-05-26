@@ -1,10 +1,16 @@
-.. _pytest-support:
+.. _pytest-plugin:
 
-**************
-Pytest Support
-**************
+*************
+Pytest Plugin
+*************
 
-:py:mod:`cocotb_tools.pytest.plugin` provides full `pytest`_ integration with cocotb. Including:
+.. warning::
+    The pytest plugin is under active development and the API **will** change in breaking ways over the next release or two.
+
+    You can still use pytest with the :ref:`Python runners <runner-with-pytest>` for building designs and running simulations,
+    and you can also still use pytest features in cocotb tests, such :func:`pytest.raises`, :func:`pytest.skip`, or pytest's assertion rewriting.
+
+:py:mod:`cocotb_tools._pytest.plugin` provides full `pytest`_ integration with cocotb. Including:
 
 * `fixtures`_ to cleanly set up and tear down cocotb tests and designs under test.
 * `plugins`_ that can extend cocotb testing capabilities.
@@ -20,7 +26,7 @@ Pytest Support
 Enabling the Plugin
 ===================
 
-:py:mod:`cocotb_tools.pytest.plugin` can be enabled in various ways.
+:py:mod:`cocotb_tools._pytest.plugin` can be enabled in various ways.
 
 In a Python project
 -------------------
@@ -30,14 +36,14 @@ When using the `pyproject.toml`_ file (recommended way):
 .. code:: toml
 
     [project.entry-points.pytest11]
-    cocotb = "cocotb_tools.pytest.plugin"
+    cocotb = "cocotb_tools._pytest.plugin"
 
 When using the ``pytest.ini`` file:
 
 .. code:: ini
 
     [pytest]
-    addopts = -p cocotb_tools.pytest.plugin
+    addopts = -p cocotb_tools._pytest.plugin
 
 When using the ``setup.cfg`` file:
 
@@ -45,7 +51,7 @@ When using the ``setup.cfg`` file:
 
     [options.entry_points]
     pytest11 =
-      cocotb = cocotb_tools.pytest.plugin
+      cocotb = cocotb_tools._pytest.plugin
 
 When using the ``setup.py`` file:
 
@@ -57,7 +63,7 @@ When using the ``setup.py`` file:
         # ...,
         entry_points={
             "pytest11": [
-                "cocotb = cocotb_tools.pytest.plugin",
+                "cocotb = cocotb_tools._pytest.plugin",
             ],
         },
     )
@@ -70,19 +76,19 @@ By defining the global variable ``pytest_plugins`` when using a ``conftest.py`` 
 
 .. code:: python
 
-    pytest_plugins = ("cocotb_tools.pytest.plugin",)
+    pytest_plugins = ("cocotb_tools._pytest.plugin",)
 
 By defining the ``PYTEST_PLUGINS`` environment variable:
 
 .. code:: shell
 
-    export PYTEST_PLUGINS="cocotb_tools.pytest.plugin"
+    export PYTEST_PLUGINS="cocotb_tools._pytest.plugin"
 
 By using the ``-p <plugin>`` option when invoking the `pytest`_ command line interface:
 
 .. code:: shell
 
-    pytest -p cocotb_tools.pytest.plugin ...
+    pytest -p cocotb_tools._pytest.plugin ...
 
 
 .. _pytest-plugin-build-and-test:
@@ -90,7 +96,7 @@ By using the ``-p <plugin>`` option when invoking the `pytest`_ command line int
 Building and Testing
 ====================
 
-:py:class:`cocotb_tools.pytest.hdl.HDL` interfaces with the :ref:`Python runners <howto-python-runner>` to build designs and run simulations.
+:py:class:`cocotb_tools._pytest.hdl.HDL` interfaces with the :ref:`Python runners <howto-python-runner>` to build designs and run simulations.
 The :py:class:`~cocotb_tools.runner.Runner` is fully configurable by using ``--cocotb-*`` command line arguments,
 configuration files like `pyproject.toml`_ or `fixture`_ arguments.
 
@@ -100,18 +106,18 @@ configuration files like `pyproject.toml`_ or `fixture`_ arguments.
 Fixtures
 --------
 
-:py:fixture:`cocotb_tools.pytest.plugin.hdl`
+:py:fixture:`cocotb_tools._pytest.plugin.hdl`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin provides an :fixture:`~cocotb_tools.pytest.plugin.hdl` fixture that will create a new instance of
-:py:class:`~cocotb_tools.pytest.hdl.HDL` that can be customized and then used in tests.
+The plugin provides an :fixture:`~cocotb_tools._pytest.plugin.hdl` fixture that will create a new instance of
+:py:class:`~cocotb_tools._pytest.hdl.HDL` that can be customized and then used in tests.
 
 An example is provided below, located in a project ``conftest.py`` file:
 
 .. code:: python
 
     import pytest
-    from cocotb_tools.pytest.hdl import HDL
+    from cocotb_tools._pytest.hdl import HDL
 
 
     @pytest.fixture(name="sample_module")
@@ -148,7 +154,7 @@ The plugin provides the marker :py:deco:`!pytest.mark.cocotb_runner` that will m
 .. code:: python
 
     import pytest
-    from cocotb_tools.pytest.hdl import HDL
+    from cocotb_tools._pytest.hdl import HDL
 
 
     @pytest.fixture(name="sample_module")
@@ -247,7 +253,7 @@ Using the :py:deco:`!pytest.mark.cocotb_test` marker is optional for test functi
 
 * start with ``test_``
 * is a coroutine function (``async def``)
-* has a positional argument ``dut`` to use the :fixture:`~cocotb_tools.pytest.plugin.dut` fixture
+* has a positional argument ``dut`` to use the :fixture:`~cocotb_tools._pytest.plugin.dut` fixture
 
 .. code:: python
 
@@ -257,13 +263,13 @@ Using the :py:deco:`!pytest.mark.cocotb_test` marker is optional for test functi
 
 
 Non-``async`` functions marked with :py:deco:`!pytest.mark.cocotb_test` are control functions run by pytest.
-They can run simulations by invoking :py:func:`cocotb_tools.pytest.hdl.HDL.test`
+They can run simulations by invoking :py:func:`cocotb_tools._pytest.hdl.HDL.test`
 or :py:func:`cocotb_tools.runner.Runner.test`.
 
 .. code:: python
 
     import pytest
-    from cocotb_tools.pytest.hdl import HDL
+    from cocotb_tools._pytest.hdl import HDL
 
 
     # First, define new HDL design, add HDL source files to it and build it
@@ -504,14 +510,14 @@ So others can use it in their projects:
 By Hooks
 --------
 
-The most recommended way to integrate custom build flow with :py:mod:`~cocotb_tools.pytest.plugin`
-is to implement cocotb pytest hooks defined in :py:mod:`cocotb_tools.pytest.hookspecs`.
+The most recommended way to integrate custom build flow with :py:mod:`~cocotb_tools._pytest.plugin`
+is to implement cocotb pytest hooks defined in :py:mod:`cocotb_tools._pytest.hookspecs`.
 
 
 .. code:: python
 
     from pathlib import Path
-    from cocotb_tools.pytest.hdl import HDL
+    from cocotb_tools._pytest.hdl import HDL
     from cocotb_tools.runner import Runner
     from pytest import FixtureRequest, hookimpl
 
@@ -551,11 +557,11 @@ This will allow to automatically list your integration in the list of available 
 Configuration
 =============
 
-Thanks to :py:mod:`cocotb_tools.pytest.plugin`, cocotb can be configured in many ways.
+Thanks to :py:mod:`cocotb_tools._pytest.plugin`, cocotb can be configured in many ways.
 
 Precedence order of configuring cocotb from the highest to the lowest priority:
 
-1. :py:func:`cocotb_tools.pytest.hdl.HDL` attributes set at fixture or test function level
+1. :py:func:`cocotb_tools._pytest.hdl.HDL` attributes set at fixture or test function level
 2. :py:deco:`!pytest.mark.cocotb_runner` marker used with test functions.
 3. ``--cocotb-*`` command line arguments when invoking them with `pytest`_ command line interface.
 4. ``COCOTB_*`` environment variables.
@@ -570,6 +576,46 @@ used to configure cocotb testing environment, can be listed by invoking `pytest`
     pytest --help
 
 
+.. _pytest-plugin-junit-xml:
+
+JUnit XML Reporting
+===================
+
+cocotb generates a JUnit XML test report file for every regression.
+See :ref:`junit` for the general behavior of this file and :ref:`junit-reference` for its schema.
+The notes below cover the plugin-specific knobs for controlling its output.
+
+Output file
+-----------
+
+Use pytest's ``--junit-xml`` command line option to specify the output file name:
+
+.. code:: shell
+
+    pytest --junit-xml=junit.xml
+
+Attachments
+-----------
+
+Setting the ``junit_logging`` pytest INI config option to ``system-out`` or ``all``
+is required for :ref:`attachments <junit-attachments>` to be added when using the plugin.
+
+.. code:: shell
+
+    pytest --override-ini=junit_logging=system-out --junit-xml=junit.xml ...
+
+Relative paths
+--------------
+
+The path hint used to convert absolute paths to relative ones (see :ref:`junit-paths`)
+is determined from where the ``pytest`` command was invoked.
+Use the :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable when invoking pytest to override that.
+
+.. code:: shell
+
+    COCOTB_RESULTS_RELATIVE_TO=$(pwd)/cocotb_subproject pytest --junit-xml=junit.xml ...
+
+
 .. _pytest-plugin-under-the-hood:
 
 Under the Hood
@@ -578,7 +624,7 @@ Under the Hood
 .. image:: diagrams/svg/pytest_plugin_overview.svg
 
 
-The :py:mod:`cocotb_tools.pytest.plugin` is split into two independent parts that complement each other.
+The :py:mod:`cocotb_tools._pytest.plugin` is split into two independent parts that complement each other.
 
 The first part is performed when invoking the ``pytest`` from command line.
 This is the main process that is running in non-simulation environment. It will:
@@ -596,7 +642,7 @@ This is the main process that is running in non-simulation environment. It will:
    Cocotb runners are treated by the plugin as test functions and they will be reported in pytest collect and test summary info.
    This will allow to report compilation/elaboration of HDL design and simulation runtimes.
 
-The second part of the :py:mod:`cocotb_tools.pytest.plugin` is performed within the simulator process. It will:
+The second part of the :py:mod:`cocotb_tools._pytest.plugin` is performed within the simulator process. It will:
 
 * Identify and mark test function as cocotb test.
 * Collect **only** cocotb tests.
@@ -610,7 +656,7 @@ Options
 =======
 
 .. argparse::
-   :module: cocotb_tools.pytest.plugin
+   :module: cocotb_tools._pytest.plugin
    :func: _options_for_documentation
    :prog: pytest
 

@@ -12,7 +12,7 @@ import pytest
 from pytest import FixtureRequest, fixture
 
 import cocotb
-from cocotb_tools.pytest.hdl import HDL
+from cocotb_tools._pytest.hdl import HDL
 
 DESIGNS: Path = Path(__file__).parent.parent.resolve() / "designs"
 
