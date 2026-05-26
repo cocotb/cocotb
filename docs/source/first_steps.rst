@@ -485,8 +485,8 @@ So if we modify the previous example to load ``250`` as the initial counter valu
                                                           File "cocotb/examples/first_steps/counter_tests.py", line 53, in test_self_checking
                                                             assert dut.count.value == expected_value
                                                         AssertionError: assert LogicArray('00000000', Range(7, 'downto', 0)) == 256
-                                                         +  where LogicArray('00000000', Range(7, 'downto', 0)) = PackedObject(counter.count).value
-                                                         +    where PackedObject(counter.count) = HierarchyObject(counter).count
+                                                         +  where LogicArray('00000000', Range(7, 'downto', 0)) = LogicArrayObject(counter.count).value
+                                                         +    where LogicArrayObject(counter.count) = HierarchyObject(counter).count
     91.00ns INFO     cocotb.regression                  ******************************************************************************************
                                                         ** TEST                              STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
                                                         ******************************************************************************************
