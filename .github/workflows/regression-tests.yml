@@ -97,6 +97,10 @@ jobs:
         pattern: cocotb-dist-*
         merge-multiple: true
 
+    - name: Show downloaded artifacts
+      if: ${{ inputs.download_artifacts }}
+      run: ls -R dist
+
       # Install Python
     - name: Set up Python ${{matrix.python-version}} (setup-python)
       if: matrix.setup_python == ''
