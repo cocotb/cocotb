@@ -12,7 +12,7 @@ import pytest
 
 import cocotb
 from cocotb.triggers import FallingEdge
-from cocotb_tools.pytest.hdl import HDL
+from cocotb_tools._pytest.hdl import HDL
 
 
 @pytest.fixture(autouse=True)

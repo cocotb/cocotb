@@ -13,9 +13,9 @@ from typing import Any
 from pytest import FixtureRequest, Parser, PytestPluginManager, fixture, hookimpl
 
 from cocotb.clock import Clock
-from cocotb_tools.pytest.hdl import HDL
+from cocotb_tools._pytest.hdl import HDL
 
-PLUGIN: str = "cocotb_tools.pytest.plugin"
+PLUGIN: str = "cocotb_tools._pytest.plugin"
 DESIGNS: Path = Path(__file__).parent.parent.resolve() / "designs"
 
 
@@ -24,14 +24,14 @@ def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None
     """Load pytest cocotb plugin in early stage of pytest when adding options to pytest.
 
     This will allow to automatically load plugin when invoking ``pytest`` with ``tests/pytest_plugin`` argument
-    without need of providing additional ``-p cocotb_tools.pytest.plugin`` argument.
+    without need of providing additional ``-p cocotb_tools._pytest.plugin`` argument.
 
     Most users in their projects will load plugin by defining an entry point in ``pyproject.toml`` file:
 
     .. code:: toml
 
         [project.entry-points.pytest11]
-        cocotb = "cocotb_tools.pytest.plugin"
+        cocotb = "cocotb_tools._pytest.plugin"
 
     Args:
         parser: Instance of command line arguments parser used by pytest.
@@ -50,7 +50,7 @@ def sample_module_fixture(hdl: HDL, request: FixtureRequest) -> HDL:
     .. code:: python
 
        import pytest
-       from cocotb_tools.pytest.hdl import HDL
+       from cocotb_tools._pytest.hdl import HDL
 
        @pytest.mark.cocotb_runner
        def test_sample_module(sample_module: HDL) -> None:

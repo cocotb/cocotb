@@ -201,6 +201,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
 
    building
    Python Code Library Reference <library_reference>
+   Pytest Plugin Reference <pytest_plugin_reference>
    JUnit Tests Report Reference <junit_reference>
    GPI Library Reference <library_reference_c>
    simulator_support

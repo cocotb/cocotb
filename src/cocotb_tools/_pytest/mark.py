@@ -28,7 +28,7 @@ def cocotb_runner(test_module: str = "", *extra_test_module: str) -> MarkDecorat
     .. code:: python
 
         import pytest
-        from cocotb_tools.pytest.hdl import HDL
+        from cocotb_tools._pytest.hdl import HDL
 
         @pytest.fixture(name="sample_module")
         def sample_module_fixture(hdl: HDL) -> HDL:
@@ -46,7 +46,7 @@ def cocotb_runner(test_module: str = "", *extra_test_module: str) -> MarkDecorat
 
     Args:
         test_module:
-            Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools.pytest.hdl.HDL.runner`.
+            Name of Python module with cocotb tests to be loaded by cocotb :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner`.
 
     Returns:
         Decorated test function as cocotb runner.

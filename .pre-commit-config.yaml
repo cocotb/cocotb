@@ -67,7 +67,7 @@ repos:
     - coverage
     - nox
     - nox-uv
-    files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/pytest/).*\.py$
+    files: ^(src/cocotb/|src/pygpi/|noxfile\.py|src/cocotb_tools/_pytest/).*\.py$
     language_version: "3.11"
 
 - repo: https://github.com/astral-sh/uv-pre-commit
