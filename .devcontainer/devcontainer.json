@@ -27,6 +27,7 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"github.vscode-github-actions",
 				"llvm-vs-code-extensions.vscode-clangd",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
