@@ -75,12 +75,12 @@ jobs:
         # A fetch depth of 2 provides enough information without fetching the entire history.
         fetch-depth: 2
 
-    - name: setup ccache
+    - name: Setup ccache
       uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
       if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
-    - name: setup ccache path
+    - name: Setup ccache path
       if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       run: |
         echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
@@ -89,8 +89,8 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: sudo apt-get update
 
-     # Download distribution artifacts (if any).
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+    - name: Download distribution artifacts (if any).
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       if: ${{ inputs.download_artifacts }}
       with:
         path: dist
@@ -120,13 +120,13 @@ jobs:
           gperf
           mingw-w64-x86_64-toolchain
 
-      # Install
-    - name: Install XML-dependencies for Python 3.14
+    - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
       run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
-      # Run tests that don't need a simulator.
+
     - name: Install uv
       uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+
     - name: Install Python testing dependencies
       run: |
         pip install nox nox-uv
