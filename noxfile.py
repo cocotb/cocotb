@@ -172,7 +172,7 @@ def dev_test_sim(
     if "COCOTB_CI_SKIP_MAKE" not in os.environ:
         session.log(f"Running 'make test' against a simulator {config_str}")
         make_args = ["make"]
-        if "COCOTB_FAIL_FAST" not in os.environ:
+        if "COCOTB_CI_FAIL_FAST" not in os.environ:
             make_args.append("-k")
         make_args.append("test")
         session.run(*make_args, external=True, env=env)
