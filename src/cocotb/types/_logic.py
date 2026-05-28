@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 from functools import cache
-from typing import Callable, Final, Union
+from typing import Union
 
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
@@ -255,14 +255,13 @@ class Logic:
             raise ValueError(f"Cannot convert {self!r} to int")
 
     else:
-        _resolve_x: Final[Callable[[str], str]] = RESOLVE_X
 
         def __bool__(self) -> bool:
             return self._repr in (_1, _H)
 
         def __int__(self) -> int:
             s = str(self)
-            s = self._resolve_x(s)
+            s = RESOLVE_X(s)  # type: ignore
             return int(s, 2)
 
     def __index__(self) -> int:
