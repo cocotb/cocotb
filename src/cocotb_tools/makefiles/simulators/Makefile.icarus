@@ -24,8 +24,10 @@ else
     ICARUS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
-ifdef COCOTB_TOPLEVEL
-  TOPMODULE_ARG := -s $(COCOTB_TOPLEVEL)
+TOPLEVELS := $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+
+ifdef TOPLEVELS
+  TOPMODULE_ARG := $(foreach t,$(TOPLEVELS),-s $(t))
 else
   TOPMODULE_ARG :=
 endif

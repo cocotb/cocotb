@@ -65,6 +65,9 @@ static inline void __check_vpi_error(const char *file, const char *func,
                  info.message);
 }
 
+gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
+                           bool is_vector = false);
+
 #define check_vpi_error()                                \
     do {                                                 \
         __check_vpi_error(__FILE__, __func__, __LINE__); \
@@ -276,6 +279,24 @@ class VpiPackageIterator : public GpiIterator {
 
   private:
     vpiHandle m_iterator = nullptr;
+};
+
+class VpiRootIterator : public GpiIterator {
+  private:
+    vpiHandle m_iterator = nullptr;
+
+  public:
+    VpiRootIterator(GpiImplInterface *impl) : GpiIterator(impl, NULL) {
+        m_iterator = vpi_iterate(vpiModule, NULL);
+        check_vpi_error();
+
+        if (!m_iterator) {
+            LOG_INFO("No root handle visible via VPI");
+        }
+    }
+
+    Status next_handle(std::string &name, GpiObjHdl **hdl,
+                       void **raw_hdl) override;
 };
 
 class VpiImpl : public GpiImplInterface {
