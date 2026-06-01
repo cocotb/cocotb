@@ -66,6 +66,14 @@ cocotb is a Free and Open Source project and is developed collaboratively by its
 cocotb has many serious commercial users and sponsors.
 See `cocotb.org <https://cocotb.org>`_ for more details.
 
+
+*********************
+How do I get started?
+*********************
+
+Read the :doc:`install` instructions to get cocotb installed and set up.
+Then follow the :doc:`first_steps` tutorial to get a simple test running.
+
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
    (Example: kid cooking; learning-oriented)
@@ -86,13 +94,33 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    :hidden:
 
    install
-   quickstart
+   first_steps
    writing_testbenches
    runner
    coroutines
    triggers
    pytest
-   examples
+
+..
+   Examples - completed and working projects that demonstrate how cocotb can be used to solve a particular problem
+   (Example: testing a mixed language design; study-oriented)
+
+   - explain the solution, don't just present it
+   - not a step-by-step guide
+   - not interactive with the user
+   - mention design considerations, alternatives, and trade-offs
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+   :name: examples
+   :hidden:
+
+   matrix_multiplier
+   mixed_language
+   mixed_signal
+   analog_model
+   more_examples
 
 
 ..
@@ -116,6 +144,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
    install_devel
    custom_flows
    extensions
+   junit
    upgrade-2.0
    update_indexing
    rotating_logger
@@ -147,6 +176,7 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
 
    troubleshooting
    timing_model
+   build_systems
 
 .. todo::
    - Move section "How does cocotb work?" from Introduction to here
@@ -171,6 +201,8 @@ See `cocotb.org <https://cocotb.org>`_ for more details.
 
    building
    Python Code Library Reference <library_reference>
+   Pytest Plugin Reference <pytest_plugin_reference>
+   JUnit Tests Report Reference <junit_reference>
    GPI Library Reference <library_reference_c>
    simulator_support
    platform_support

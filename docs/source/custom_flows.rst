@@ -26,8 +26,7 @@ See the sections below for additional settings to be done, depending on the simu
 Icarus Verilog
 ==============
 
-* Call the ``vvp`` executable with the options
-  ``-M $(cocotb-config --lib-dir) -m $(cocotb-config --lib-name vpi icarus)``.
+* Call the ``vvp`` executable with the option ``-m $(cocotb-config --lib-name vpi icarus)``.
 
 Verilator
 =========

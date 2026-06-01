@@ -1,13 +1,13 @@
 // This file is public domain, it can be freely copied without restrictions.
 // SPDX-License-Identifier: CC0-1.0
 
-module simple_counter (
+module counter (
   input  logic clk,
   input  logic rst,
   input  logic ena,
   input  logic set,
   input  logic [7:0] din,
-  output logic [7:0] counter
+  output logic [7:0] count
 );
 
   timeunit 1ns;
@@ -15,14 +15,14 @@ module simple_counter (
 
   always_ff @(posedge clk) begin
     if (rst) begin
-      counter <= 8'd0;
+      count <= 8'd0;
     end else begin
       if (set) begin
-        counter <= din;
+        count <= din;
       end else if (ena) begin
-        counter <= counter + 1;
+        count <= count + 1;
       end else begin
-        counter <= counter;
+        count <= count;
       end
     end
   end

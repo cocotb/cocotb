@@ -362,17 +362,6 @@ class build_ext(_build_ext):
 
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 
-        # icarus requires vpl extension
-        filename_short = filename_short.replace(
-            "libcocotbvpi_icarus.so", "libcocotbvpi_icarus.vpl"
-        )
-        filename_short = filename_short.replace(
-            "libcocotbvpi_icarus.dll", "libcocotbvpi_icarus.vpl"
-        )
-        filename_short = filename_short.replace(
-            "cocotbvpi_icarus.dll", "cocotbvpi_icarus.vpl"
-        )
-
         return filename_short
 
     def finalize_options(self):

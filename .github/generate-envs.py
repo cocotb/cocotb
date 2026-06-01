@@ -41,7 +41,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -49,7 +49,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -57,7 +57,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
@@ -65,7 +65,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
@@ -73,7 +73,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
@@ -81,7 +81,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.14",
         "group": "ci-free",
@@ -144,7 +144,16 @@ ENVS = [
         "python-version": "3.9",
         "group": "experimental",
     },
-    # Testing latest release is covered by the Python version tests
+    # Testing NVC on Ubuntu
+    # latest release is used in Python version test
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.19.3",  # minimum
+        "os": "ubuntu-22.04",
+        "python-version": "3.9",
+        "group": "extended",
+    },
     {
         "lang": "vhdl",
         "sim": "nvc",
@@ -242,7 +251,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "windows-latest",
         "python-version": "3.11",
         "group": "ci-free",
@@ -252,7 +261,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.19.2",
+        "sim-version": "r1.20.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",
@@ -386,16 +395,7 @@ for version in verilator_versions:
         },
     ]
 
-nvc_versions = (
-    "r1.11.0",
-    "r1.12.2",
-    "r1.13.3",
-    "r1.14.2",
-    "r1.15.2",
-    "r1.16.0",  # First version with --preserve-case
-    "r1.17.1",
-    "r1.18.2",
-)
+nvc_versions = ()
 for version in nvc_versions:
     ENVS += [
         {

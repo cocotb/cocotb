@@ -75,29 +75,31 @@ jobs:
         # A fetch depth of 2 provides enough information without fetching the entire history.
         fetch-depth: 2
 
-    - name: setup ccache
-      uses: hendrikmuhs/ccache-action@33522472633dbd32578e909b315f5ee43ba878ce # v1.2.22
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
-    - name: setup ccache path
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+    - name: Setup ccache path
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       run: |
         echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
-
-     # Use the ccache cache for all compilers.
 
     - name: Update package index (ubuntu)
       if: startsWith(matrix.os, 'ubuntu')
       run: sudo apt-get update
 
-     # Download distribution artifacts (if any).
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+    - name: Download distribution artifacts (if any).
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
       if: ${{ inputs.download_artifacts }}
       with:
         path: dist
         pattern: cocotb-dist-*
         merge-multiple: true
+
+    - name: Show downloaded artifacts
+      if: ${{ inputs.download_artifacts }}
+      run: ls -R dist
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}} (setup-python)
@@ -109,7 +111,7 @@ jobs:
 
     - name: Install msys2 (Windows)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
-      uses: msys2/setup-msys2@v2
+      uses: msys2/setup-msys2@e9898307ac31d1a803454791be09ab9973336e1c  # v2.31.0
       with:
         msystem: MINGW64
         update: true
@@ -118,13 +120,13 @@ jobs:
           gperf
           mingw-w64-x86_64-toolchain
 
-      # Install
-    - name: Install XML-dependencies for Python 3.14
+    - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
       run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
-      # Run tests that don't need a simulator.
+
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+
     - name: Install Python testing dependencies
       run: |
         pip install nox nox-uv
@@ -294,7 +296,7 @@ jobs:
 
     - name: Upload to codecov
       if: inputs.collect_coverage
-      uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
+      uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354  # v6.0.1
       env:
         # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
         CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc

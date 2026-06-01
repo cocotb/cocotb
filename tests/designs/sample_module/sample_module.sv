@@ -196,9 +196,11 @@ reg _underscore_name;
 bit mybit;
 bit [1:0] mybits;
 bit [1:0] mybits_uninitialized;
+logic [0:0] one_bit_vector;
 initial begin
     mybit = 1;
     mybits = '1;
+    one_bit_vector = '1;
 end
 
 always @(mybit) begin
@@ -209,6 +211,9 @@ always @(mybits) begin
 end
 always @(mybits_uninitialized) begin
     $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
+end
+always @(one_bit_vector) begin
+    $display("%m: one_bit_vector has been updated, new value is %b", one_bit_vector);
 end
 
 // for testing weird signal names

@@ -19,7 +19,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     else
         $(info Skipping example mixed_signal since only Xcelium is supported)
     endif
-    EXAMPLES += doc_examples/quickstart
+    EXAMPLES += first_steps
 endif
 
 .PHONY: $(EXAMPLES)
@@ -28,11 +28,11 @@ endif
 all: $(EXAMPLES)
 
 $(EXAMPLES):
-	@cd $@ && $(MAKE)
+	@cd $@ && $(MAKE) SIM=$(SIM) TOPLEVEL_LANG=$(TOPLEVEL_LANG)
 
 .PHONY: clean
 clean:
 	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
 
 regression:
-	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) regression;)
+	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) SIM=$(SIM) TOPLEVEL_LANG=$(TOPLEVEL_LANG) regression;)

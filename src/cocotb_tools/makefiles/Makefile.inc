@@ -146,6 +146,23 @@ endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
 
+# Common environment variables passed inline to simulator recipes.
+# Using inline assignment to avoid leaking values across
+# recursive make invocations. Uses = (lazy expansion) so that deprecate
+# calls and user variable overrides are evaluated at recipe time.
+COCOTB_ENV = \
+    COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
+    COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) \
+    $(if $(COCOTB_TEST_FILTER),COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER)) \
+    COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+    TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+    $(if $(COCOTB_RANDOM_SEED),COCOTB_RANDOM_SEED=$(COCOTB_RANDOM_SEED)) \
+    $(if $(COCOTB_LOG_LEVEL),COCOTB_LOG_LEVEL=$(COCOTB_LOG_LEVEL)) \
+    $(if $(COCOTB_SCHEDULER_DEBUG),COCOTB_SCHEDULER_DEBUG=$(COCOTB_SCHEDULER_DEBUG)) \
+    $(if $(GPI_DEBUG),GPI_DEBUG=$(GPI_DEBUG)) \
+    $(if $(PYGPI_DEBUG),PYGPI_DEBUG=$(PYGPI_DEBUG)) \
+    $(if $(GPI_LOG_LEVEL),GPI_LOG_LEVEL=$(GPI_LOG_LEVEL))
+
 
 # Universal
 clean::

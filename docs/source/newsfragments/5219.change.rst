@@ -1,0 +1,1 @@
+Tests reported in generated JUnit XML tests results file will be grouped into test suites by cocotb test module.

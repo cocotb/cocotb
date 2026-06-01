@@ -7,13 +7,31 @@
 	},
 	"postCreateCommand": ".devcontainer/post-create.sh",
 	"postAttachCommand": "less .devcontainer/README.md",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:3": {},
+		"ghcr.io/helpers4/devcontainer/shell-history-per-project:1": {
+			"historyDirectory": "/workspaces/.shell-history"
+		}
+	},
+	"mounts": [
+		{
+			// Persist shell history across container rebuilds.
+			"source": "${devcontainerId}-shellhistory",
+			"target": "/workspaces/.shell-history",
+			"type": "volume"
+		}
+	],
+	"remoteEnv": {
+		"PATH": "/usr/lib/ccache:${containerEnv:PATH}"
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"github.vscode-github-actions",
 				"llvm-vs-code-extensions.vscode-clangd",
+				"lramseyer.vaporview",
 				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"lramseyer.vaporview"
+				"ms-python.vscode-pylance"
 			],
 			"settings": {
 				"tasks": {

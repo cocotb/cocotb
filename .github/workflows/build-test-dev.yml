@@ -14,10 +14,12 @@ on:
     branches:
       - master
       - "stable/**"
+      - "feature/**"
   pull_request:
     branches:
       - master
       - 'stable/**'
+      - 'feature/**'
     paths-ignore:
       # Skip running tests for changes only in:
       # Documentation

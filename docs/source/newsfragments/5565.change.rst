@@ -1,0 +1,1 @@
+Makefile simulator recipes now use a shared ``COCOTB_ENV`` variable defined in ``Makefile.inc``.

@@ -171,7 +171,11 @@ def dev_test_sim(
 
     if "COCOTB_CI_SKIP_MAKE" not in os.environ:
         session.log(f"Running 'make test' against a simulator {config_str}")
-        session.run("make", "-k", "test", external=True, env=env)
+        make_args = ["make"]
+        if "COCOTB_CI_FAIL_FAST" not in os.environ:
+            make_args.append("-k")
+        make_args.append("test")
+        session.run(*make_args, external=True, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error
@@ -196,6 +200,7 @@ def dev_test_sim(
     ]
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--doctest-modules",
         "--cov=cocotb",
@@ -211,6 +216,7 @@ def dev_test_sim(
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--cov=cocotb",
         "--cov-branch",
@@ -229,17 +235,20 @@ def dev_test_sim(
         "examples/matrix_multiplier",
         "examples/mixed_language",
     ]
-    session.run(
-        "pytest",
-        "-v",
-        *pytest_example_tree,
-        env=env,
-    )
+    for example in pytest_example_tree:
+        with session.chdir(example):
+            session.run(
+                "pytest",
+                "-s",
+                "-v",
+                env=env,
+            )
 
     # We need to run it separately to avoid loading pytest cocotb plugin for other tests
     session.log(f"Running tests for pytest plugin against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "tests/pytest_plugin",
         "--cocotb-simulator",
@@ -282,6 +291,7 @@ def dev_test_nosim(session: nox.Session) -> None:
     session.log("Running simulator-agnostic tests with pytest")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "--cov=cocotb",
         "--cov-branch",
@@ -438,12 +448,14 @@ def release_install_from_sdist(session: nox.Session) -> None:
     sdists = list(Path(dist_dir).glob("cocotb-*.tar.gz"))
     if not sdists:
         session.error(
-            f"No potential sdist found in the {dist_dir!r} directory. Run the 'release_build_sdist' session first!"
+            f"No potential sdist found in the {dist_dir!r} directory. "
+            f"Run the 'release_build_sdist' session first!"
         )
     elif len(sdists) > 1:
         session.error(
             f"More than one potential sdist found in the {dist_dir!r} "
-            f"directory. Run the 'release_clean' session first!"
+            f"directory: {', '.join(str(p) for p in sdists)}. "
+            f"Run the 'release_clean' session first!"
         )
     sdist_path = sdists[0]
     assert sdist_path.is_file()
@@ -510,6 +522,7 @@ def release_test_sim(
     session.log(f"Running simulator-specific tests against a simulator {config_str}")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "-k",
         "simulator_required",
@@ -525,6 +538,7 @@ def release_test_nosim(session: nox.Session) -> None:
     session.log("Running simulator-agnostic tests")
     session.run(
         "pytest",
+        "-s",
         "-v",
         "-k",
         "not simulator_required",

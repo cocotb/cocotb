@@ -50,6 +50,7 @@ extensions = [
     "sphinx_codeautolink",
     "sphinxarg.ext",
     "sphinx_autofixture",
+    "sphinxcontrib.yowasp_wavedrom"
 ]
 
 intersphinx_mapping = {

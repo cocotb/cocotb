@@ -44,10 +44,10 @@ from pytest import (
 
 import cocotb
 from cocotb_tools import _env
-from cocotb_tools.pytest._handle import MockSimHandle
-from cocotb_tools.pytest._junitxml import JUnitXML
-from cocotb_tools.pytest._runner import Runner
-from cocotb_tools.pytest.hdl import _get_simulator
+from cocotb_tools._pytest._handle import MockSimHandle
+from cocotb_tools._pytest._junitxml import JUnitXML
+from cocotb_tools._pytest._runner import Runner
+from cocotb_tools._pytest.hdl import _get_simulator
 
 
 class Controller:

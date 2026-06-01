@@ -1,0 +1,1 @@
+Removed the :func:`!cocotb_tools.config.lib_name` function.

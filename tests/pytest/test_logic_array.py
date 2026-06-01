@@ -338,7 +338,7 @@ def test_index():
     r = LogicArray("0001101", Range(7, "downto", 1))
     assert r.index(Logic("1")) == 4
     assert r.index(Logic("1"), 2, 0) == 1
-    with pytest.raises(IndexError):
+    with pytest.raises(ValueError):
         r.index(object())
 
 

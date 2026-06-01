@@ -1,0 +1,1 @@
+Added the :func:`~cocotb_tools.runner.as_vhdl_literal` and :func:`~cocotb_tools.runner.as_sv_literal` functions to explicitly convert Python values to VHDL or SystemVerilog literal strings.

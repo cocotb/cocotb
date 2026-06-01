@@ -1,5 +1,5 @@
-ARG VERILATOR_VERSION=5.044
-ARG UV_VERSION=0.10.2
+ARG VERILATOR_VERSION=5.048
+ARG UV_VERSION=0.11.16
 
 # Container images used only to copy binaries out of it (see below).
 FROM verilator/verilator:v${VERILATOR_VERSION} AS verilator
@@ -41,6 +41,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # Install UV from the official uv container image.
 COPY --from=uv /uv /uvx /usr/local/bin/
 
+# In a Dev Container, the venv tends to be in the git repository, which is
+# mounted from the host and hence a different mount than the cache directory.
+# Avoid the warning about uv being unable to use hardlinks in such an
+# environment.
+ENV UV_LINK_MODE=copy
+
 # Install Verilator from official Verilator container image.
 COPY --from=verilator /usr/local/share/verilator /usr/local/share/verilator
 COPY --from=verilator /usr/local/bin/verilator* /usr/local/bin/
@@ -49,8 +55,8 @@ COPY --from=verilator /usr/local/share/pkgconfig/verilator.pc /usr/local/share/p
 
 # Install NVC from an upstream Debian package.
 # (Use apt instead of dpkg to resolve dependencies automatically.)
-ARG NVC_VERSION=1.18.2
-ARG NVC_SHA256=bb6f19a84a398e13c56649996262db63ed9787e19dd0ad894774e132e170b785
+ARG NVC_VERSION=1.21.0
+ARG NVC_SHA256=d2fc583c0b51b4784886b5180ed7edad3e02f8351add85286c080bfee7a9786d
 RUN mkdir -p /tmp/nvc-install \
     && curl -SLo /tmp/nvc-install/nvc.deb "https://github.com/nickg/nvc/releases/download/r${NVC_VERSION}/nvc_${NVC_VERSION}-1_amd64_ubuntu-24.04.deb" \
     && echo "${NVC_SHA256} /tmp/nvc-install/nvc.deb" | sha256sum --check \

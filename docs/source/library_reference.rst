@@ -17,95 +17,6 @@ Library Reference
 
 .. module:: cocotb
 
-.. _api-pytest-plugin:
-
-Pytest Plugin
-=============
-
-
-.. _api-pytest-plugin-fixtures:
-
-Fixtures
---------
-
-.. module:: cocotb_tools.pytest.plugin
-
-.. autofixture:: dut
-
-.. autofixture:: hdl_session
-
-.. autofixture:: hdl
-
-
-.. _api-pytest-plugin-markers:
-
-Markers
--------
-
-.. module:: cocotb_tools.pytest.mark
-
-.. autodecorator:: cocotb_runner
-
-.. autodecorator:: cocotb_test
-
-.. autodecorator:: cocotb_timeout
-
-.. autodecorator:: cocotb_library
-
-.. autodecorator:: cocotb_sources
-
-.. autodecorator:: cocotb_defines
-
-.. autodecorator:: cocotb_includes
-
-.. autodecorator:: cocotb_parameters
-
-.. autodecorator:: cocotb_plusargs
-
-.. autodecorator:: cocotb_env
-
-.. autodecorator:: cocotb_seed
-
-.. autodecorator:: cocotb_timescale
-
-.. autodecorator:: cocotb_always
-
-.. autodecorator:: cocotb_clean
-
-.. autodecorator:: cocotb_waves
-
-.. autodecorator:: cocotb_build_args
-
-.. autodecorator:: cocotb_elab_args
-
-.. autodecorator:: cocotb_test_args
-
-.. autodecorator:: cocotb_pre_cmd
-
-.. _api-pytest-plugin-hdl:
-
-
-HDL Fixture Request
--------------------
-
-.. module:: cocotb_tools.pytest.hdl
-
-.. autoclass:: HDL
-    :members:
-
-
-.. _api-pytest-plugin-hook-specs:
-
-Hook Specifications
--------------------
-
-.. module:: cocotb_tools.pytest.hookspecs
-
-.. autofunction:: pytest_cocotb_make_hdl
-
-.. autofunction:: pytest_cocotb_make_runner
-
-
 .. _api-runner:
 
 Python Test Runner
@@ -132,6 +43,10 @@ Python Test Runner
 .. autoclass:: VerilatorControlFile
 
 .. autodata:: MAX_PARALLEL_BUILD_JOBS
+
+.. autofunction:: as_vhdl_literal
+
+.. autofunction:: as_sv_literal
 
 .. envvar:: GUI
 
@@ -360,6 +275,23 @@ Discovering Tests
     Name of the file in which xUnit XML test results are to be stored.
 
     .. versionadded:: 1.3
+
+.. envvar:: COCOTB_RESULTS_RELATIVE_TO
+
+    Type: :ref:`env-string`
+
+    A hint for cocotb how to convert absolute paths to relative ones. Used in report generators like :ref:`junit`.
+
+    .. versionadded:: 2.1
+
+.. envvar:: COCOTB_RESULTS_ATTACHMENTS
+
+    Type: :ref:`env-list`
+
+    List of absolute paths to files (comma ``,`` separated) that will be included as file attachments in generated
+    reports like :ref:`junit`.
+
+    .. versionadded:: 2.1
 
 .. envvar:: COCOTB_REWRITE_ASSERTION_FILES
 
@@ -932,7 +864,7 @@ Other Runtime Information
     Leading and trailing whitespace are automatically discarded.
 
     The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
-    and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
+    and is also passed to all cocotb tests as the first and only parameter (often called ``dut``).
 
     .. versionchanged:: 1.6 Strip leading and trailing whitespace
 
