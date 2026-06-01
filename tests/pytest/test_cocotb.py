@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -12,8 +13,10 @@ from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
 
-tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")
+pytest_dir = Path(__file__).resolve().parent
+tests_dir = pytest_dir.parent
+sim_build = pytest_dir / "sim_build"
+sample_module_dir = tests_dir / "designs" / "sample_module"
 
 module_name = [
     "test_async_coroutines",
@@ -38,16 +41,14 @@ hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
 vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
 if hdl_toplevel_lang == "verilog":
-    sources = [os.path.join(tests_dir, "designs", "sample_module", "sample_module.sv")]
+    sources = [sample_module_dir / "sample_module.sv"]
     gpi_interfaces = ["vpi"]
     sim = os.getenv("SIM", "icarus")
 else:
     sources = [
-        os.path.join(
-            tests_dir, "designs", "sample_module", "sample_module_package.vhdl"
-        ),
-        os.path.join(tests_dir, "designs", "sample_module", "sample_module_1.vhdl"),
-        os.path.join(tests_dir, "designs", "sample_module", "sample_module.vhdl"),
+        sample_module_dir / "sample_module_package.vhdl",
+        sample_module_dir / "sample_module_1.vhdl",
+        sample_module_dir / "sample_module.vhdl",
     ]
     gpi_interfaces = [vhdl_gpi_interfaces]
     sim = os.getenv("SIM", "nvc")
@@ -62,7 +63,7 @@ elif sim == "nvc":
     compile_args = ["--std=08"]
 
 hdl_toplevel = "sample_module"
-sys.path.insert(0, os.path.join(tests_dir, "test_cases", "test_cocotb"))
+sys.path.insert(0, str(tests_dir / "test_cases" / "test_cocotb"))
 
 # test_timing_triggers.py requires a 1ps time precision.
 timescale = ("1ps", "1ps")

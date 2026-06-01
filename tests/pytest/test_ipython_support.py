@@ -16,8 +16,8 @@ if sys.platform != "win32":
 
 pytestmark = pytest.mark.simulator_required
 
-tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sample_module_dir = os.path.join(tests_dir, "designs", "sample_module")
+tests_dir = Path(__file__).resolve().parent.parent
+sample_module_dir = tests_dir / "designs" / "sample_module"
 sim = os.getenv(
     "SIM",
     "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
@@ -27,7 +27,7 @@ sim = os.getenv(
 def spawn_make(env: dict[str, str]):
     return spawn(
         "make",
-        ["-C", sample_module_dir],
+        ["-C", str(sample_module_dir)],
         env=env,
         encoding="utf-8",
         timeout=90,
@@ -70,14 +70,14 @@ def test_ipython_support_interactive(tmp_path: Path) -> None:
             "COCOTB_TEST_MODULES": "cocotb_tools.ipython_support",
             "IPYTHONDIR": str(tmp_path / "ipython"),
             "PATH": os.pathsep.join(
-                [os.path.dirname(sys.executable), os.environ.get("PATH", "")]
+                [str(Path(sys.executable).parent), os.environ.get("PATH", "")]
             ),
             "TERM": "dumb",
         }
     )
 
     subprocess.run(
-        ["make", "-C", sample_module_dir, "clean"],
+        ["make", "-C", str(sample_module_dir), "clean"],
         env=env,
         check=True,
         stdout=subprocess.DEVNULL,

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import find_libpython
 import pytest
@@ -22,9 +23,12 @@ from cocotb_tools.runner import (
 
 pytestmark = pytest.mark.simulator_required
 
-tests_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sim_build = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sim_build")
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
+pytest_dir = Path(__file__).resolve().parent
+tests_dir = pytest_dir.parent
+sim_build = pytest_dir / "sim_build"
+runner_design_dir = tests_dir / "designs" / "runner"
+basic_hierarchy_module_dir = tests_dir / "designs" / "basic_hierarchy_module"
+sys.path.insert(0, str(tests_dir / "pytest"))
 
 sim = os.getenv(
     "SIM",
@@ -113,32 +117,31 @@ def test_runner(parameters, pre_cmd, clean_build):
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
 
     if hdl_toplevel_lang == "verilog":
-        sources = [os.path.join(tests_dir, "designs", "runner", "runner.sv")]
+        sources = [runner_design_dir / "runner.sv"]
         gpi_interfaces = ["vpi"]
     else:
-        sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
+        sources = [runner_design_dir / "runner.vhdl"]
         gpi_interfaces = [vhdl_gpi_interfaces]
 
     runner = get_runner(sim)
     compile_args = [VHDL("-v93")] if sim == "xcelium" else []
 
     # Pre-make build directory and test file for clean build assertions
-    build_dir = (
-        sim_build
-        + "/test_runner/"
-        + "_".join("{}={}".format(*i) for i in parameters.items())
+    build_dir_name = (
+        "_".join(f"{key}={value}" for key, value in parameters.items())
         + ("_pre_cmd" if pre_cmd is not None else "")
         + ("_clean" if clean_build else "")
     )
-    os.makedirs(build_dir, exist_ok=True)
-    open(build_dir + "/clean_test_file", "a").close()
+    build_dir = sim_build / "test_runner" / build_dir_name
+    build_dir.mkdir(parents=True, exist_ok=True)
+    (build_dir / "clean_test_file").touch()
 
     runner.build(
         sources=sources,
         hdl_toplevel="runner",
         parameters=parameters,
         defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
-        includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
+        includes=[basic_hierarchy_module_dir],
         build_args=compile_args,
         clean=clean_build,
         build_dir=build_dir,
@@ -155,25 +158,25 @@ def test_runner(parameters, pre_cmd, clean_build):
     # Assert pre_cmd result. Questa only, at the moment
     if sim == "questa":
         if pre_cmd is not None:
-            assert os.path.isfile(build_dir + "/pre_cmd_test_file")
+            assert (build_dir / "pre_cmd_test_file").is_file()
         else:
-            assert not os.path.isfile(build_dir + "/pre_cmd_test_file")
+            assert not (build_dir / "pre_cmd_test_file").is_file()
 
     # In case clean_build runner.build() must purge test directory completely,
     # with the test file inside
     if clean_build:
-        assert not os.path.isfile(build_dir + "/clean_test_file")
+        assert not (build_dir / "clean_test_file").is_file()
     else:
-        assert os.path.isfile(build_dir + "/clean_test_file")
+        assert (build_dir / "clean_test_file").is_file()
 
 
 def test_missing_libpython(monkeypatch):
     hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     if hdl_toplevel_lang == "verilog":
-        hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.sv")]
+        hdl_sources = [runner_design_dir / "runner.sv"]
         gpi_interfaces = ["vpi"]
     else:
-        hdl_sources = [os.path.join(tests_dir, "designs", "runner", "runner.vhdl")]
+        hdl_sources = [runner_design_dir / "runner.vhdl"]
         gpi_interfaces = [os.getenv("VHDL_GPI_INTERFACE", None)]
 
     sim_tool = os.getenv(
@@ -186,16 +189,16 @@ def test_missing_libpython(monkeypatch):
         "WIDTH_OUT": "8",
     }
     build_args = [VHDL("-v93")] if sim_tool == "xcelium" else []
-    build_dir = os.path.join(sim_build, "test_missing_libpython")
+    build_dir = sim_build / "test_missing_libpython"
 
-    os.makedirs(build_dir, exist_ok=True)
+    build_dir.mkdir(parents=True, exist_ok=True)
 
     sim_runner.build(
         sources=hdl_sources,
         hdl_toplevel="runner",
         parameters=sim_params,
         defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
-        includes=[os.path.join(tests_dir, "designs", "basic_hierarchy_module")],
+        includes=[basic_hierarchy_module_dir],
         build_args=build_args,
         build_dir=build_dir,
     )

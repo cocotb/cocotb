@@ -124,6 +124,7 @@ extend-select = [
     "G",        # flake8-logging-format
     "ISC",      # implicit string concat
     "TC",       # flake8-typechecking
+    "PTH",      # flake8-use-pathlib
     "SIM103",   # return the condition directly
     "SIM300",   # yoda conditions
     "RUF100",   # unused noqa
@@ -151,6 +152,14 @@ ignore = [
     "TC001",   # typing-only first party import
     "TC002",   # typing-only third party import
     "TC003",   # typing-only standard library import
+    "PTH123",  # Path.open() over open() (preference)
+    "PTH207",  # Path.glob() over glob.glob() (preference)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# This file will be deleted soon, so who cares.
+"cocotb_build_libs.py" = [
+    "PTH",
 ]
 
 [tool.ruff.lint.isort]
