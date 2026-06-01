@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
 import sys
 
 import pytest
@@ -23,7 +22,7 @@ from test_cocotb import (
 from cocotb_tools.runner import get_runner
 
 pytestmark = pytest.mark.simulator_required
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
+sys.path.insert(0, str(tests_dir / "pytest"))
 
 # test_timing_triggers.py requires a 1ps time precision.
 timescale = ("1ps", "1ps")

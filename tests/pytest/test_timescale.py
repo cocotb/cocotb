@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 import pytest
 from test_cocotb import (
@@ -20,7 +21,7 @@ from test_cocotb import (
 from cocotb.simtime import _get_log_time_scale
 from cocotb_tools.runner import get_runner
 
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
+sys.path.insert(0, str(tests_dir / "pytest"))
 
 cocotb_test_contents = """
 import cocotb
@@ -39,16 +40,17 @@ async def check_timescale(dut):
 )
 @pytest.mark.parametrize("precision", ["fs", "ps", "ns", "us", "ms", "s"])
 def test_precision(precision):
-    build_dir = os.path.join(sim_build, f"test_timescale_{precision}")
+    build_dir = sim_build / f"test_timescale_{precision}"
 
     timescale = (f"1{precision}", f"1{precision}")
     precision_log = _get_log_time_scale(precision if precision != "s" else "sec")
 
     with tempfile.TemporaryDirectory() as d:
-        sys.path.insert(0, d)
-        test_module_path = os.path.join(d, "test_precision.py")
-        test_module = os.path.basename(os.path.splitext(test_module_path)[0])
-        with open(test_module_path, "w") as f:
+        temp_dir = Path(d)
+        sys.path.insert(0, str(temp_dir))
+        test_module_path = temp_dir / "test_precision.py"
+        test_module = test_module_path.stem
+        with test_module_path.open("w") as f:
             f.write(cocotb_test_contents.format(precision=precision_log))
             f.flush()
 

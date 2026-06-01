@@ -24,8 +24,8 @@ from cocotb.triggers import ClockCycles
 from cocotb_tools.runner import get_runner
 from cocotb_tools.sim_versions import VerilatorVersion
 
-sys.path.insert(0, os.path.join(tests_dir, "pytest"))
-test_module = os.path.basename(os.path.splitext(__file__)[0])
+sys.path.insert(0, str(tests_dir / "pytest"))
+test_module = Path(__file__).stem
 sim = os.getenv(
     "SIM",
     "icarus" if os.getenv("TOPLEVEL_LANG", "verilog") == "verilog" else "nvc",
@@ -77,18 +77,18 @@ def run_simulation(sim, extra_build_args=None, test_args=None):
 def test_wave_dump():
     run_simulation(sim=sim)
     if sim == "icarus":
-        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
+        dumpfile_path = sim_build / f"{hdl_toplevel}.fst"
     elif sim == "verilator":
-        dumpfile_path = os.path.join(sim_build, "dump.vcd")
+        dumpfile_path = sim_build / "dump.vcd"
     elif sim == "xcelium":
-        dumpfile_path = os.path.join(sim_build, "cocotb_waves.shm", "cocotb_waves.trn")
+        dumpfile_path = sim_build / "cocotb_waves.shm" / "cocotb_waves.trn"
     elif sim == "nvc":
-        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.fst")
+        dumpfile_path = sim_build / f"{hdl_toplevel}.fst"
     elif sim == "ghdl":
-        dumpfile_path = os.path.join(sim_build, f"{hdl_toplevel}.ghw")
+        dumpfile_path = sim_build / f"{hdl_toplevel}.ghw"
     else:
         raise RuntimeError("Not a supported simulator")
-    assert os.path.exists(dumpfile_path)
+    assert dumpfile_path.exists()
 
 
 skip_saif_dump_test = True
@@ -112,10 +112,10 @@ if sim == "verilator":
 def test_saif_dump():
     run_simulation(sim=sim, extra_build_args=["--trace-saif"])
     if sim == "verilator":
-        dumpfile_path = os.path.join(sim_build, "dump.saif")
+        dumpfile_path = sim_build / "dump.saif"
     else:
         raise RuntimeError("Not a supported simulator")
-    assert os.path.exists(dumpfile_path)
+    assert dumpfile_path.exists()
 
 
 @pytest.mark.simulator_required

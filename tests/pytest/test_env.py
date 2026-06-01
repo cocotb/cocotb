@@ -98,13 +98,13 @@ def test_env_bool_invalid(monkeypatch: MonkeyPatch) -> None:
 def test_env_path_empty(monkeypatch: MonkeyPatch) -> None:
     """Test :func:`cocotb_tools._env.as_path` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_PATH", "")
-    assert _env.as_path("TEST_PATH") == Path(".").resolve()
+    assert _env.as_path("TEST_PATH") == Path().resolve()
 
 
 def test_env_path_undefined(monkeypatch: MonkeyPatch) -> None:
     """Test :func:`cocotb_tools._env.as_path` when environment variable is undefined."""
     monkeypatch.delenv("TEST_PATH", raising=False)
-    assert _env.as_path("TEST_PATH") == Path(".").resolve()
+    assert _env.as_path("TEST_PATH") == Path().resolve()
 
 
 def test_env_path_default(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:

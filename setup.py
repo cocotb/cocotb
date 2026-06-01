@@ -10,14 +10,15 @@ import logging
 import os
 import sys
 from io import StringIO
-from os import path, walk
+from os import walk
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
 # Note: cocotb is not installed properly yet and is missing dependencies and binaries
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
 # The below line is necessary for PEP517 support
-sys.path.append(path.dirname(__file__))
+sys.path.append(str(Path(__file__).parent))
 
 from cocotb_build_libs import build_ext, get_ext
 
@@ -39,7 +40,7 @@ def package_files(directory):
     paths = []
     for fpath, _, filenames in walk(directory):
         for filename in filenames:
-            paths.append(path.join("..", "..", fpath, filename))
+            paths.append(str(Path("..", "..", fpath, filename)))
     return paths
 
 
