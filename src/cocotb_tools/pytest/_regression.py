@@ -2,18 +2,21 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Pytest regression manager for cocotb."""
+"""Pytest regression manager for cocotb.
+
+This module integrates cocotb with pytest, allowing pytest to collect, configure, run, and report on cocotb simulation tests.
+"""
 
 from __future__ import annotations
 
 import bdb
 import hashlib
-import inspect
 import random
 from collections import deque
 from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
+from inspect import isasyncgenfunction, iscoroutinefunction
 from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from pathlib import Path
@@ -27,6 +30,7 @@ from pytest import (
     CallInfo,
     Class,
     Collector,
+    CollectReport,
     Config,
     ExceptionInfo,
     ExitCode,
@@ -46,15 +50,19 @@ import cocotb._shutdown
 import cocotb._test_manager
 import cocotb.simulator
 import cocotb.types._resolve
+from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
+from cocotb.handle import SimHandleBase
 from cocotb.simtime import TimeUnit, get_sim_time
-from cocotb_tools._pytest._fixture import (
+from cocotb_tools.pytest._collector import is_dut_fixture
+from cocotb_tools.pytest._fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
 )
-from cocotb_tools._pytest._test import RunningTestSetup
+from cocotb_tools.pytest._test import RunningTestSetup
+from cocotb_tools.pytest._utils import to_list
 
 RETRIES: int = 10
 INTERVAL: float = 0.1  # seconds
@@ -65,11 +73,17 @@ When = Literal["setup", "call", "teardown"]
 
 
 class SimFailure(BaseException):
-    """A Test failure due to simulator failure. Used internally."""
+    """An exception raised when a test fails due to simulator failure.
+
+    This is used internally to signal that the simulator ended or failed unexpectedly during a test run.
+    """
 
 
 def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
-    """Wrap class method, capture exception, notify pytest and plugins, finish simulation."""
+    """A decorator that wraps a regression manager method to handle exceptions.
+
+    It catches any raised `BaseException`, notifies pytest and its plugins about the exception, and terminates the simulator session.
+    """
 
     @wraps(method)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
@@ -84,7 +98,12 @@ def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class RegressionManager:
-    """Pytest regression manager for cocotb."""
+    """The regression manager for running cocotb tests via pytest.
+
+    This class acts as a pytest plugin within the simulation process.
+    It manages the pytest session, intercepts item collection, sets up fixtures (including coroutine fixtures),
+    schedules test execution on the cocotb scheduler, and forwards test reports to the main pytest process.
+    """
 
     _timer1 = Timer(1)
 
@@ -102,37 +121,45 @@ class RegressionManager:
         relative_to: Path | str | None = None,
         attachments: Iterable[Path | str] | None = None,
     ) -> None:
-        """Create new instance of regression manager for cocotb tests.
+        """Initialize a new regression manager instance for cocotb tests.
 
         Args:
-            args: Command line arguments for pytest.
-            nodeid: Node identifier of cocotb runner.
-            toplevel: Name of HDL top level design.
-            xmlpath: Override the ``--junit-xml`` option.
-            keywords: List of cocotb runner keywords.
+            *args: Command line arguments for pytest.
+            nodeid: Node identifier of the simulation process.
+            toplevel: Name of the HDL top-level design.
+            xmlpath: Path to write the JUnit XML report, overriding the default ``--junit-xml`` option.
+            keywords: List of additional keywords for filtering cocotb tests.
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
-            invocation_dir: Path to directory location from where pytest was invoked.
-            reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
-            seed: Initialization value for the random number generator. If not provided, use current timestamp.
-            relative_to: If provided, all absolute paths will be converted to relative ones.
-            attachments: List of file attachments to be included in created test reports.
+            invocation_dir: Path to the directory from which pytest was originally invoked.
+            reporter_address: IPC address (Unix socket, Windows pipe, TCP, etc.) of the test reporter.
+            seed: Initialization value for the random number generator. If not provided, the current timestamp is used.
+            relative_to: If provided, absolute paths in reports are converted to be relative to this path.
+            attachments: List of file attachments to be included in the test reports.
         """
         self._toplevel: str = toplevel
-        """Name of top level."""
+        """Name of the top-level HDL design."""
+
+        self._test: Test | TestGenerator
+        """The currently executing cocotb test object."""
 
         self._running_test: TestManager
-        """Current running test: "setup", "call" or "teardown"."""
+        """The test manager for the currently active phase ("setup", "call", or "teardown")."""
 
         self._setups: deque[TestManager] = deque[TestManager]()
-        """List of test setups that were populated from the :py:func:`pytest.hookspec.pytest_fixture_setup` hook."""
+        """Queue of test setups collected from the :func:`pytest.hookspec.pytest_fixture_setup` hook."""
 
         self._call: TestManager | None = None
-        """Test call that was populated from the :py:func:`pytest.hookspec.pytest_runtest_call` hook."""
+        """The test call manager created in the :func:`pytest.hookspec.pytest_runtest_call` hook, or ``None``."""
 
         self._teardowns: deque[TestManager] = deque[TestManager]()
-        """List of test teardowns that were populated from registered setup finalizers via
-        :py:meth:`pytest.FixtureRequest.addfinalizer`` method.
+        """Queue of test teardowns registered via setup finalizers using the
+        :meth:`pytest.FixtureRequest.addfinalizer` method.
         """
+
+        if nodeid.startswith("::cocotb::") and nodeid.endswith("::simulation"):
+            nodeid = nodeid.removesuffix("simulation")
+        else:
+            nodeid += "::"
 
         self._scheduled: bool = False
         self._index: int = 0
@@ -188,7 +215,7 @@ class RegressionManager:
         # Get log file option from command line or from configuration file(s)
         log_file: str | None = config.getoption("log_file") or config.getini("log_file")
 
-        # Unify it to current working directory where cocotb runner is running to avoid overriding it
+        # Unify it to current working directory where simulation process is running to avoid overriding it
         if log_file:
             config.option.log_file = Path(log_file).name
 
@@ -212,31 +239,35 @@ class RegressionManager:
 
     @finish_on_exception
     def start_regression(self) -> None:
-        """Start regression manager."""
+        """Start the pytest regression run.
+
+        This triggers the pytest lifecycle hooks: session start, collection, and the test loop.
+        """
         self._session.config.hook.pytest_sessionstart(session=self._session)
         self._session.config.hook.pytest_collection(session=self._session)
         self._session.config.hook.pytest_runtestloop(session=self._session)
 
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
-        """Called after the :py:class:`pytest.Session` object has been created and
-        before performing collection and entering the run test loop.
+        """Retrieve the logging plugin after the pytest Session object is created.
+
+        This is called before performing collection and entering the runtest loop.
 
         Args:
-            session: The pytest session object.
+            session: The active pytest Session object.
         """
         self._logging_plugin = session.config.pluginmanager.get_plugin("logging-plugin")
 
     @hookimpl(tryfirst=True)
     def pytest_report_header(self, config: Config, start_path: Path) -> str | list[str]:
-        """Return a string or list of strings to be displayed as header info for terminal reporting.
+        """Return header information about cocotb and the simulator for terminal reporting.
 
         Args:
             config: The pytest config object.
-            start_path: The starting dir.
+            start_path: The starting directory path.
 
         Returns:
-            Lines returned by a plugin are displayed before those of plugins which ran before it.
+            A list of strings containing simulator name/version, cocotb version, random seed, and top-level design name.
         """
         return [
             f"Running on {cocotb.SIM_NAME} version {cocotb.SIM_VERSION}",
@@ -245,27 +276,102 @@ class RegressionManager:
             f"Top level set to {self._toplevel!r}",
         ]
 
-    @hookimpl(tryfirst=True, wrapper=True)
+    @hookimpl(wrapper=True)
     def pytest_pycollect_makeitem(
         self, collector: Module | Class, name: str, obj: object
     ) -> Generator[
         None,
-        Item | Collector | list[Item | Collector] | None,
-        list[Item | Collector] | None,
+        None | Item | Collector | list[Item | Collector],
+        None | Item | Collector | list[Item | Collector],
     ]:
-        result: Item | Collector | list[Item | Collector] | None = yield
+        """Intercept pytest item collection to extract and wrap cocotb tests.
 
-        if result is None:
-            return None
+        Args:
+            collector: The pytest Module or Class collector.
+            name: The name of the python object within the collector.
+            obj: The python object to collect.
 
-        items: Iterable[Item | Collector] = (
-            result if isinstance(result, list) else (result,)
-        )
+        Yields:
+            None.
 
-        return list(self._collect(items))
+        Returns:
+            The collected and processed test item(s).
+        """
+        items: None | Item | Collector | list[Item | Collector] = yield
+
+        if items is not None:
+            items = list(self.collect_items(to_list(items)))
+
+        return items
+
+    def collect_items(
+        self, items: Iterable[Item | Collector]
+    ) -> Generator[Item | Collector, None, None]:
+        """Filter and collect cocotb test coroutines.
+
+        This filters the collected items, updating any that are coroutines to be recognized
+        as cocotb tests and resolving their DUT fixtures.
+
+        Args:
+            items: An iterable of collected pytest items or collectors.
+
+        Yields:
+            Each collected and updated test item.
+        """
+        for item in items:
+            if isinstance(item, Function) and iscoroutinefunction(item.function):
+                self.update_item(item)
+                yield item
+
+    def update_item(self, item: Function) -> None:
+        """Configure a collected pytest function item to run as a cocotb test.
+
+        This adds the required cocotb markers, updates the node ID to match the
+        simulation path, and replaces any DUT fixtures with simulation handles
+        pointing to the top-level simulator handle (`cocotb.top`).
+
+        Args:
+            item: The pytest Function item to update.
+        """
+        nodeid: str = self._nodeid
+        module: Module | None = item.getparent(Module)
+
+        if module:
+            test_module: str = module.getmodpath(includemodule=True)
+            item.extra_keyword_matches.update(
+                (test_module, f"{test_module}.{item.name}")
+            )
+            nodeid += test_module
+
+        nodeid += f".{item.name}"
+
+        item._nodeid = nodeid
+        item.add_marker("cocotb")
+        item.add_marker("cocotb_test")
+        item.extra_keyword_matches.update(self._keywords)
+
+        # Replace defined DUT fixtures with the simulation handle :data:`cocotb.top`
+        for name, fixturedefs in item._fixtureinfo.name2fixturedefs.items():
+            if fixturedefs and (name in "dut" or is_dut_fixture(fixturedefs[-1])):
+                fixturedef: FixtureDef = fixturedefs[-1]
+                func = fixturedef.func
+
+                if not iscoroutinefunction(func) and not isasyncgenfunction(func):
+                    fixturedef.func = cocotb_top  # type: ignore
+                    fixturedef.argnames = ()  # type: ignore
+                    fixturedef.cached_result = (cocotb.top, None, None)
+                    item._fixtureinfo.name2fixturedefs[name] = (fixturedef,)
 
     @hookimpl(tryfirst=True)
     def pytest_runtestloop(self, session: Session) -> bool:
+        """Run the pytest test loop for the collected cocotb test items.
+
+        Args:
+            session: The active pytest Session object.
+
+        Returns:
+            Always returns True to signal that the loop has been handled.
+        """
         if (
             session.testsfailed
             and not session.config.option.continue_on_collection_errors
@@ -284,11 +390,16 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_protocol(self, item: Item, nextitem: Item | None) -> bool:
-        """Perform the runtest protocol for a single test item.
+        """Execute the pytest runtest protocol for a single test item.
+
+        This starts the test logging lifecycle and kicks off the test setup.
 
         Args:
-            item: Test item for which the runtest protocol is performed.
-            nextitem: The scheduled-to-be-next test item (or ``None`` if this is the end my friend).
+            item: The test item to run.
+            nextitem: The next scheduled test item, or ``None`` if this is the last test.
+
+        Returns:
+            Always returns True to indicate that the protocol is handled.
         """
         item.ihook.pytest_runtest_logstart(nodeid=item.nodeid, location=item.location)
         self._setup(item=item, nextitem=nextitem)
@@ -297,29 +408,15 @@ class RegressionManager:
 
     @property
     def _item(self) -> Item:
-        """Get current pytest item (test)."""
+        """The current pytest Item instance being executed."""
         return self._session.items[self._index]
 
     @property
     def _nextitem(self) -> Item | None:
-        """Get next pytest item (test) needed by test teardown phase."""
+        """The next pytest Item instance in the session queue, or ``None``."""
         index: int = self._index + 1
 
         return self._session.items[index] if index < len(self._session.items) else None
-
-    def _collect(
-        self, items: Iterable[Item | Collector]
-    ) -> Generator[Item | Collector, None, None]:
-        for item in items:
-            if not isinstance(item, Function):
-                yield item
-
-            elif "cocotb_test" in item.keywords and inspect.iscoroutinefunction(
-                item.function
-            ):
-                item.extra_keyword_matches.update(self._keywords)
-
-                yield item
 
     def _call_and_report(
         self,
@@ -328,16 +425,16 @@ class RegressionManager:
         func: Callable[..., None] | None = None,
         **kwargs: object,
     ) -> TestReport:
-        """Invoke test setup, call, teardown and generate test report from it.
+        """Run a test phase (setup, call, or teardown) and generate a test report.
 
         Args:
-            item: The pytest item.
-            when: Test setup, call or teardown.
-            func: Test function that will be called.
-            kwargs: Additional named arguments that will be passed to the test function.
+            item: The pytest test Item.
+            when: The current phase ("setup", "call", or "teardown").
+            func: The callable to execute. If not provided, invokes the default pytest hook for the phase.
+            **kwargs: Additional keyword arguments passed to `func`.
 
         Returns:
-            Test report.
+            A :class:`pytest.TestReport` object representing the outcome of the phase.
         """
         if not func:
             self._logging_root_level = getLogger().level
@@ -372,14 +469,16 @@ class RegressionManager:
         return report
 
     def _completed(self, item: Item, when: When) -> TestReport:
-        """Part of test setup, call or teardown completed callback.
+        """Handle the completion of a test phase.
+
+        Updates the report log sections and generates the final test report for the phase.
 
         Args:
-            item: The pytest item.
-            when: Test "setup", "call" or "teardown".
+            item: The pytest test Item.
+            when: The finished phase ("setup", "call", or "teardown").
 
         Returns:
-            Test report.
+            A :class:`pytest.TestReport` object for the completed phase.
         """
         self._update_report_section(item=item, when=when)
 
@@ -389,7 +488,7 @@ class RegressionManager:
 
     @finish_on_exception
     def _setup_completed(self) -> None:
-        """Test setup completed callback."""
+        """Callback executed when the test setup phase is complete."""
         item: Item = self._item
         nextitem: Item | None = self._nextitem
 
@@ -399,12 +498,16 @@ class RegressionManager:
     def _setup(
         self, item: Item, nextitem: Item | None = None, report: TestReport | None = None
     ) -> None:
-        """Test setup.
+        """Execute the setup phase and subsequent test execution phases.
+
+        This runs each collected fixture setup coroutine sequentially. Once all
+        fixtures are set up successfully, it proceeds to call the test function itself.
+        If any setup fails, it skips to teardown.
 
         Args:
-            item: The pytest item.
-            nextitem: The next pytest item. ``None`` if there are no more pytest items.
-            report: Test report.
+            item: The pytest test Item.
+            nextitem: The next test Item in the queue, or ``None``.
+            report: An optional pre-computed test report for the current setup step.
         """
         if not report:
             self._setups.clear()
@@ -432,7 +535,7 @@ class RegressionManager:
 
     @finish_on_exception
     def _call_completed(self) -> None:
-        """Test call completed callback."""
+        """Callback executed when the main test function execution phase is complete."""
         item: Item = self._item
         nextitem: Item | None = self._nextitem
 
@@ -442,7 +545,7 @@ class RegressionManager:
 
     @finish_on_exception
     def _teardown_completed(self) -> None:
-        """Test teardown completed callback."""
+        """Callback executed when a test teardown finalizer phase is complete."""
         item: Item = self._item
         nextitem: Item | None = self._nextitem
 
@@ -452,12 +555,15 @@ class RegressionManager:
     def _teardown(
         self, item: Item, nextitem: Item | None = None, report: TestReport | None = None
     ) -> None:
-        """Test teardown.
+        """Execute the teardown phase for a test item.
+
+        This runs registered finalizer and teardown coroutines sequentially. After
+        completing teardown, it advances the test runner to the next test item.
 
         Args:
-            item: The pytest item.
-            nextitem: The next pytest item. ``None`` if there are no more pytest items.
-            report: Test report.
+            item: The pytest test Item.
+            nextitem: The next test Item in the queue, or ``None``.
+            report: An optional pre-computed test report for the current teardown step.
         """
         if not report:
             self._teardowns.clear()
@@ -479,18 +585,25 @@ class RegressionManager:
             self._finish()
 
     def _get_item(self) -> tuple[Item, Item | None]:
+        """Get the current and next pytest items."""
         return self._item, self._nextitem
 
     def _pop_item(self) -> tuple[Item, Item | None]:
+        """Advance to the next test item and return the new current and next items."""
         self._index += 1
 
         return self._get_item()
 
     def _notify_exception(self, excinfo: ExceptionInfo) -> None:
+        """Notify pytest and its plugins about an exception, setting the session exit status."""
         self._session.exitstatus = ExitCode.INTERNAL_ERROR
         self._session.config.notify_exception(excinfo, self._session.config.option)
 
     def _finish(self) -> None:
+        """Finalize the pytest session and terminate the simulator.
+
+        This invokes the session finish hooks, unconfigures pytest, and stops the simulator.
+        """
         if self._finished:  # this method must be called once
             return
 
@@ -506,10 +619,13 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_setup(self, item: Item) -> None:
-        """Called to perform the setup phase for a test item.
+        """Perform the setup phase for a test item.
+
+        This saves the current logging state and initializes the random seed based
+        on the test node ID and the master seed to ensure reproducible runs.
 
         Args:
-            item: The pytest item (test function).
+            item: The pytest test Item.
         """
         self._save_logging_state()
 
@@ -529,20 +645,25 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_call(self, item: Item) -> None:
-        """Called to run the test for test item (the call phase).
+        """Run the actual test code for a test item.
+
+        Saves the current logging state before starting.
 
         Args:
-            item: The pytest item (test function).
+            item: The pytest test Item.
         """
         self._save_logging_state()
 
     @hookimpl(tryfirst=True)
     def pytest_runtest_teardown(self, item: Item, nextitem: Item | None = None) -> None:
-        """Called to perform the teardown phase for a test item.
+        """Perform the teardown phase for a test item.
+
+        This restores the logging state and resets the random seed generators
+        back to their initial values.
 
         Args:
-            item: The pytest item (test function).
-            nextitem: The scheduled-to-be-next pytest item (next test function).
+            item: The pytest test Item.
+            nextitem: The next scheduled test Item, or ``None``.
         """
         self._save_logging_state()
 
@@ -557,10 +678,22 @@ class RegressionManager:
         fixturedef: FixtureDef[Any],
         request: Any,  # NOTE: type not available in public pytest API
     ) -> object | None:
-        """Execution of fixture setup."""
+        """Execute the setup phase for a fixture.
+
+        If the fixture function is an asynchronous generator or a coroutine,
+        it wraps and schedules it via cocotb's test manager. Otherwise, it allows
+        pytest to perform the standard synchronous fixture setup.
+
+        Args:
+            fixturedef: The fixture definition.
+            request: The fixture request.
+
+        Returns:
+            ``True`` if the fixture is asynchronous and handled by cocotb, otherwise ``None``.
+        """
         fixturefunc = fixturedef.func
-        is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
-        is_async_generator: bool = inspect.isasyncgenfunction(fixturefunc)
+        is_coroutine: bool = iscoroutinefunction(fixturefunc)
+        is_async_generator: bool = isasyncgenfunction(fixturefunc)
 
         if not is_coroutine and not is_async_generator:
             return None
@@ -602,7 +735,15 @@ class RegressionManager:
         fixturedef: FixtureDef[Any],
         request: Any,
     ) -> Callable[[], Any]:
-        """Test setup with teardown."""
+        """Wrap an asynchronous generator fixture for setup and teardown.
+
+        Args:
+            fixturedef: The fixture definition.
+            request: The fixture request.
+
+        Returns:
+            A callable that runs the setup portion of the async generator and registers its finalizer.
+        """
 
         async def func() -> Any:
             self._restore_logging_state()
@@ -626,7 +767,15 @@ class RegressionManager:
     def _setup_async_function(
         self, fixturedef: FixtureDef[Any], request: Any
     ) -> Callable[[], Any]:
-        """Test setup-only without teardown."""
+        """Wrap a coroutine fixture (setup-only, no teardown).
+
+        Args:
+            fixturedef: The fixture definition.
+            request: The fixture request.
+
+        Returns:
+            A callable that resolves fixture arguments and runs the coroutine fixture.
+        """
 
         async def func() -> Any:
             self._restore_logging_state()
@@ -642,10 +791,20 @@ class RegressionManager:
 
     @hookimpl(tryfirst=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
-        testfunction = pyfuncitem.obj
+        """Execute the test function.
 
-        if not inspect.iscoroutinefunction(testfunction):
-            return None
+        Wraps the test coroutine, resolves any fixture arguments, handles timeouts
+        if specified, and schedules the test execution using cocotb's test manager.
+
+        Args:
+            pyfuncitem: The pytest Function test item.
+
+        Returns:
+            ``True`` to indicate the call has been handled.
+        """
+        testfunction = pyfuncitem.obj
+        self._test = cocotb.test(testfunction)
+        self._test.name = pyfuncitem.name
 
         timeout: tuple[float, TimeUnit] | None = _get_timeout(pyfuncitem)
 
@@ -675,29 +834,33 @@ class RegressionManager:
     def pytest_runtest_makereport(
         self, item: Item, call: CallInfo[None]
     ) -> Generator[None, TestReport, TestReport]:
-        """Called to create a :class:`~pytest.TestReport` for each of
-        the setup, call and teardown runtest phases of a test item.
+        """Create a :class:`~pytest.TestReport` for the setup, call, and teardown phases of a test item.
 
-        Created test report will contain additional properties about simulation and cocotb:
+        The generated test report will contain additional properties about the simulation and cocotb:
 
-        * `cocotb`: Mark test report as cocotb test report. Always set to True.
-        * `sim_time_start`: Simulation time when specific test phase started.
-        * `sim_time_stop`: Simulation time when specific test phase ended.
-        * `sim_time_duration`: Simulation duration (stop - start) for specific test phase.
-        * `sim_time_unit`: Time unit for simulation time. Possible values: `step`, `fs`, `ps`,
-          `ns`, `us`, `ms` or `sec` (seconds).
-        * `runner_nodeid`: Node identifier of cocotb runner (test to run simulator by pytest parent process).
-        * `random_seed`: Value of seed used for randomization.
+        * ``cocotb``: Marks the report as a cocotb test report. Always set to ``True``.
+        * ``sim_time_start``: The simulation time when the test phase started.
+        * ``sim_time_stop``: The simulation time when the test phase ended.
+        * ``sim_time_duration``: The simulation duration (stop - start) for the test phase.
+        * ``sim_time_ratio``: The ratio of real time to simulation time.
+        * ``sim_time_unit``: The time unit for the simulation. Possible values include: ``step``,
+          ``fs``, ``ps``, ``ns``, ``us``, ``ms``, or ``sec``.
+        * ``random_seed``: The seed value used for randomization.
+        * ``file``: The file path of the test.
+        * ``line``: The line number of the test.
 
-        Above properties are accessible from generated test report and they will be available from
-        various generated test report outputs like JUnit XML report.
+        These properties are attached to the test report object and are included in outputs such as the
+        JUnit XML report.
 
         Args:
-            item: The item (test).
-            call: The :class:`~pytest.CallInfo` for the test phase (setup, call, teardown).
+            item: The pytest test Item.
+            call: The :class:`~pytest.CallInfo` for the active test phase.
+
+        Yields:
+            None.
 
         Returns:
-            New object of test report with additional properties about simulation and cocotb.
+            The decorated :class:`~pytest.TestReport` containing simulation metadata.
         """
         report: TestReport = yield  # get generated test report from other plugins
 
@@ -715,7 +878,6 @@ class RegressionManager:
             "sim_time_duration": sim_time_duration,
             "sim_time_ratio": sim_time_ratio,
             "sim_time_unit": self._sim_time_unit,
-            "runner_nodeid": self._nodeid,  # identify cocotb runner
             "random_seed": self._seed,
             "file": self._normalize_path(report.location[0]),
             "line": report.location[1],
@@ -747,7 +909,17 @@ class RegressionManager:
         return report
 
     @hookimpl(tryfirst=True)
+    def pytest_collectreport(self, report: CollectReport) -> None:
+        """Handle a collection report by sending it to the parent process reporter."""
+        self._send_report(report)
+
+    @hookimpl(tryfirst=True)
     def pytest_runtest_logreport(self, report: TestReport) -> None:
+        """Handle a test report by sending it to the parent process reporter."""
+        self._send_report(report)
+
+    def _send_report(self, report: CollectReport | TestReport) -> None:
+        """Serialize and send a report to the main test reporter via IPC."""
         if self._reporter_address:
             config: Config = self._session.config
 
@@ -772,12 +944,12 @@ class RegressionManager:
         request: Any,
         iterator: AsyncGenerator[Any, None],
     ) -> None:
-        """Add asynchronous test teardown.
+        """Register an asynchronous finalizer for a generator-based fixture.
 
         Args:
-            fixturedef: Definition of fixture.
-            request: Fixture request.
-            iterator: Asynchronous generator from invoked yield statement.
+            fixturedef: The fixture definition.
+            request: The fixture request.
+            iterator: The asynchronous generator representing the fixture's execution.
         """
 
         async def func() -> None:
@@ -807,16 +979,16 @@ class RegressionManager:
         fixturedef.addfinalizer(finalizer)
 
     def _save_logging_state(self) -> None:
-        """Save state of logging including log handlers and current log level."""
+        """Save the current logging configuration state, including the root logger level."""
         self._logging_level = getLogger().level
         self._logging_restored = False
 
     def _restore_logging_state(self) -> None:
-        """Restore log handlers needed by pytest capture mechanism.
+        """Restore log handlers required by pytest's output capture mechanism.
 
-        These log handlers were unnecessary removed by using context manager in pytest logging plugin.
-        Because how everything is working when using async functions, context manager exists immediately
-        after scheduling async function to cocotb scheduler.
+        These handlers are removed prematurely when the pytest logging plugin's
+        context manager exits, which happens as soon as an async function is
+        scheduled on the cocotb scheduler.
         """
         if not self._logging_restored and self._logging_plugin:
             root_logger: Logger = getLogger()
@@ -830,11 +1002,11 @@ class RegressionManager:
     def _update_report_section(
         self, item: Item, when: Literal["setup", "call", "teardown"]
     ) -> None:
-        """Update report section in item.
+        """Capture logs for the active test phase and update the report section in the test item.
 
         Args:
-            item: Test function.
-            when: Test phase.
+            item: The pytest test Item.
+            when: The active test phase.
         """
         if self._logging_plugin:
             log: str = self._logging_plugin.report_handler.stream.getvalue().strip()
@@ -852,6 +1024,7 @@ class RegressionManager:
             root_logger.removeHandler(self._logging_plugin.report_handler)
 
     def _on_sim_end(self) -> None:
+        """Handle premature simulation termination by raising a SimFailure exception."""
         try:
             raise SimFailure(
                 "cocotb expected it would shut down the simulation, but the simulation ended prematurely. "
@@ -864,10 +1037,10 @@ class RegressionManager:
             self._finish()
 
     def _start(self, running_test: TestManager) -> None:
-        """Start test setup, call or teardown.
+        """Schedule and start a test phase (setup, call, or teardown).
 
         Args:
-            running_test: Test to run.
+            running_test: The test manager instance representing the phase to execute.
         """
         self._running_test = running_test
 
@@ -878,13 +1051,14 @@ class RegressionManager:
             self._running_test.start()
 
     def _shutdown(self) -> None:
+        """Shut down the cocotb environment and stop the simulator."""
         cocotb._shutdown._shutdown()
 
         # Setup simulator finalization
         cocotb.simulator.stop_simulator()
 
     def _normalize_path(self, path: Path | str) -> Path:
-        """Resolves absolute path to path relative to COCOTB_RELATIVE_TO if possible."""
+        """Resolve an absolute path to a relative path relative to ``_relative_to`` if possible."""
 
         if not isinstance(path, Path):
             path = Path(path)
@@ -898,12 +1072,12 @@ class RegressionManager:
         return path
 
     def _normalize_paths(self, paths: Iterable[Path | str] | None) -> list[Path]:
-        """Resolves a list of paths to paths relative to COCOTB_RELATIVE_TO if possible."""
+        """Resolve a list of paths to be relative to ``_relative_to`` if possible."""
         return [self._normalize_path(path) for path in paths or () if path]
 
 
 def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:
-    """Check whether the call raised an exception that should be reported as interactive."""
+    """Check whether the exception raised during a call should trigger interactive debugging."""
     if call.excinfo is None:
         return False  # Didn't raise.
 
@@ -915,7 +1089,7 @@ def _check_interactive_exception(call: CallInfo, report: TestReport) -> bool:
 
 
 def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> None:
-    """Interactive exception using Python Debugger (pdb)."""
+    """Trigger the interactive debugger (pdb) hook for a test failure."""
     try:
         item.ihook.pytest_exception_interact(node=item, call=call, report=report)
     except Exit:
@@ -923,12 +1097,12 @@ def _interactive_exception(item: Item, call: CallInfo, report: TestReport) -> No
 
 
 def _to_timeout(duration: float, unit: TimeUnit) -> tuple[float, TimeUnit]:
-    """Helper function to extract ``*marker.args`` and ``**marker.kwargs`` to tuple."""
+    """Convert duration and unit arguments to a timeout tuple."""
     return duration, unit
 
 
 def _get_timeout(function: Function) -> tuple[float, TimeUnit] | None:
-    """Get timeout from test function."""
+    """Retrieve the cocotb timeout marker settings from a test function, if present."""
     marker: Mark | None = function.get_closest_marker("cocotb_timeout")
 
     return _to_timeout(*marker.args, **marker.kwargs) if marker else None
@@ -938,10 +1112,27 @@ def _wrap_with_timeout(
     func: Callable[..., Awaitable],
     timeout: tuple[float, TimeUnit],
 ) -> Callable[..., Awaitable]:
-    """Wrap async test function (setup, call, teardown) with timeout."""
+    """Wrap an asynchronous function with a timeout.
+
+    Args:
+        func: The asynchronous function to wrap.
+        timeout: A tuple of (duration, unit) specifying the timeout.
+
+    Returns:
+        A wrapped asynchronous function that raises a timeout exception if it runs too long.
+    """
 
     @wraps(func)
     async def wrapped(*args: object, **kwargs: object) -> Any:
         return await with_timeout(func(*args, **kwargs), timeout[0], timeout[1])
 
     return wrapped
+
+
+def cocotb_top() -> SimHandleBase:
+    """Return the handle to the top-level HDL entity/module (``cocotb.top``)."""
+    return cocotb.top
+
+
+_manager_inst: RegressionManager
+"""The global regression manager instance."""

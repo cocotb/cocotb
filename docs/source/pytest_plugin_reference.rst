@@ -16,13 +16,9 @@ Pytest Plugin Reference
 Fixtures
 ========
 
-.. module:: cocotb_tools._pytest.plugin
+.. module:: cocotb_tools.pytest.plugin
 
 .. autofixture:: dut
-
-.. autofixture:: hdl_session
-
-.. autofixture:: hdl
 
 
 .. _api-pytest-plugin-markers:
@@ -30,55 +26,77 @@ Fixtures
 Markers
 =======
 
-.. module:: cocotb_tools._pytest.mark
+.. module:: cocotb_tools.pytest.mark
 
-.. autodecorator:: cocotb_runner
+.. autodecorator:: cocotb
+
+.. autodecorator:: cocotb_simulation
 
 .. autodecorator:: cocotb_test
 
-.. autodecorator:: cocotb_timeout
+.. autodecorator:: cocotb_suffix
 
-.. autodecorator:: cocotb_library
+.. autodecorator:: cocotb_simulator
+
+.. autodecorator:: cocotb_test_modules
+
+.. autodecorator:: cocotb_toplevel
+
+.. autodecorator:: cocotb_toplevel_lang
+
+.. autodecorator:: cocotb_toplevel_library
+
+.. autodecorator:: cocotb_timeout
 
 .. autodecorator:: cocotb_sources
 
 .. autodecorator:: cocotb_defines
 
-.. autodecorator:: cocotb_includes
-
 .. autodecorator:: cocotb_parameters
-
-.. autodecorator:: cocotb_plusargs
 
 .. autodecorator:: cocotb_env
 
-.. autodecorator:: cocotb_seed
+.. autodecorator:: cocotb_includes
+
+.. autodecorator:: cocotb_plusargs
 
 .. autodecorator:: cocotb_timescale
 
-.. autodecorator:: cocotb_always
-
-.. autodecorator:: cocotb_clean
-
-.. autodecorator:: cocotb_waves
+.. autodecorator:: cocotb_build_dir
 
 .. autodecorator:: cocotb_build_args
 
 .. autodecorator:: cocotb_elab_args
 
-.. autodecorator:: cocotb_test_args
+.. autodecorator:: cocotb_sim_args
 
 .. autodecorator:: cocotb_pre_cmd
+
+.. autodecorator:: cocotb_library
+
+.. autodecorator:: cocotb_waves
+
+.. autodecorator:: cocotb_verbose
+
+.. autodecorator:: cocotb_always
+
+.. autodecorator:: cocotb_clean
+
+.. autodecorator:: cocotb_gui
+
+.. autodecorator:: cocotb_gpi_interfaces
+
+.. autodecorator:: cocotb_test_filter
 
 
 .. _api-pytest-plugin-hdl:
 
-HDL Fixture Request
+Dut Fixture Request
 ===================
 
-.. module:: cocotb_tools._pytest.hdl
+.. module:: cocotb_tools.pytest.dut
 
-.. autoclass:: HDL
+.. autoclass:: Dut
     :members:
 
 
@@ -87,8 +105,8 @@ HDL Fixture Request
 Hook Specifications
 ===================
 
-.. module:: cocotb_tools._pytest.hookspecs
+.. module:: cocotb_tools.pytest.hookspecs
 
-.. autofunction:: pytest_cocotb_make_hdl
+.. autofunction:: pytest_cocotb_dut_create
 
-.. autofunction:: pytest_cocotb_make_runner
+.. autofunction:: pytest_cocotb_dut_run
