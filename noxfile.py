@@ -250,13 +250,19 @@ def dev_test_sim(
         "pytest",
         "-s",
         "-v",
-        "tests/pytest_plugin",
+        "-p",
+        "pytester",
+        "-p",
+        "cocotb_tools.pytest.plugin",
+        "-m",
+        "simulator_required",
         "--cocotb-simulator",
         sim,
         "--cocotb-gpi-interfaces",
         gpi_interface,
         "--cocotb-toplevel-lang",
         toplevel_lang,
+        "tests/pytest_plugin",
         env=env,
     )
 
@@ -299,6 +305,21 @@ def dev_test_nosim(session: nox.Session) -> None:
         "--cov-report=",
         "-k",
         "not simulator_required",
+    )
+
+    # Run pytest with the default configuration in setup.cfg.
+    session.log("Running simulator-agnostic plugin tests with pytest")
+    session.run(
+        "pytest",
+        "-s",
+        "-v",
+        "-p",
+        "pytester",
+        "-p",
+        "cocotb_tools.pytest.plugin",
+        "-m",
+        "not simulator_required",
+        "tests/pytest_plugin",
     )
 
     session.log("All tests passed!")
