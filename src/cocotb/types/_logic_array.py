@@ -639,6 +639,8 @@ class LogicArray(AbstractMutableArray[Logic]):
                 other = LogicArray(other)
             except ValueError:
                 return False
+            except TypeError:
+                return NotImplemented
             return self == other
         else:
             return NotImplemented
