@@ -305,6 +305,7 @@ def test_equality():
     assert LogicArray("0101") != "lol"
     assert LogicArray("0101") != 123
     assert LogicArray("0101") != [7, "f", dict]
+    assert LogicArray("0101") != [object()]
     assert LogicArray("1111") == -1
     assert LogicArray("1111") == 15
     assert LogicArray("0111") != -6
