@@ -149,46 +149,45 @@ function(add_cocotb_library TARGET_NAME)
 
     set(ALL_SOURCES ${ARG_SOURCES})
     if(WIN32)
-        if(NOT "${TARGET_NAME}" STREQUAL "simulator")
-            set(RC_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.rc")
-            set(LIB_NAME ${ARG_OUTPUT_NAME})
-            if(NOT LIB_NAME)
-                set(LIB_NAME ${TARGET_NAME})
-            endif()
-
-            if(MSVC AND LIB_NAME MATCHES "^lib(.+)")
-                string(REGEX REPLACE "^lib" "" LIB_NAME ${LIB_NAME})
-            endif()
-
-            set(RC_LIBS ${ARG_RC_LIBRARIES})
-            if(MSVC)
-                set(RC_LIBS_PROCESSED "")
-                foreach(LIB ${RC_LIBS})
-                    if(LIB MATCHES "^lib(.+)")
-                        string(REGEX REPLACE "^lib" "" LIB ${LIB})
-                    endif()
-                    list(APPEND RC_LIBS_PROCESSED ${LIB})
-                endforeach()
-                set(RC_LIBS ${RC_LIBS_PROCESSED})
-            endif()
-
-            set(RC_RUNTIME_LIBS ${ARG_RC_RUNTIME_LIBRARIES})
-            if(MSVC AND RC_RUNTIME_LIBS)
-                set(RC_RUNTIME_LIBS_PROCESSED "")
-                foreach(LIB ${RC_RUNTIME_LIBS})
-                    if(LIB MATCHES "^lib(.+)")
-                        string(REGEX REPLACE "^lib" "" LIB ${LIB})
-                    endif()
-                    list(APPEND RC_RUNTIME_LIBS_PROCESSED ${LIB})
-                endforeach()
-                set(RC_RUNTIME_LIBS ${RC_RUNTIME_LIBS_PROCESSED})
-            endif()
-
-            create_rc_file(
-                ${RC_FILENAME} ${LIB_NAME} "${LIB_NAME}.${LIB_EXT}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}"
-            )
-            list(APPEND ALL_SOURCES ${RC_FILENAME})
+        set(RC_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.rc")
+        set(LIB_NAME ${ARG_OUTPUT_NAME})
+        if(NOT LIB_NAME)
+            set(LIB_NAME ${TARGET_NAME})
         endif()
+
+        if(MSVC AND LIB_NAME MATCHES "^lib(.+)")
+            string(REGEX REPLACE "^lib" "" LIB_NAME ${LIB_NAME})
+        endif()
+
+        set(RC_LIBS ${ARG_RC_LIBRARIES})
+        if(MSVC)
+            set(RC_LIBS_PROCESSED "")
+            foreach(LIB ${RC_LIBS})
+                if(LIB MATCHES "^lib(.+)")
+                    string(REGEX REPLACE "^lib" "" LIB ${LIB})
+                endif()
+                list(APPEND RC_LIBS_PROCESSED ${LIB})
+            endforeach()
+            set(RC_LIBS ${RC_LIBS_PROCESSED})
+        endif()
+
+        set(RC_RUNTIME_LIBS ${ARG_RC_RUNTIME_LIBRARIES})
+        if(MSVC AND RC_RUNTIME_LIBS)
+            set(RC_RUNTIME_LIBS_PROCESSED "")
+            foreach(LIB ${RC_RUNTIME_LIBS})
+                if(LIB MATCHES "^lib(.+)")
+                    string(REGEX REPLACE "^lib" "" LIB ${LIB})
+                endif()
+                list(APPEND RC_RUNTIME_LIBS_PROCESSED ${LIB})
+            endforeach()
+            set(RC_RUNTIME_LIBS ${RC_RUNTIME_LIBS_PROCESSED})
+        endif()
+
+
+        create_rc_file(
+            ${RC_FILENAME} ${LIB_NAME} "${LIB_NAME}.${LIB_EXT}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}"
+        )
+        list(APPEND ALL_SOURCES ${RC_FILENAME})
     endif()
 
     add_library(${TARGET_NAME} SHARED ${ALL_SOURCES})
@@ -265,7 +264,7 @@ add_cocotb_library(simulator
         ${SHARE_LIB_DIR}/pygpi/logging.cpp
     DEFINES PYGPI_EXPORTS
     LIBRARIES gpi ${Python_LIBRARIES}
-    RC_LIBRARIES "gpi"
+    RC_LIBRARIES ""
 )
 
 set_target_properties(simulator PROPERTIES
@@ -488,7 +487,11 @@ if(SKBUILD)
         RUNTIME DESTINATION cocotb
         LIBRARY DESTINATION cocotb)
 
+    # Windows loads simulator.pyd next to cocotb/; put gpi.dll here too (also under libs/).
     if(WIN32)
+        install(TARGETS gpi
+            RUNTIME DESTINATION cocotb
+            LIBRARY DESTINATION cocotb)
         install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
         file(GLOB PYD_CONFIG_FILES ${CMAKE_BINARY_DIR}/cocotb/*.pyd.2.config)
         if(PYD_CONFIG_FILES)
