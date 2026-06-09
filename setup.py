@@ -9,8 +9,8 @@ import sys
 
 from setuptools import setup
 
-# Same cap as upstream master; VERSION is the template used by setuptools-git-versioning.
 version = open("VERSION").read().strip()
+
 max_python3_minor_version = 14
 if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
     3,
