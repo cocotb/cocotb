@@ -26,6 +26,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 if(WIN32)
+    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
+else()
+    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.so")
+endif()
+
+if(WIN32)
     set(LIB_EXT "dll")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else()
@@ -177,7 +183,14 @@ function(add_cocotb_library TARGET_NAME)
             set(RC_RUNTIME_LIBS ${RC_RUNTIME_LIBS_PROCESSED})
         endif()
 
-        create_rc_file(${RC_FILENAME} ${LIB_NAME} "${LIB_NAME}.${LIB_EXT}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}")
+        if("${TARGET_NAME}" STREQUAL "simulator")
+            set(_cocotb_rc_manifest_file "${LIB_NAME}${PYTHON_EXT_SUFFIX}")
+        else()
+            set(_cocotb_rc_manifest_file "${LIB_NAME}.${LIB_EXT}")
+        endif()
+        create_rc_file(
+            ${RC_FILENAME} ${LIB_NAME} "${_cocotb_rc_manifest_file}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}"
+        )
         list(APPEND ALL_SOURCES ${RC_FILENAME})
     endif()
 
@@ -185,6 +198,10 @@ function(add_cocotb_library TARGET_NAME)
 
     if(ARG_OUTPUT_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
+    endif()
+
+    if(APPLE)
+        set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".so")
     endif()
 
     target_include_directories(${TARGET_NAME} PRIVATE ${INCLUDE_DIRS})
@@ -253,13 +270,6 @@ add_cocotb_library(simulator
     LIBRARIES gpi ${Python_LIBRARIES}
     RC_LIBRARIES "gpi"
 )
-
-if(WIN32)
-    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
-else()
-    # Extension modules must use .so on macOS too; CMake's SHARED_LIBRARY_SUFFIX is .dylib.
-    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.so")
-endif()
 
 set_target_properties(simulator PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
