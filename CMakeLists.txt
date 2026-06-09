@@ -257,7 +257,8 @@ add_cocotb_library(simulator
 if(WIN32)
     set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
 else()
-    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    # Extension modules must use .so on macOS too; CMake's SHARED_LIBRARY_SUFFIX is .dylib.
+    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.so")
 endif()
 
 set_target_properties(simulator PROPERTIES
@@ -306,10 +307,6 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
         else()
             target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
         endif()
-    endif()
-
-    if(SIM_LOWER STREQUAL "icarus")
-        set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".vpl")
     endif()
 endfunction()
 
