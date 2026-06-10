@@ -1,0 +1,51 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Reusable workflow: build cocotb release artifacts (wheels + sdist).
+
+name: Build release artifacts
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: false
+        type: string
+        default: '["ubuntu-22.04", "windows-2022", "macos-15-intel", "macos-14"]'
+        description: >
+          JSON array of operating systems to build on.
+          Defaults to all supported platforms.
+
+jobs:
+  build_release:
+    name: Build distribution on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Keep going even if one matrix build fails.
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+      - name: Install nox
+        run: python3 -m pip install nox nox-uv
+
+      # Use the cibuildwheel configuration inside nox, instead of the
+      # cibuildwheel GitHub Action, to make the process easy to reproduce
+      # locally.
+      - name: Build cocotb release
+        run: |
+          nox -s release_clean
+          nox -s release_build
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: cocotb-dist-${{ matrix.os }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
