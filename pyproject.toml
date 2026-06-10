@@ -210,6 +210,11 @@ markers = [
 # log_cli = true
 # log_cli_level = DEBUG
 
+[tool.coverage.run]
+# Patches all subprocesses to automatically append coverage together.
+# Used to collect coverage in pytest simulation runs.
+patch = ["subprocess"]
+
 [tool.coverage.paths]
 source = [
     "src/cocotb/",
