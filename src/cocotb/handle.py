@@ -1367,7 +1367,7 @@ class LogicArrayObject(
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
 
         .. versionchanged:: 2.0
-            Supplying too large of an :class:`int` value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with an :class:`int` *value* too large to fit in the vector results a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
@@ -1435,6 +1435,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
+    They are assumed to be IEEE 754 double precision floating point types.
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
@@ -1498,6 +1499,9 @@ class EnumObject(
 
     For Verilog objects, enumerations are little more than named integer values.
     There may be many enumeration values that a given :class:`int` value represents.
+
+    .. note::
+        There is currently no support for getting the enumeration names or values.
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
@@ -1557,10 +1561,10 @@ class EnumObject(
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
-            ValueError: If *value* would not fit in a 32-bit signed integer.
+            ValueError: If *value* would not fit in the underlying integer.
 
         .. versionchanged:: 2.0
-            Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with a *value* too large to fit in the underlying integer results a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
@@ -1586,7 +1590,9 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         * ``int``
         * ``longint``
 
-    This type should not be used for the 4-state integer types ``integer`` and ``time``.
+    .. note::
+        This type is *not* used for the 4-state Verilog integer types ``integer`` and ``time``.
+        Those types will typically map to :class:`.LogicArrayObject`.
 
     VHDL types that map to this object:
 
@@ -1594,7 +1600,24 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         * ``natural``
         * ``positive``
 
-    Objects that use this type are assumed to be two's complement 32-bit integers with 2-state (``0`` and ``1``) bits.
+    You can obtain the bit-width of the integer using :func:`len`,
+    and the signed-ness using the :attr:`is_signed` property.
+
+    .. code-block:: python
+
+        width = len(dut.integer_object)
+        is_signed = dut.integer_object.is_signed
+
+    .. warning::
+        Occasionally, type detection (especially in Verilog sources) will not be able to distinguish between a
+        :class:`!IntegerObject`, :class:`!EnumObject`, or :class:`!LogicArrayObject`.
+        The other two types have the same :attr:`!is_signed` property and :func:`len` results as this type,
+        so this should be un-observable except in edge cases.
+
+    .. versionchanged:: 2.1
+        Integers previously were previously assumed to be signed and 32-bits wide.
+        Signed-ness and bit-width are now determined based on the simulation object.
+        This may cause changes in behavior, but in the direction of better correctness.
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
@@ -1653,10 +1676,10 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
 
         Raises:
             TypeError: If *value* is any type other than :class:`int`.
-            ValueError: If *value* would not fit in a 32-bit signed integer.
+            ValueError: If *value* would not fit in the underlying integer.
 
         .. versionchanged:: 2.0
-            Supplying too large of a value results in raising a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with a *value* too large to fit in the underlying integer results a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
