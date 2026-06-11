@@ -141,6 +141,7 @@ def dev_test(
     gpi_interface: str,
 ) -> None:
     """Run all development tests and merge coverage."""
+    clean(session)
     build_cocotb_for_dev_test(session)
     configure_test_env(session)
     # Collect coverage of cocotb
@@ -475,6 +476,7 @@ def release_test(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str, source: str
 ) -> None:
     """Run all tests against a cocotb release build."""
+    clean(session)
     if source == "sdist":
         release_install_from_sdist(session)
     else:
@@ -639,3 +641,17 @@ def docs_spelling(session: nox.Session) -> None:
         "spelling",
         *session.posargs,
     )
+
+
+@nox.session(venv_backend="none")
+def clean(session: nox.Session) -> None:
+
+    # Remove any .coverage files from previous runs.
+    for coverage_file in glob.glob("**/.coverage*", recursive=True):
+        os.unlink(coverage_file)
+
+    # Remove results.xml and combined_results.xml files from previous runs.
+    for xml_file in glob.glob("**/results.xml", recursive=True) + glob.glob(
+        "**/combined_results.xml", recursive=True
+    ):
+        os.unlink(xml_file)
