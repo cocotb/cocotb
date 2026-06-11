@@ -57,7 +57,6 @@ from cocotb_tools.runner import Runner, get_runner
 
 _ENTRY_POINT: str = ",".join(
     (
-        "cocotb_tools._coverage:start_cocotb_library_coverage",
         "cocotb.logging:_configure",
         "cocotb._init:init_package_from_simulation",
         "cocotb_tools._pytest._init:run_regression",

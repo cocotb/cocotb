@@ -13,7 +13,6 @@ def load_entry() -> None:
     entry_points_str: list[str] = _env.as_list(
         "PYGPI_USERS",
         (
-            "cocotb_tools._coverage:start_cocotb_library_coverage",
             "cocotb.logging:_configure",
             "cocotb._init:init_package_from_simulation",
             "cocotb.regression:_run_regression",

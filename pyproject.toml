@@ -214,6 +214,12 @@ markers = [
 # Patches all subprocesses to automatically append coverage together.
 # Used to collect coverage in pytest simulation runs.
 patch = ["subprocess"]
+branch = true
+source = [
+    "cocotb",
+    "pygpi",
+    "cocotb_tools",
+]
 
 [tool.coverage.paths]
 source = [
@@ -223,7 +229,6 @@ source = [
 
 [tool.coverage.report]
 omit = [
-    "*/cocotb_tools/*",
     "*/_vendor/*",
 ]
 exclude_lines = [
@@ -327,11 +332,11 @@ test_common = [
 dev_test = [
     {include-group = "test_common"},
     # We only collect coverage on dev workflows.
-    "coverage[toml]>=7.2",
-    "pytest-cov",
+    # 7.10 added `patch = ["subprocess"]`
+    "coverage[toml]>=7.10",
 ]
 coverage_report = [
-    "coverage[toml]>=7.2",
+    "coverage[toml]>=7.10",
     "gcovr==8.4",
 ]
 release_test = [
