@@ -23,6 +23,7 @@ on:
       - "stable/**"
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build_release:
