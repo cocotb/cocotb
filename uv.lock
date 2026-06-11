@@ -677,10 +677,22 @@ release-build-wheel = [
 release-test = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
+    { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "ipython", version = "8.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "ipython", version = "9.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "ipython", version = "9.12.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pexpect" },
+    { name = "psutil" },
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest", version = "9.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 test-common = [
+    { name = "ipython", version = "8.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "ipython", version = "8.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "ipython", version = "9.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "ipython", version = "9.12.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pexpect" },
+    { name = "psutil" },
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest", version = "9.0.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
@@ -768,9 +780,18 @@ release-build-wheel = [{ name = "cibuildwheel", marker = "python_full_version >=
 release-test = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
+    { name = "ipython" },
+    { name = "pexpect" },
+    { name = "psutil" },
+    { name = "pytest", specifier = ">=6" },
     { name = "pytest", specifier = ">=8.4" },
 ]
-test-common = [{ name = "pytest", specifier = ">=8.4" }]
+test-common = [
+    { name = "ipython" },
+    { name = "pexpect" },
+    { name = "psutil" },
+    { name = "pytest", specifier = ">=8.4" },
+]
 
 [[package]]
 name = "colorama"
