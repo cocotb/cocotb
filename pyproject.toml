@@ -316,15 +316,19 @@ release_build_sdist = [
     "build",
 ]
 test_common = [
-    "pytest>=8.4"  # need RaisesExc and RaisesGroup
+    # Needed for RaisesExc and RaisesGroup testing.
+    "pytest>=8.4",
+    # Needed for IPython shell interactive testing.
+    "IPython",
+    "pexpect",
+    # Needed for leak testing.
+    "psutil",
 ]
 dev_test = [
     {include-group = "test_common"},
+    # We only collect coverage on dev workflows.
     "coverage[toml]>=7.2",
-    "IPython",
-    "pexpect",
     "pytest-cov",
-    "psutil",
 ]
 coverage_report = [
     "coverage[toml]>=7.2",
@@ -340,6 +344,7 @@ release_test = [
     # PyPi, and then installing cocotb itself from the local dist directory.
     "exceptiongroup; python_version<'3.11'",
     "find_libpython",
+    "pytest>=6",
 ]
 
 [tool.uv.dependency-groups]
