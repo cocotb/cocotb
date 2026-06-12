@@ -1367,7 +1367,7 @@ class LogicArrayObject(
             ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
 
         .. versionchanged:: 2.0
-            Setting the simulation object's value with an :class:`int` *value* too large to fit in the vector results a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with an :class:`int` *value* too large to fit in the vector results in a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
@@ -1564,7 +1564,7 @@ class EnumObject(
             ValueError: If *value* would not fit in the underlying integer.
 
         .. versionchanged:: 2.0
-            Setting the simulation object's value with a *value* too large to fit in the underlying integer results a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with a *value* too large to fit in the underlying integer results in a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
@@ -1601,7 +1601,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         * ``positive``
 
     You can obtain the bit-width of the integer using :func:`len`,
-    and the signed-ness using the :attr:`is_signed` property.
+    and the signedness using the :attr:`is_signed` property.
 
     .. code-block:: python
 
@@ -1609,14 +1609,14 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         is_signed = dut.integer_object.is_signed
 
     .. warning::
-        Occasionally, type detection (especially in Verilog sources) will not be able to distinguish between a
+        Occasionally, type detection (especially in Verilog sources) will not be able to distinguish between an
         :class:`!IntegerObject`, :class:`!EnumObject`, or :class:`!LogicArrayObject`.
         The other two types have the same :attr:`!is_signed` property and :func:`len` results as this type,
         so this should be un-observable except in edge cases.
 
     .. versionchanged:: 2.1
-        Integers previously were previously assumed to be signed and 32-bits wide.
-        Signed-ness and bit-width are now determined based on the simulation object.
+        Integers were previously assumed to be signed and 32-bits wide.
+        Signedness and bit-width are now determined based on the simulation object.
         This may cause changes in behavior, but in the direction of better correctness.
     """
 
@@ -1679,7 +1679,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
             ValueError: If *value* would not fit in the underlying integer.
 
         .. versionchanged:: 2.0
-            Setting the simulation object's value with a *value* too large to fit in the underlying integer results a :exc:`ValueError` instead of an :exc:`OverflowError`.
+            Setting the simulation object's value with a *value* too large to fit in the underlying integer results in a :exc:`ValueError` instead of an :exc:`OverflowError`.
         """
         self.value = value
 
