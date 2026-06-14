@@ -250,13 +250,27 @@ def dev_test_sim(
         "pytest",
         "-s",
         "-v",
-        "tests/pytest_plugin",
+        "-p",
+        "pytester",
+        "-p",
+        "cocotb_tools.pytest.plugin",
+        "-m",
+        "simulator_required",
         "--cocotb-simulator",
         sim,
         "--cocotb-gpi-interfaces",
         gpi_interface,
         "--cocotb-toplevel-lang",
         toplevel_lang,
+        # TODO: For now, we need to explicitly list test files because other plugin tests are broken
+        "tests/pytest_plugin/test_simulator.py",
+        "tests/pytest_plugin/test_plugin.py",
+        "tests/pytest_plugin/test_option.py",
+        "tests/pytest_plugin/test_mark.py",
+        "tests/pytest_plugin/test_dut.py",
+        "tests/pytest_plugin/test_utils.py",
+        "tests/pytest_plugin/test_collector.py",
+        "tests/pytest_plugin/test_regression_manager.py",
         env=env,
     )
 
@@ -299,6 +313,29 @@ def dev_test_nosim(session: nox.Session) -> None:
         "--cov-report=",
         "-k",
         "not simulator_required",
+    )
+
+    # Run pytest with the default configuration in setup.cfg.
+    session.log("Running simulator-agnostic plugin tests with pytest")
+    session.run(
+        "pytest",
+        "-s",
+        "-v",
+        "-p",
+        "pytester",
+        "-p",
+        "cocotb_tools.pytest.plugin",
+        "-m",
+        "not simulator_required",
+        # TODO: For now, we need to explicitly list test files because other plugin tests are broken
+        "tests/pytest_plugin/test_simulator.py",
+        "tests/pytest_plugin/test_plugin.py",
+        "tests/pytest_plugin/test_option.py",
+        "tests/pytest_plugin/test_mark.py",
+        "tests/pytest_plugin/test_dut.py",
+        "tests/pytest_plugin/test_utils.py",
+        "tests/pytest_plugin/test_collector.py",
+        "tests/pytest_plugin/test_regression_manager.py",
     )
 
     session.log("All tests passed!")
