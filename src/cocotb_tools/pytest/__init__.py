@@ -2,4 +2,5 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Plugin to use pytest as regression manager in cocotb."""
+# TODO: We don't want the __init__.py file here but it is still needed.
+# The pytest plugin module will be not installed without it.
