@@ -43,6 +43,7 @@ def simulator_support_matrix() -> list[tuple[str, str, str]]:
         ("icarus", "verilog", "vpi"),
         ("nvc", "vhdl", "vhpi"),
         ("questa", "vhdl", "fli"),
+        ("ryusim", "verilog", "vpi"),
         ("verilator", "verilog", "vpi"),
     ]
 
