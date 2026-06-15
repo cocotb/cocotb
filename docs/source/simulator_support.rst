@@ -630,3 +630,53 @@ Reported Issues for this Simulator
 * `All issues with label category:simulators:dsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Adsim>`_
 
 .. versionadded:: 2.0
+
+.. _sim-ryusim:
+
+RyuSim
+======
+
+RyuSim compiles synthesizable SystemVerilog to C++ and runs the resulting
+simulation through cocotb's VPI interface.
+
+In order to use this simulator, set :make:var:`SIM` to ``ryusim``:
+
+.. code-block:: bash
+
+    make SIM=ryusim
+    # or
+    SIM=ryusim [...] pytest [...]
+
+For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
+see :class:`cocotb_tools.runner.RyuSim`.
+
+.. note::
+
+    A working installation of RyuSim is required, with the ``ryusim`` executable on the :envvar:`PATH`.
+
+RyuSim only supports Verilog/SystemVerilog (no VHDL) through the VPI interface,
+and only accepts synthesizable constructs
+(no ``initial`` blocks, ``#`` delays, ``fork``/``join``, or ``$readmemh``).
+
+.. _sim-ryusim-waveforms:
+
+Waveforms
+---------
+
+RyuSim can produce waveform traces in the VCD format.
+They can be viewed with GTKWave or with `Surfer <https://surfer-project.org/>`_.
+
+To enable VCD tracing, set :make:var:`WAVES` to ``1``.
+
+.. code-block:: bash
+
+    make SIM=ryusim WAVES=1
+
+.. _sim-ryusim-issues:
+
+Reported Issues for this Simulator
+----------------------------------
+
+* `All issues with label category:simulators:ryusim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aryusim>`_
+
+.. versionadded:: 2.0

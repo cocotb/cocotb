@@ -196,3 +196,12 @@ Siemens DSim
 
 * Extend the ``dsim`` call with the option
   ``-pli_lib $(cocotb-config --lib-name-path vpi dsim) +acc+rwcbfsWF``.
+
+.. _custom-flows-ryusim:
+
+RyuSim
+======
+
+* Compile the design with ``ryusim compile --top <toplevel> -o <build_dir> <sources>``.
+* Run the resulting simulation model with the option
+  ``--vpi-load $(cocotb-config --lib-name-path vpi ryusim)``.
