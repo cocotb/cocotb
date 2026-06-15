@@ -20,7 +20,7 @@ def build_and_run(benchmark, scenario: str) -> None:
     runner.build(
         hdl_toplevel="task_churn_perf_top",
         sources=[THIS_DIR / "task_churn_perf_top.sv"],
-        build_dir="sim_build",
+        build_dir=f"sim_build/test_task_churn_{scenario}",
     )
 
     @benchmark
