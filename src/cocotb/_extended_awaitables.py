@@ -15,8 +15,8 @@ from decimal import Decimal
 from typing import Any, TypeVar, cast, overload
 
 import cocotb.handle
-from cocotb._base_triggers import NullTrigger, Trigger, _InternalEvent
-from cocotb._concurrent_waiters import select
+from cocotb._base_triggers import NullTrigger, Trigger
+from cocotb._concurrent_waiters import gather, select
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb.simtime import RoundMode, TimeUnit
@@ -39,14 +39,10 @@ class Waitable(Awaitable[T]):
         return self._wait().__await__()
 
 
-async def _wait_callback(trigger: Awaitable[T]) -> T:
-    return await trigger
-
-
 class Combine(Waitable["Combine"]):
     r"""Trigger that fires when all *triggers* have fired.
 
-    :keyword:`await`\ ing this returns the :class:`Combine` object.
+    :keyword:`await`\ ing this returns the :class:`!Combine` object.
     This is similar to Verilog's ``join``.
     See :ref:`combine-tutorial` for an example.
 
@@ -59,6 +55,11 @@ class Combine(Waitable["Combine"]):
     .. deprecated:: 2.1
         Passing :class:`~cocotb.task.Task` objects to :class:`!Combine` is deprecated.
         Use :func:`~cocotb.triggers.gather` instead and pass coroutines directly instead of wrapping them in :func:`cocotb.start_soon`.
+
+    .. versionchanged:: 2.1
+        Previously when a child *trigger* was cancelled, the cancellation was ignored.
+        Now, if a child *trigger* is cancelled, the entire :class:`!Combine`, including all other child triggers, is cancelled,
+        and a :exc:`~asyncio.CancelledError` is raised at the point the :class:`!Combine` is :keyword:`await` ed.
     """
 
     _task_deprecation_str = (
@@ -91,51 +92,8 @@ class Combine(Waitable["Combine"]):
     async def _wait(self) -> Combine:
         if len(self._triggers) == 0:
             await NullTrigger()
-        elif len(self._triggers) == 1:
-            await self._triggers[0]
         else:
-            waiters: list[Task[object]] = []
-            completed: list[Task[object]] = []
-            done = _InternalEvent(self)
-            exception: BaseException | None = None
-
-            def on_done(
-                task: Task[object],
-            ) -> None:
-                # have to check cancelled first otherwise exception() will throw
-                if task.cancelled():
-                    completed.append(task)
-                    if len(completed) == len(waiters):
-                        done.set()
-                    return
-                e = task.exception()
-                if e is not None:
-                    nonlocal exception
-                    exception = e
-                    done.set()
-                else:
-                    completed.append(task)
-                    if len(completed) == len(waiters):
-                        done.set()
-
-            # start a parallel task for each trigger
-            for t in self._triggers:
-                task = Task[object](_wait_callback(t))
-                task._add_done_callback(on_done)
-                cocotb.start_soon(task)
-                waiters.append(task)
-
-            try:
-                # wait for the last waiter to complete
-                await done
-            finally:
-                # kill remaining waiters
-                for w in waiters:
-                    w.cancel()
-
-            if exception is not None:
-                raise exception
-
+            await gather(*self._triggers, _repr=self.__repr__)  # type: ignore[call-overload]
         return self
 
     def __repr__(self) -> str:
@@ -219,33 +177,8 @@ class First(Waitable[object]):
         self._triggers = triggers
 
     async def _wait(self) -> object:
-        if len(self._triggers) == 1:
-            return await self._triggers[0]
-
-        waiters: list[Task[object]] = []
-        done = _InternalEvent(self)
-        completed: list[Task[object]] = []
-
-        def on_done(task: Task[object]) -> None:
-            completed.append(task)
-            done.set()
-
-        # start a parallel task for each trigger
-        for t in self._triggers:
-            task = Task[object](_wait_callback(t))
-            task._add_done_callback(on_done)
-            cocotb.start_soon(task)
-            waiters.append(task)
-
-        try:
-            # wait for a waiter to complete
-            await done
-        finally:
-            # kill all the other waiters
-            for w in waiters:
-                w.cancel()
-
-        return completed[0].result()
+        _, result = await select(*self._triggers, _repr=self.__repr__)  # type: ignore[call-overload]
+        return result
 
     def __repr__(self) -> str:
         # no _pointer_str here, since this is not a trigger, so identity

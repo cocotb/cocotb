@@ -116,8 +116,8 @@ async def test_lock_repr(dut):
 @cocotb.test()
 async def test_internalevent(dut):
     """Test _InternalEvent trigger."""
-    e = _InternalEvent("test parent")
-    assert repr(e) == "'test parent'"
+    e = _InternalEvent(lambda: "test parent")
+    assert repr(e) == "test parent"
 
     async def set_internalevent():
         await Timer(1, unit="ns")
@@ -133,7 +133,6 @@ async def test_internalevent(dut):
         await e
 
     e = _InternalEvent(None)
-    assert repr(e) == "None"
     ran = False
 
     async def await_internalevent():

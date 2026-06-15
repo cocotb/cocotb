@@ -7,10 +7,10 @@ from __future__ import annotations
 from asyncio import CancelledError
 from collections.abc import Iterable
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
 
 import cocotb
-from cocotb._base_triggers import Event
+from cocotb._base_triggers import _InternalEvent
 from cocotb.task import Task
 
 if TYPE_CHECKING:
@@ -37,7 +37,9 @@ def _return_exception(task: Task[T]) -> BaseException | T:
 
 
 async def _wait(
-    awaitables: Iterable[Awaitable[Any]], return_when: ReturnWhen
+    awaitables: Iterable[Awaitable[Any]],
+    return_when: ReturnWhen,
+    _repr: Callable[[], str],
 ) -> tuple[list[Task[Any]], Task[Any] | None]:
     r"""Await on all given *awaitables* concurrently and block until the *return_when* condition is met.
 
@@ -74,7 +76,7 @@ async def _wait(
     waiters = [Task[Any](waiter(a)) for a in awaitables]
     # Use dict (insertion-ordered) so cancellation order is deterministic and we have O(1) insertion and removals.
     remaining = dict.fromkeys(waiters)
-    done = Event()
+    done = _InternalEvent(_repr)
     cancelling: bool = False
     # The first task to complete, stored regardless of return_when condition.
     first_completed: Task[Any] | None = None
@@ -123,7 +125,7 @@ async def _wait(
         cocotb.start_soon(task)
 
     try:
-        await done.wait()
+        await done
     except CancelledError:
         cancel()
         raise
@@ -144,7 +146,9 @@ async def select(
 
 
 async def select(
-    *awaitables: Awaitable[T], return_exceptions: bool = False
+    *awaitables: Awaitable[T],
+    return_exceptions: bool = False,
+    _repr: Callable[[], str] | None = None,
 ) -> tuple[int, T | BaseException]:
     r"""Await on all given *awaitables* concurrently and return the index and result of the first to complete.
 
@@ -177,8 +181,15 @@ async def select(
     if len(awaitables) == 0:
         raise ValueError("At least one awaitable required")
 
+    # select is being called on its own and not part of First.
+    # So we add a repr here since this is not a class.
+    if _repr is None:
+
+        def _repr() -> str:
+            return f"select({', '.join(repr(a) for a in awaitables)})"
+
     tasks, first_completed = await _wait(
-        awaitables, return_when=ReturnWhen.FIRST_COMPLETED
+        awaitables, return_when=ReturnWhen.FIRST_COMPLETED, _repr=_repr
     )
     assert first_completed is not None
 
@@ -248,6 +259,7 @@ async def gather(
 async def gather(
     *awaitables: Awaitable[Any],
     return_exceptions: bool = False,
+    _repr: Callable[[], str] | None = None,
 ) -> tuple[Any, ...]:
     r"""Await on all given *awaitables* concurrently and return their results once all have completed.
 
@@ -276,6 +288,13 @@ async def gather(
     if len(awaitables) == 0:
         return ()
 
+    # gather is being called on its own and not part of Combine.
+    # So we add a repr here since this is not a class.
+    if _repr is None:
+
+        def _repr() -> str:
+            return f"gather({', '.join(repr(a) for a in awaitables)})"
+
     # When returning exceptions, we behave like continue-on-error: never cancel siblings.
     # Otherwise, cancel siblings as soon as one fails or is cancelled.
     tasks, first_completed = await _wait(
@@ -283,6 +302,7 @@ async def gather(
         return_when=ReturnWhen.ALL_COMPLETED
         if return_exceptions
         else ReturnWhen.FIRST_EXCEPTION,
+        _repr=_repr,
     )
 
     if return_exceptions:
