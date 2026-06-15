@@ -750,4 +750,16 @@ def get_ext():
         )
         ext.append(dsim_vpi_ext)
 
+    #
+    # RyuSim
+    #
+    if os.name == "posix":
+        logger.info("Compiling libraries for RyuSim")
+        ryusim_vpi_ext = _get_vpi_lib_ext(
+            include_dirs=include_dirs,
+            share_lib_dir=share_lib_dir,
+            sim_define="RYUSIM",
+        )
+        ext.append(ryusim_vpi_ext)
+
     return ext
