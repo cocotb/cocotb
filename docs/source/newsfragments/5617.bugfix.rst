@@ -1,0 +1,1 @@
+:class:`~cocotb.triggers.Combine` and :class:`~cocotb.triggers.First` now schedule their waiter tasks eagerly on :keyword:`await` instead of starting "soon." This fixes a class of races between the waiter :term:`tasks <task>` and any already scheduled :term:`!tasks`, bringing the scheduler back towards 1.9's behavior.

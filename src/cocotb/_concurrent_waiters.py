@@ -8,7 +8,6 @@ from collections.abc import Iterable
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
 
-import cocotb
 from cocotb._base_triggers import _InternalEvent
 from cocotb.task import Task
 
@@ -117,7 +116,7 @@ async def _wait(
 
     for task in waiters:
         task._add_done_callback(done_callback)
-        cocotb.start_soon(task)
+        task.start_eagerly()
 
     try:
         await done

@@ -419,20 +419,8 @@ async def test_task_repr(_) -> None:
 
     await NullTrigger()
 
-    log.info(repr(coro_task))
-    assert re.match(
-        (
-            r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
-            r"<Task \d+ created coro=coroutine_wait\(\)>, "
-            r"<Timer of 2000.00ps at \w+>"
-            r"\)>"
-        ),
-        repr(coro_task),
-    )
-
-    # wait for coroutine_wait to start
-    await NullTrigger()  # start_soon on _wait_callback
-
+    # The waiter task wrapping `task` inside select runs eagerly, awaits `task`,
+    # which calls `_ensure_started()` and puts the inner task in `scheduled` state.
     log.info(repr(coro_task))
     assert re.match(
         (
@@ -444,7 +432,8 @@ async def test_task_repr(_) -> None:
         repr(coro_task),
     )
 
-    await NullTrigger()  # awaiting Task in _wait_callback
+    # Let coroutine_wait run; it awaits its Timer and becomes pending.
+    await NullTrigger()
 
     log.info(repr(coro_task))
     assert re.match(
