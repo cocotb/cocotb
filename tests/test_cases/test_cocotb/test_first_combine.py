@@ -58,8 +58,9 @@ async def test_First_unfired_triggers_killed_on_exception(_) -> None:
         raise ValueError("I am a failure")
 
     with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
-        await First(cocotb.start_soon(Task(fails())), *triggers)
+        await First(Task(fails()), *triggers)
 
+    # test all triggers were unprimed
     for t in triggers:
         assert t.primed == 1
         assert t.unprimed == 1
@@ -75,8 +76,9 @@ async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
         raise ValueError("I am a failure")
 
     with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
-        await Combine(cocotb.start_soon(Task(fails())), *triggers)
+        await Combine(Task(fails()), *triggers)
 
+    # test all triggers were unprimed
     for t in triggers:
         assert t.primed == 1
         assert t.unprimed == 1
@@ -429,17 +431,7 @@ async def test_Combine_task_being_waited_cancelled(_: Any) -> None:
     # cancel just one task
     tasks[0].cancel()
 
-    # check other tasks haven't been cancelled and the Combine isn't finished.
-    await Timer(1, "ns")
-    assert not waiter_task.done()
-    for t in tasks[1:]:
-        assert not t.done()
-
-    # cancel remaining tasks
-    for t in tasks[1:]:
-        t.cancel()
-
-    # see if that finishes the Combine
+    # check all Tasks have been cancelled and the Combine is finished.
     await Timer(1, "ns")
     assert waiter_task.done()
 

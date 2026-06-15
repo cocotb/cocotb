@@ -267,9 +267,9 @@ class _InternalEvent(Trigger):
     providing a better debugging experience.
     """
 
-    def __init__(self, parent: object) -> None:
+    def __init__(self, repr_func: Callable[[], str]) -> None:
         super().__init__()
-        self._parent = parent
+        self._repr_func = repr_func
         self._fired: bool = False
         self._awaited: bool = False
 
@@ -300,7 +300,7 @@ class _InternalEvent(Trigger):
         return (yield from super().__await__())
 
     def __repr__(self) -> str:
-        return repr(self._parent)
+        return self._repr_func()
 
 
 class _Lock(Trigger):

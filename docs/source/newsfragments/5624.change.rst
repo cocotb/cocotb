@@ -1,0 +1,1 @@
+:class:`~cocotb.triggers.Combine` now propagates :exc:`~asyncio.CancelledError`\ s raised by any of its children instead of ignoring them.
