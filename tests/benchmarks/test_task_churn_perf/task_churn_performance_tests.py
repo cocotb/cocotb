@@ -33,15 +33,13 @@ async def typical(dut) -> None:
     transient_tasks = 24
     waves_tasks = 32
 
-    residents = [cocotb.start_soon(task_resident(5)) for _ in range(resident_tasks)]
+    for _ in range(resident_tasks):
+        cocotb.start_soon(task_resident(5))
 
     for _ in range(waves_tasks):
         for _ in range(transient_tasks):
             cocotb.start_soon(task_transient(2))
         await Timer(3, "ns")
-
-    for task in residents:
-        task.kill()
 
 
 @cocotb.test()
@@ -60,10 +58,9 @@ async def churn_random(dut) -> None:
 @cocotb.test()
 async def resident_bulk(dut) -> None:
     # A large resident population started at time 0 and torn down at test end.
-    residents = [cocotb.start_soon(task_resident(10000)) for _ in range(500000)]
+    for _ in range(500000):
+        cocotb.start_soon(task_resident(10000))
     await Timer(1, "ns")
-    for task in residents:
-        task.kill()
 
 
 @cocotb.test()
@@ -82,9 +79,7 @@ async def fanout(dut) -> None:
             cocotb.start_soon(task_transient(1))
             await Timer(1, "ns")
 
-    parents = [cocotb.start_soon(parent()) for _ in range(1000)]
+    for _ in range(1000):
+        cocotb.start_soon(parent())
 
     await Timer(51, "ns")
-
-    for task in parents:
-        task.kill()
