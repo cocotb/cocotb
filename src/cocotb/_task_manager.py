@@ -205,7 +205,7 @@ class TaskManager:
         self._none_remaining.clear()
 
         # Schedule the Task to run soon
-        task._ensure_started()
+        task.start_soon()
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""
