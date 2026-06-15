@@ -223,7 +223,6 @@ class RegressionManager:
         self._test_queue: list[Test] = []
         self._filters: list[re.Pattern[str]] = []
         self._mode = RegressionMode.REGRESSION
-        self._included: list[bool]
         self._regression_terminated: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
         self._random_test_order = _env.as_bool(
@@ -365,15 +364,12 @@ class RegressionManager:
 
         # mark tests for running and count included tests
         if self._filters:
-            self.total_tests = 0
-            for test in self._test_queue:
-                test.included = False
-                for filter in self._filters:
-                    if filter.search(test.fullname):
-                        test.included = True
-                        self.total_tests += 1
-        else:
-            self.total_tests = sum(1 for test in self._test_queue if test.included)
+            self._test_queue = [
+                test
+                for test in self._test_queue
+                if any(f.search(test.fullname) for f in self._filters)
+            ]
+        self.total_tests = len(self._test_queue)
 
         # compute counts
         self.count = 1
@@ -396,11 +392,6 @@ class RegressionManager:
         """
         while self._test_queue:
             self._test = self._test_queue.pop(0)
-
-            # if the test is not included, record and continue
-            if not self._test.included:
-                self._record_test_excluded()
-                continue
 
             # if the test is skipped, record and continue
             if self._test.skip and self._mode != RegressionMode.TESTCASE:
@@ -686,23 +677,6 @@ class RegressionManager:
             self.total_tests,
             _format_doc(self._test.doc),
         )
-
-    def _record_test_excluded(self) -> None:
-        """Called by :meth:`_execute` when a test is excluded by filters."""
-
-        # write out xunit results
-        self.xunit.add_testcase(
-            name=self._test.name,
-            classname=self._test.module,
-            status="skipped",
-            reason="Test was excluded",
-            extra_properties={
-                "file": inspect.getfile(self._test.func),
-                "line": self._get_lineno(self._test),
-            },
-        )
-
-        # do not log anything, nor save details for the summary
 
     def _record_test_skipped(
         self,
