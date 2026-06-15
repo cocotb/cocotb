@@ -1,0 +1,1 @@
+Added :meth:`.Task.start_soon` to schedule an unstarted :class:`.Task` to start "soon". This is primarily for users to start a :class:`!Task` after using :func:`!create_task` or manually instantiating :class:`!Task` to create a task.

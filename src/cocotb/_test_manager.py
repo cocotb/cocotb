@@ -88,7 +88,7 @@ class TestManager:
 
         # start main task
         self._main_task._add_done_callback(self._test_done_callback)
-        self._main_task._ensure_started()
+        self._main_task.start_soon()
         self._tasks[self._main_task] = None
 
         # start timeout if specified
@@ -249,6 +249,8 @@ def start_soon(
             read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
     task = create_task(coro, name=name)
+    # This is _ensure_started() rather than start_soon() for backwards compatibility.
+    # Calling cocotb.start_soon(task) on a task that already started should not fail.
     task._ensure_started()
     return task
 

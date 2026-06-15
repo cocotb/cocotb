@@ -1152,3 +1152,20 @@ async def test_start_soon_awaitable(_: object) -> None:
     task = cocotb.start_soon(AwaitableThing())
     result = await task
     assert result == 42
+
+
+@cocotb.test
+async def test_task_start_soon(_: object) -> None:
+    """Test functionality of Task.start_soon()."""
+
+    async def coro() -> None:
+        await Timer(2)
+
+    task = Task(coro())
+    task.start_soon()
+    await Timer(1)
+    assert not task.done()
+    with pytest.raises(RuntimeError):
+        task.start_soon()
+    await Timer(2)
+    assert task.done()
