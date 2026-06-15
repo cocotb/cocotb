@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Generator, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from platform import node
@@ -76,6 +76,7 @@ class XUnitReporter:
         name: str = "cocotb tests",
         relative_to: Path | str | None = None,
         default_properties: Mapping[str, Any] | None = None,
+        default_attachments: Iterable[Path | str] | None = None,
     ) -> None:
         """Create new instance of xUnit reporter.
 
@@ -83,6 +84,7 @@ class XUnitReporter:
             name: Name of xUnit reporter. Used as name for the XML test suites root element.
             relative_to: If provided, all reported absolute paths will be converted to relative paths.
             default_properties: Additional common default properties that will be added to all created test cases.
+            default_attachments: Additional common default file attachments that will be added to all created test cases.
         """
         # The root of the XML document
         self._root = Element("testsuites", name=name)
@@ -98,6 +100,17 @@ class XUnitReporter:
 
         # If present, all reported absolute paths will be converted to relative paths
         self._relative_to = Path(relative_to).resolve() if relative_to else None
+        self._relative_to_str = f"{self._relative_to}{os.path.sep}"
+
+        # Common file attachments that will be added to all created test cases
+        self._default_attachments: list[str] = [
+            self._normalize_path(attachment) for attachment in default_attachments or ()
+        ]
+
+        # A text block with a list of file attachments separated by a newline
+        self._text_attachments: str = "\n".join(
+            f"[[ATTACHMENT|{attachment}]]" for attachment in self._default_attachments
+        )
 
     def add_testcase(
         self,
@@ -123,43 +136,31 @@ class XUnitReporter:
             extra_properties: Additional test case properties.
         """
         testsuite = self._get_testsuite(classname or "cocotb")
-
-        # NOTE: file and line attributes are invalid in Jenkins XML schema version 2.*
-        attributes = {
-            "classname": _escape(classname),
-            "name": _escape(name),
-            "time": f"{time:.3f}",
-        }
-
         testsuite.time += time
         testsuite.tests += 1
 
-        testcase = SubElement(testsuite.element, "testcase", attrib=attributes)
-
-        # Normalize all line endings to \n as that is a requirement of XML.
-        # Ensure a newline at the end. Required when adding file attachments
-        if system_out:
-            system_out = (
-                system_out.rstrip("\r\n").replace("\r\n", "\n").replace("\r", "\n")
-                + "\n"
-            )
-
-        if system_err:
-            system_err = (
-                system_err.rstrip("\r\n").replace("\r\n", "\n").replace("\r", "\n")
-                + "\n"
-            )
+        # NOTE: file and line attributes are invalid in Jenkins XML schema version 2.*
+        testcase = SubElement(
+            testsuite.element,
+            "testcase",
+            classname=_escape(classname),
+            name=_escape(name),
+            time=f"{time:.3f}",
+        )
 
         properties = self._default_properties.copy()
 
         if extra_properties:
             properties.update(extra_properties)
 
-        if properties:
-            property_root = SubElement(testcase, "properties")
+        properties_root = SubElement(testcase, "properties")
 
-            for key, value in properties.items():
-                system_out += "\n".join(self._add_property(property_root, key, value))
+        for key, item in properties.items():
+            value = self._normalize_path(item) if key == "file" else str(item)
+            properties_root.append(Element("property", name=key, value=value))
+
+        for value in self._default_attachments:
+            properties_root.append(Element("property", name="attachment", value=value))
 
         if status == "skipped":
             self._add_simple(testcase, "skipped", reason)
@@ -172,6 +173,9 @@ class XUnitReporter:
         elif status == "failed":
             self._add_simple(testcase, "failure", reason)
             testsuite.failures += 1
+
+        if self._text_attachments:
+            system_out = _ensure_newline(system_out) + self._text_attachments
 
         if system_out:
             SubElement(testcase, "system-out").text = self._normalize_text(system_out)
@@ -229,18 +233,15 @@ class XUnitReporter:
 
         return self._testsuite
 
-    def _normalize_path(self, path: Path | str) -> Path:
+    def _normalize_path(self, path: Any) -> str:
         """Convert provided path to relative path."""
-        if not isinstance(path, Path):
-            path = Path(path)
-
-        if self._relative_to and path.is_absolute():
+        if self._relative_to:
             try:
-                return path.resolve().relative_to(self._relative_to)
+                return str(Path(path).resolve().relative_to(self._relative_to))
             except ValueError:
-                return path.resolve()
+                pass
 
-        return path
+        return str(path)
 
     def _add_simple(
         self,
@@ -258,11 +259,9 @@ class XUnitReporter:
         Returns:
             Added XML element.
         """
-        message = _escape(reason).strip()
-
         if isinstance(reason, BaseException):
             kind = _escape(type(reason).__name__)
-            element = SubElement(parent, name, message=message, type=kind)
+            element = SubElement(parent, name, message=_escape(reason), type=kind)
             text = self._normalize_text(
                 "".join(format_exception(type(reason), reason, reason.__traceback__))
             )
@@ -272,49 +271,34 @@ class XUnitReporter:
 
             return element
 
-        if isinstance(reason, str) and message:
-            return SubElement(parent, name, message=message)
+        if reason:
+            return SubElement(parent, name, message=_escape(reason))
 
         return SubElement(parent, name)
 
     def _normalize_text(self, text: str) -> str:
-        """Replace all absolute paths with relative ones."""
-        if self._relative_to:
-            text = text.replace(f"{self._relative_to}{os.path.sep}", "")
+        """Normalize provided text.
 
-        return _escape(text)
-
-    def _add_property(
-        self, parent: Element, name: str, value: Any
-    ) -> Generator[str, None, None]:
-        """Add property to XML element.
-
-        Args:
-            parent: XML parent element.
-            name: Name of property.
-            value: Value of property.
+        * Replacing all absolute paths with relative ones.
+        * Replacing Windows/macOS newlines with POSIX newlines.
+        * Ensuring a newline at the end of the text.
+        * Removing invalid characters.
 
         Returns:
-            Text content to be added to the ``system-out`` XML element.
+            Normalized text.
         """
-        # Skip empty values
-        if not value and value not in (0, 0.0, False):
-            return
+        if self._relative_to:
+            text = text.replace(self._relative_to_str, "")
 
-        # Handling property as a list. Example: attachment: ["a", "b", "c"]
-        if not isinstance(value, str) and isinstance(value, Iterable):
-            for item in value:
-                yield from self._add_property(parent, name, item)
-            return
+        if "\r" in text:
+            text = text.replace("\r\n", "\n").replace("\r", "\n")
 
-        # Handling paths like files and attachments
-        if isinstance(value, Path) or name in ("file", "attachment"):
-            value = self._normalize_path(value)
+        return _escape(_ensure_newline(text))
 
-        if name == "attachment":
-            yield f"[[ATTACHMENT|{value}]]"
 
-        SubElement(parent, "property", name=_escape(name), value=_escape(value))
+def _ensure_newline(text: str) -> str:
+    """Ensure newline at the end of the provided text."""
+    return text + "\n" if text and text[-1] != "\n" else text
 
 
 def _escape_code(matchobj: re.Match[str]) -> str:

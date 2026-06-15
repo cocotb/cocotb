@@ -46,6 +46,7 @@ def test_report(tmp_path: Path) -> None:
 
     xunit: XUnitReporter = XUnitReporter(
         relative_to=tmp_path,
+        default_attachments=attachments,
         # Common default properties that will be added to all created test cases
         default_properties={
             "cocotb": True,
@@ -53,7 +54,6 @@ def test_report(tmp_path: Path) -> None:
             "sim_time_duration": 0.0,
             "sim_time_unit": "ns",
             "sim_time_ratio": 0.0,
-            "attachment": attachments,
         },
     )
 
@@ -183,14 +183,14 @@ def test_report(tmp_path: Path) -> None:
     assert properties[3].get("value") == "ns"
     assert properties[4].get("name") == "sim_time_ratio"
     assert properties[4].get("value") == "2.0"
-    assert properties[5].get("name") == "attachment"
-    assert properties[5].get("value") == "sim.log"
-    assert properties[6].get("name") == "attachment"
-    assert properties[6].get("value") == "wave.vcd"
-    assert properties[7].get("name") == "file"
-    assert properties[7].get("value") == "module.py"
-    assert properties[8].get("name") == "line"
-    assert properties[8].get("value") == "10"
+    assert properties[5].get("name") == "file"
+    assert properties[5].get("value") == "module.py"
+    assert properties[6].get("name") == "line"
+    assert properties[6].get("value") == "10"
+    assert properties[7].get("name") == "attachment"
+    assert properties[7].get("value") == "sim.log"
+    assert properties[8].get("name") == "attachment"
+    assert properties[8].get("value") == "wave.vcd"
 
     assert len(testcases[0].findall("error")) == 0
     assert len(testcases[0].findall("failure")) == 0
@@ -275,7 +275,10 @@ def test_file_outside_workspace(tmp_path: Path) -> None:
     file.parent.mkdir(parents=True, exist_ok=True)
     file.touch(exist_ok=True)
 
-    xunit: XUnitReporter = XUnitReporter(relative_to=results.parent)
+    xunit: XUnitReporter = XUnitReporter(
+        relative_to=results.parent,
+        default_attachments=(file,),
+    )
 
     xunit.add_testcase(
         name="test",
@@ -283,7 +286,6 @@ def test_file_outside_workspace(tmp_path: Path) -> None:
         status="passed",
         extra_properties={
             "file": str(file),
-            "attachment": file,
         },
     )
 
@@ -316,9 +318,6 @@ def test_without_attachments(tmp_path: Path) -> None:
         name="test",
         classname="module",
         status="passed",
-        extra_properties={
-            "attachment": (),
-        },
     )
 
     xunit.write(results)
@@ -335,7 +334,10 @@ def test_properties(tmp_path: Path) -> None:
     """xUnit XML report with properties."""
     results: Path = tmp_path / "results.xml"
 
-    xunit: XUnitReporter = XUnitReporter(relative_to=tmp_path)
+    xunit: XUnitReporter = XUnitReporter(
+        relative_to=tmp_path,
+        default_attachments=(results,),
+    )
 
     xunit.add_testcase(
         name="test",
@@ -346,13 +348,9 @@ def test_properties(tmp_path: Path) -> None:
             "coverage": False,
             "file": results,
             "line": 10,
-            "attachment": str(results),
             "sim_time_unit": "ns",
             "sim_time_ratio": 0.0,
             "sim_time_duration": 0,
-            "list0": (),
-            "list1": ("a",),
-            "list2": ("a", "b"),
         },
     )
 
@@ -369,7 +367,7 @@ def test_properties(tmp_path: Path) -> None:
         for item in testcases[0].iter("property")
     }
 
-    assert len(properties) == 10
+    assert len(properties) == 8
     assert properties["cocotb"] == "True"
     assert properties["coverage"] == "False"
     assert properties["line"] == "10"
@@ -378,8 +376,6 @@ def test_properties(tmp_path: Path) -> None:
     assert properties["sim_time_unit"] == "ns"
     assert properties["sim_time_ratio"] == "0.0"
     assert properties["sim_time_duration"] == "0"
-    assert properties["list1"] == "a"
-    assert properties["list2"] == "b"
 
 
 def test_invalid_characters(tmp_path: Path) -> None:

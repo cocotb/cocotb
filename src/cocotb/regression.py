@@ -235,12 +235,14 @@ class RegressionManager:
 
         # Setup xUnit
         ###################
-        attachments = os.getenv("COCOTB_RESULTS_ATTACHMENTS", "").strip().split(",")
-        attachments = [a for a in attachments if a]  # filter out empty fields
         self.xunit = XUnitReporter(
             relative_to=os.getenv("COCOTB_RESULTS_RELATIVE_TO"),
+            # Common default file attachments that will be added to all created test cases
+            default_attachments=_env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
             # Common default properties that will be added to all created test cases
             default_properties={
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
                 "cocotb": True,
                 "random_seed": self._regression_seed,
                 "sim_time_unit": "ns",
@@ -248,7 +250,6 @@ class RegressionManager:
                 "sim_time_stop": 0.0,
                 "sim_time_duration": 0.0,
                 "sim_time_ratio": 0.0,
-                "attachment": attachments,
             },
         )
 
