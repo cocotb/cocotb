@@ -55,7 +55,7 @@ class TestManager:
 
         # We create the main task here so that the init checks can be done immediately.
         self._main_task = Task[None](test_coro, name=f"Test {name}")
-        self._tasks: list[Task[Any]] = []
+        self._tasks: dict[Task[Any], None] = {}
         self._excs: list[BaseException] = []
         self._finishing: bool = False
         self._complete: bool = False
@@ -87,7 +87,7 @@ class TestManager:
         # start main task
         self._main_task._add_done_callback(self._test_done_callback)
         self._main_task._ensure_started()
-        self._tasks.append(self._main_task)
+        self._tasks[self._main_task] = None
 
         # start timeout if specified
         if self._timeout is not None:
@@ -146,7 +146,7 @@ class TestManager:
             self._timeout_cb.cancel()
 
         # Cancel Tasks.
-        for task in self._tasks[:]:
+        for task in list(self._tasks):
             task._cancel_now()
 
         # Register function to clean up global state once all Tasks have ended.
@@ -167,11 +167,11 @@ class TestManager:
 
     def add_task(self, task: Task[Any]) -> None:
         task._add_done_callback(self._task_done_callback)
-        self._tasks.append(task)
+        self._tasks[task] = None
         self._done.clear()
 
     def remove_task(self, task: Task[Any]) -> None:
-        self._tasks.remove(task)
+        del self._tasks[task]
         if not self._tasks:
             self._done.set()
 

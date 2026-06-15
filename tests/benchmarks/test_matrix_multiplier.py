@@ -38,7 +38,7 @@ def build_and_run_matrix_multiplier(benchmark, sim):
         hdl_toplevel="matrix_multiplier",
         sources=sources,
         build_args=build_args,
-        build_dir="sim_build/matrix_multiplier",
+        build_dir=f"sim_build/matrix_multiplier_{sim}",
     )
 
     @benchmark

@@ -1,0 +1,1 @@
+Fixed a performance regression where the time to remove a completed :class:`~cocotb.task.Task` scaled linearly with the number of concurrently running tasks.

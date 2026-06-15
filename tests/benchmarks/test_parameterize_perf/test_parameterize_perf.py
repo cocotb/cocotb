@@ -20,7 +20,7 @@ def test_parameterize_perf_icarus(benchmark) -> None:
     runner.build(
         hdl_toplevel="parametrize_perf_top",
         sources=[THIS_DIR / "parametrize_perf_top.sv"],
-        build_dir="sim_build",
+        build_dir="sim_build/parametrize_perf_icarus",
     )
 
     @benchmark
