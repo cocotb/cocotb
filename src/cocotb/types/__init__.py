@@ -9,6 +9,7 @@ from ._indexing import IndexingChangedWarning
 from ._logic import Bit, Logic
 from ._logic_array import LogicArray
 from ._range import Range
+from ._resolve import get_default_resolve_method, set_default_resolve_method
 
 __all__ = (
     "AbstractArray",
@@ -19,6 +20,8 @@ __all__ = (
     "Logic",
     "LogicArray",
     "Range",
+    "get_default_resolve_method",
+    "set_default_resolve_method",
 )
 
 # Set __module__ on re-exports

@@ -382,30 +382,50 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :members:
     :inherited-members:
 
+.. _x-resolving:
+
+non-``0``/``1`` values of :class:`.Logic`, and :class:`.LogicArray` values can be "resolved" to ``0``\ s and ``1``\ s using the
+:meth:`!resolve` method on those types.
+You can check to see if that call would fail using the :meth:`!is_resolvable` method.
+
+The possible resolvers are:
+
+* ``error``:
+    Any non-``0``\ /\ ``1`` values cause resolution to fail with a :exc:`ValueError` exception.
+
+* ``weak``:
+    ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+    Remaining non-``0``/``1`` values cause resolution to fail with a :exc:`ValueError` exception.
+
+* ``zeros``:
+    ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+    Remaining non-``0``/``1`` values are resolved to ``0``.
+
+* ``ones``:
+    ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+    Remaining non-``0``/``1`` values are resolved to ``1``.
+
+* ``random``:
+    ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
+    Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
+
+.. versionchanged:: 2.1
+    ``weak`` resolver now throws :exc:`ValueError` on ``W``, ``X``, ``Z``, and ``-`` values.
+
+There is a global default resolver that is used when no resolver is specified.
+:func:`get_default_resolve_method` and :func:`set_default_resolve_method` can be used to get and set the global default resolver.
+:envvar:`COCOTB_RESOLVE_X` can be used to set the global default resolver at the start of a simulation.
+
+.. autofunction:: get_default_resolve_method
+
+.. autofunction:: set_default_resolve_method
+
 .. envvar:: COCOTB_RESOLVE_X
 
     Type: :ref:`env-string`
 
-    Defines how to resolve bits with a value of ``X``, ``Z``, ``U``, ``W``, or ``-`` when being converted to integer.
-    Valid settings are:
-
-    ``error``
-        Resolves nothing.
-    ``weak``
-        Resolves ``L`` to ``0`` and ``H`` to ``1``.
-    ``zeros``
-        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``0``.
-    ``ones``
-        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values to ``1``.
-    ``random``
-        Like ``weak``, but resolves all other non-\ ``0``\ /\ ``1`` values randomly to either ``0`` or ``1``.
-
-    There is also a slight difference in behavior of ``bool(logic)`` when this environment variable is set.
-    When this variable is set, ``bool(logic)`` treats all non-\ ``0``\ /\ ``1`` values as equivalent to ``0``.
-    When this variable is *not* set, ``bool(logic)`` will fail on non-\ ``0``\ /\ ``1`` values.
-
-    .. warning::
-        Using this feature is *not* recommended.
+    Accepts the resolver strings ``error``, ``weak``, ``zeros``, ``ones``, and ``random``.
+    Sets the global default resolver at the start of simulation.
 
     .. deprecated:: 2.0
         The previously accepted values ``VALUE_ERROR``, ``ZEROS``, ``ONES``, and ``RANDOM`` are deprecated.

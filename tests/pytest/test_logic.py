@@ -162,8 +162,19 @@ def test_logic_invert():
 
 
 def test_resolve():
-    for inp, exp in zip("UX01ZWLH-", "UX01ZX01-"):
-        assert Logic(inp).resolve("weak") == Logic(exp)
+    for inp, exp in zip("UX01ZWLH-", "!!01!!!!!"):
+        if exp == "!":
+            with pytest.raises(ValueError):
+                Logic(inp).resolve("error")
+        else:
+            assert Logic(inp).resolve("error") == Logic(exp)
+
+    for inp, exp in zip("UX01ZWLH-", "!!01!!01!"):
+        if exp == "!":
+            with pytest.raises(ValueError):
+                Logic(inp).resolve("weak")
+        else:
+            assert Logic(inp).resolve("weak") == Logic(exp)
 
     for inp, exp in zip("UX01ZWLH-", "000100010"):
         assert Logic(inp).resolve("zeros") == Logic(exp)

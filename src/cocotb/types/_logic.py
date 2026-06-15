@@ -7,7 +7,13 @@ import sys
 from functools import cache
 from typing import Union
 
-from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+from cocotb.types._resolve import (
+    IsResolvable,
+    IsResolvableLogic,
+    ResolverLiteral,
+    is_resolvable_bool,
+    resolve,
+)
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -238,77 +244,79 @@ class Logic:
     def __str__(self) -> str:
         return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
-    if RESOLVE_X is None:
+    def __bool__(self) -> bool:
+        return self.resolve()._repr == _1
 
-        def __bool__(self) -> bool:
-            if self._repr in (_0, _L):
-                return False
-            elif self._repr in (_1, _H):
-                return True
-            raise ValueError(f"Cannot convert {self!r} to bool")
-
-        def __int__(self) -> int:
-            if self._repr in (_0, _L):
-                return 0
-            elif self._repr in (_1, _H):
-                return 1
-            raise ValueError(f"Cannot convert {self!r} to int")
-
-    else:
-
-        def __bool__(self) -> bool:
-            return self._repr in (_1, _H)
-
-        def __int__(self) -> int:
-            s = str(self)
-            s = RESOLVE_X(s)  # type: ignore
-            return int(s, 2)
+    def __int__(self) -> int:
+        return 1 if self.resolve()._repr == _1 else 0
 
     def __index__(self) -> int:
         return int(self)
 
-    def resolve(self, resolver: ResolverLiteral) -> Self:
+    def resolve(self, resolver: ResolverLiteral | None = None) -> Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
-        The possible values of the *resolver* argument are:
-
-        * ``"weak"``:
-            Weak values are resolved to their strong-valued equivalents.
-
-        * ``"zeros"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are resolved to ``0``.
-
-        * ``"ones"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are resolved to ``1``.
-
-        * ``"random"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
-
         Args:
-            resolver: How to resolve non-``0``/``1`` values. See possible values above.
+            resolver: How to resolve non-``0``/``1`` values.
+                See :ref:`x-resolving` for more information on resolver values and their behavior.
+                If ``None`` (default), the global default resolver will be used.
 
         Returns:
-            The resolved Logic.
+            The resolved :class:`!Bit`.
 
         Raises:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
+
+        .. versionchanged:: 2.1
+            This now returns a :class:`Bit` instead of a :class:`!Logic`.
+            Because :class:`!Bit` is a subtype of :class:`!Logic` this should not cause any issues unless there are explicit type checks
+            (e.g. ``type(obj) is Logic``).
+
+        .. versionchanged:: 2.1
+            The *resolver* parameter is now optional.
+            The global default resolver will be used if it is not provided.
+
+        .. versionchanged:: 2.1
+            The ``weak`` resolver now throws :exc:`ValueError` on ``W``, ``X``, ``Z``, and ``-`` values.
         """
-        return type(self)(get_str_resolver(resolver)(str(self)))
+        return Bit(resolve(str(self), resolver))
 
     def __len__(self) -> int:
         return 1
 
     @property
-    def is_resolvable(self) -> bool:
-        """``True`` if value is ``0``, ``1``, ``L``, ``H``.
+    def is_resolvable(self) -> IsResolvable:
+        """Returns ``True`` if the value would not cause :meth:`resolve` to fail with the given resolver.
+
+        This property can be used in boolean checks directly, in which case it will use the global default resolver.
+        Or it can be called with a specific resolver to check against that resolver instead.
+
+        .. code-block:: pycon3
+            >>> if Logic("L").is_resolvable:
+            ...     print("resolvable!")
+            resolvable!
+            >>> Logic("X").is_resolvable("zeros")
+            True
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values.
+                See :ref:`x-resolving` for more information on resolver values and their behavior.
+                If ``None`` (default), the global default resolver will be used.
+
+        Returns:
+            ``True`` if the value would not cause :meth:`resolve` to fail with the given resolver.
 
         .. versionadded:: 2.0
+
+        .. versionchanged:: 2.1
+            The return type was changed from :class:`bool` to a special object that can be used in boolean checks,
+            or called with a resolver to check against that resolver instead.
+
+        .. versionchanged:: 2.1
+            This property now respects the current default resolver, instead of always checking against the "weak" resolver.
         """
-        return (False, False, True, True, False, False, True, True, False)[self._repr]
+        return IsResolvableLogic(str(self))
 
     def __copy__(self) -> Logic:
         return self
@@ -336,3 +344,63 @@ class Bit(Logic):
     """
 
     _values = {_0, _1}
+
+    def resolve(self, resolver: ResolverLiteral | None = None) -> Bit:
+        """Resolve non-``0``/``1`` values to ``0``/``1``.
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values.
+                See :ref:`x-resolving` for more information on resolver values and their behavior.
+                If ``None`` (default), the global default resolver will be used.
+
+        Returns:
+            The resolved :class:`!Bit`.
+
+        Raises:
+            ValueError: Invalid *resolver* value.
+            TypeError: Unsupported *value* type.
+
+        .. versionchanged:: 2.1
+            The *resolver* parameter is now optional.
+            The global default resolver will be used if it is not provided.
+        """
+        return self
+
+    @property
+    def is_resolvable(self) -> IsResolvable:
+        """``True`` if the value would not cause :meth:`resolve` to fail with the given resolver.
+
+        This property can be used in boolean checks directly, in which case it will use the global default resolver.
+        Or it can be called with a specific resolver to check against that resolver instead.
+
+        .. code-block:: pycon3
+            >>> if Bit("1").is_resolvable:
+            ...     print("resolvable!")
+            resolvable!
+            >>> Bit("1").is_resolvable("error")
+            True
+
+        Args:
+            resolver: How to resolve non-``0``/``1`` values.
+                See :ref:`x-resolving` for more information on resolver values and their behavior.
+                If ``None`` (default), the global default resolver will be used.
+
+        Returns:
+            ``True`` always.
+
+        .. versionadded:: 2.0
+
+        .. versionchanged:: 2.1
+            The return type was changed from :class:`bool` to a special object that can be used in boolean checks,
+            or called with a resolver to check against that resolver instead.
+
+        .. versionchanged:: 2.1
+            This property now respects the current default resolver, instead of always checking against the "weak" resolver.
+        """
+        return is_resolvable_bool
+
+    def __bool__(self) -> bool:
+        return self._repr == _1
+
+    def __int__(self) -> int:
+        return 1 if self._repr == _1 else 0

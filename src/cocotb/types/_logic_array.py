@@ -20,7 +20,7 @@ from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT
 from cocotb.types._range import Range
-from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+from cocotb.types._resolve import IsResolvableLogicArray, ResolverLiteral, resolve
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -337,19 +337,14 @@ class LogicArray(AbstractMutableArray[Logic]):
             # May convert list to str before converting to int.
             value_as_str = self._get_str()
 
-            # always resolve L and H to 0 and 1
-            value_as_str = value_as_str.translate(_resolve_lh_table)
-
             try:
-                self._value_as_int = int(value_as_str, 2)
+                resolved_str = resolve(value_as_str)
             except ValueError:
-                if RESOLVE_X is None:
-                    raise ValueError(
-                        f"Can't convert {type(self).__qualname__} to int: it contains non-0/1 values"
-                    ) from None
-                else:
-                    value_as_str = RESOLVE_X(value_as_str)
-                    return int(value_as_str, 2)
+                raise ValueError(
+                    f"Can't convert {type(self).__qualname__} to int: it contains non-0/1 values"
+                ) from None
+            else:
+                self._value_as_int = int(resolved_str, 2)
 
         return self._value_as_int
 
@@ -674,9 +669,24 @@ class LogicArray(AbstractMutableArray[Logic]):
         self[:] = value
 
     @property
-    def is_resolvable(self) -> bool:
-        """``True`` if all elements are ``0``, ``1``, ``L``, ``H``."""
-        return all(bit.is_resolvable for bit in self)
+    def is_resolvable(self) -> IsResolvableLogicArray:
+        """``True`` if the value would not cause :meth:`resolve` to fail with the given resolver.
+
+        This property can be used in boolean checks directly, in which case it will use the global default resolver.
+        Or it can be called with a specific resolver to check against that resolver instead.
+
+        See :ref:`x-resolving` for more information on resolver values and their behavior.
+
+        .. versionadded:: 2.0
+
+        .. versionchanged:: 2.1
+            The return type was changed from :class:`bool` to a special object that can be used in boolean checks,
+            or called with a resolver to check against that resolver instead.
+
+        .. versionchanged:: 2.1
+            This property now respects the current default resolver, instead of always checking against the "weak" resolver.
+        """
+        return IsResolvableLogicArray(str(self))
 
     @property
     @deprecated(
@@ -962,51 +972,44 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __invert__(self) -> LogicArray:
         return LogicArray(~v for v in self)
 
-    if RESOLVE_X is None:
+    def __bool__(self) -> bool:
+        if len(self) == 0:
+            return False
+        return bool(self.to_unsigned())
 
-        def __bool__(self) -> bool:
-            if len(self) == 0:
-                return False
-            return bool(int(self))
-
-    else:
-
-        def __bool__(self) -> bool:
-            if len(self) == 0:
-                return False
-            return any(bool(bit) for bit in self)
-
-    def resolve(self, resolver: ResolverLiteral) -> LogicArray:
-        """Resolves non-0/1 values to 0/1.
-
-        The possible values of the *resolver* argument are:
-
-        * ``"weak"``:
-            Weak values are resolved to their strong-valued equivalents.
-
-        * ``"zeros"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are resolved to ``0``.
-
-        * ``"ones"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are resolved to ``1``.
-
-        * ``"random"``:
-            ``L`` and ``H`` are resolved to ``0`` and ``1``, respectively.
-            Remaining non-``0``/``1`` values are randomly resolved to either ``0`` or ``1``.
+    def resolve(self, resolver: ResolverLiteral | None = None) -> LogicArray:
+        """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         Args:
-            resolver: How to resolve non-``0``/``1`` values. See possible values above.
+            resolver: How to resolve non-``0``/``1`` values.
+                See :ref:`x-resolving` for more information on resolver values and their behavior.
+                If ``None`` (default), the global default resolver will be used.
 
         Returns:
-            The resolved Logic.
+            The resolved :class:`!LogicArray`.
 
         Raises:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
+
+        .. versionchanged:: 2.1
+            The *resolver* parameter is now optional.
+            The global default resolver will be used if it is not provided.
+
+        .. versionchanged:: 2.1
+            The ``weak`` resolver now throws :exc:`ValueError` on ``W``, ``X``, ``Z``, and ``-`` values.
         """
-        return LogicArray(get_str_resolver(resolver)(str(self)), self.range)
+        # We build the output value manually so we can fill in both the string and int representations.
+        # Otherwise when a user goes to use `__bool__` or `__int__` on the resolve value, it would
+        # go through the resolver again, unnecessarily.
+        resolved_self = resolve(self._get_str(), resolver)
+        output = LogicArray.__new__(LogicArray)
+        output._value_as_array = None
+        output._value_as_int = int(resolved_self, 2)
+        output._value_as_str = resolved_self
+        output._range = self._range
+        output._warn_indexing = self._warn_indexing
+        return output
 
     def __copy__(self) -> LogicArray:
         raise NotImplementedError("`copy.copy` on LogicArray is not supported")

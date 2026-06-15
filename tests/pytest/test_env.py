@@ -7,15 +7,11 @@ environment variables in a consistent and unified way."""
 
 from __future__ import annotations
 
-import os
 import shlex
-import subprocess
-import sys
 from importlib import reload
 from logging import getLogger
 from pathlib import Path
 from re import escape
-from typing import Callable, cast
 
 import pytest
 from pytest import MonkeyPatch, raises
@@ -26,8 +22,7 @@ import cocotb._profiling
 import cocotb.regression
 import cocotb.types._resolve
 from cocotb.handle import SimHandleBase
-from cocotb.types import Logic, LogicArray
-from cocotb.types._resolve import ResolverLiteral
+from cocotb.types import Logic
 from cocotb_tools import _env
 
 
@@ -339,97 +334,68 @@ def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:
     """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to ``weak`` value."""
     monkeypatch.setenv("COCOTB_RESOLVE_X", "weak")
 
-    resolve: Callable[[str], str] | None = cocotb.types._resolve._init()
+    cocotb.types._resolve._init()
 
-    assert resolve
-    assert resolve("0") == "0"
-    assert resolve("1") == "1"
-    assert resolve("L") == "0"
-    assert resolve("H") == "1"
-    assert resolve("W") == "X"
+    try:
+        assert Logic("0").resolve() == "0"
+        assert Logic("1").resolve() == "1"
+        assert Logic("L").resolve() == "0"
+        assert Logic("H").resolve() == "1"
+        with pytest.raises(ValueError):
+            Logic("W").resolve()
+        with pytest.raises(ValueError):
+            Logic("U").resolve()
+        with pytest.raises(ValueError):
+            Logic("X").resolve()
+        with pytest.raises(ValueError):
+            Logic("Z").resolve()
+        with pytest.raises(ValueError):
+            Logic("-").resolve()
+
+    finally:
+        cocotb.types.set_default_resolve_method("weak")
 
 
 def test_env_cocotb_resolve_x_value_error(monkeypatch: MonkeyPatch) -> None:
     """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to deprecated ``value_error``."""
     monkeypatch.setenv("COCOTB_RESOLVE_X", "value_error")
 
-    resolve: Callable[[str], str] | None = cocotb.types._resolve._init()
+    cocotb.types._resolve._init()
 
-    assert resolve
-    assert resolve("0") == "0"
-    assert resolve("1") == "1"
+    try:
+        assert Logic("0").resolve() == "0"
+        assert Logic("1").resolve() == "1"
+        with pytest.raises(ValueError):
+            Logic("L").resolve()
+        with pytest.raises(ValueError):
+            Logic("H").resolve()
+        with pytest.raises(ValueError):
+            Logic("W").resolve()
+        with pytest.raises(ValueError):
+            Logic("U").resolve()
+        with pytest.raises(ValueError):
+            Logic("X").resolve()
+        with pytest.raises(ValueError):
+            Logic("Z").resolve()
+        with pytest.raises(ValueError):
+            Logic("-").resolve()
+
+    finally:
+        cocotb.types.set_default_resolve_method("weak")
 
 
 def test_env_cocotb_resolve_x_invalid(monkeypatch: MonkeyPatch) -> None:
     """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to invalid value."""
     monkeypatch.setenv("COCOTB_RESOLVE_X", "invalid")
 
-    with pytest.raises(
-        ValueError,
-        match=escape(
-            "Invalid COCOTB_RESOLVE_X value: 'invalid'. Valid values are 'error', 'weak', 'zeros', 'ones', or 'random'"
-        ),
-    ):
-        cocotb.types._resolve._init()
+    try:
+        with pytest.raises(
+            ValueError,
+            match=escape(
+                "Invalid COCOTB_RESOLVE_X value: 'invalid'. Valid values are 'error', 'weak', 'zeros', 'ones', or 'random'"
+            ),
+        ):
+            cocotb.types._resolve._init()
 
-
-@pytest.mark.parametrize("resolver", ["weak", "zeros", "ones", "random", "error"])
-def test_env_cocotb_resolve_x_logic_conversion(resolver: str, tmp_path: Path) -> None:
-    """Test that :envvar:`COCOTB_RESOLVE_X` affects ``int()``/``bool()`` of
-    :class:`~cocotb.types.Logic` and :class:`~cocotb.types.LogicArray`.
-
-    The resolving ``__int__``/``__bool__`` methods are bound at import time
-    based on the env var, so this runs in a subprocess with the variable set.
-    Expected ints are computed in the parent via ``.resolve(resolver)``.
-    """
-    typed_resolver = cast("ResolverLiteral", resolver)
-    chars = "UX01ZWLH-"
-    arrays = ["1010", "01LH", "X01Z", "UXWZ", "1HLH"]
-    lines: list[str] = ["from cocotb.types import Logic, LogicArray"]
-
-    def append_int_check(
-        expr: str, expected: int | None, length: int, random_input: bool
-    ) -> None:
-        if resolver == "random" and random_input:
-            lines.append(f"assert 0 <= int({expr}) < (1 << {length}), {expr!r}")
-        elif expected is None:
-            lines.extend(
-                [
-                    f"try: int({expr})",
-                    "except ValueError: pass",
-                    f"else: raise AssertionError({expr!r})",
-                ]
-            )
-        else:
-            lines.append(f"assert int({expr}) == {expected}, {expr!r}")
-
-    for c in chars:
-        # Logic.__int__ under a resolver does `int(resolver(str(self)), 2)`.
-        # The resolved Logic's str is "0"/"1" iff that int call succeeds.
-        resolved = str(Logic(c).resolve(typed_resolver))
-        expected: int | None = int(resolved) if resolved in ("0", "1") else None
-        append_int_check(f"Logic({c!r})", expected, 1, c not in "01LH")
-        # Under any resolver, only 1/H are truthy; others return False (no raise).
-        lines.append(f"assert bool(Logic({c!r})) is {c in '1H'}, {c!r}")
-
-    for s in arrays:
-        # LogicArray._get_int pre-translates L,H -> 0,1 in both branches, so
-        # int(LogicArray(s).resolve(resolver)) predicts subprocess behavior.
-        try:
-            expected = int(LogicArray(s).resolve(typed_resolver))
-        except ValueError:
-            expected = None
-        random_input = any(c not in "01LH" for c in s)
-        append_int_check(f"LogicArray({s!r})", expected, len(s), random_input)
-        lines.append(
-            f"assert bool(LogicArray({s!r})) is {any(c in '1H' for c in s)}, {s!r}"
-        )
-    lines.append("assert bool(LogicArray('')) is False")
-
-    script = tmp_path / "check.py"
-    script.write_text("\n".join(lines) + "\n")
-    subprocess.run(
-        [sys.executable, str(script)],
-        env={**os.environ, "COCOTB_RESOLVE_X": resolver},
-        check=True,
-    )
+    finally:
+        cocotb.types.set_default_resolve_method("weak")
