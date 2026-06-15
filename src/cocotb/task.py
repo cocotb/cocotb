@@ -230,7 +230,20 @@ class Task(Generic[ResultType]):
         else:
             raise RuntimeError("Task in unknown state")
 
+    def start_eagerly(self) -> None:
+        """Starts an unstarted Task immediately.
+
+        Raises:
+            RuntimeError: If the Task has already started.
+
+        .. versionadded:: 2.1
+        """
+        if self._state is not _TaskState.UNSTARTED:
+            raise RuntimeError("Can only start_eagerly() an unstarted Task")
+        self._resume()
+
     def _ensure_started(self) -> None:
+        """Queues a Task to start running if it is not already started."""
         state = self._state
         if state is _TaskState.UNSTARTED:
             if debug.debug:
@@ -284,6 +297,7 @@ class Task(Generic[ResultType]):
 
         # Set this Task and the current. Unset in finally block.
         global _current_task
+        _previous_task = _current_task
         _current_task = self
 
         try:
@@ -375,7 +389,7 @@ class Task(Generic[ResultType]):
                         self._log.debug("Pending %r on %r", self, trigger)
 
         finally:
-            _current_task = None
+            _current_task = _previous_task
 
     @deprecated("`task.kill()` is deprecated in favor of `task.cancel()`")
     def kill(self) -> None:

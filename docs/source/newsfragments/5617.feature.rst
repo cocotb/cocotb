@@ -1,0 +1,1 @@
+Added :meth:`.Task.start_eagerly` to start a :class:`.Task` immediately (in the same stack frame as the caller).
