@@ -4,12 +4,13 @@
 
 from __future__ import annotations
 
+from asyncio import CancelledError
 from collections.abc import Generator
 
 import pytest
 
 import cocotb
-from cocotb.triggers import NullTrigger, Timer, Trigger, gather, select, wait
+from cocotb.triggers import NullTrigger, Timer, Trigger, gather, select
 
 
 async def coro(wait: int, ret: int = 0) -> int:
@@ -33,69 +34,6 @@ class MyException(Exception): ...
 async def raises_after(wait: int) -> None:
     await Timer(wait)
     raise MyException()
-
-
-@cocotb.test
-async def test_wait(_: object) -> None:
-    a1, b1, c1, d1 = await wait(
-        coro(1),
-        Timer(2),
-        AwaitableThing(3),
-        raises_after(4),
-        return_when="ALL_COMPLETED",
-    )
-    assert a1.done()
-    assert b1.done()
-    assert c1.done()
-    assert d1.exception() is not None
-
-    a2, b2, c2 = await wait(
-        coro(1), Timer(2), AwaitableThing(3), return_when="FIRST_EXCEPTION"
-    )
-    assert a2.done()
-    assert b2.done()
-    assert c2.done()
-
-    a3, b3, c3, d3 = await wait(
-        Timer(1),
-        raises_after(2),
-        AwaitableThing(3),
-        coro(4),
-        return_when="FIRST_EXCEPTION",
-    )
-    # Wait for cancellations to finish
-    await NullTrigger()
-    assert a3.done()
-    assert b3.exception() is not None
-    assert c3.cancelled()
-    assert d3.cancelled()
-
-    a4, b4, c4, d4 = await wait(
-        coro(1),
-        Timer(2),
-        AwaitableThing(3),
-        raises_after(4),
-        return_when="FIRST_COMPLETED",
-    )
-    # Wait for cancellations to finish
-    await NullTrigger()
-    assert a4.done()
-    assert b4.cancelled()
-    assert c4.cancelled()
-    assert d4.cancelled()
-
-
-@cocotb.test
-async def test_wait_doesnt_cancel_tasks(_: object) -> None:
-    async def completes() -> int:
-        await Timer(10)
-        return 123
-
-    task = cocotb.start_soon(completes())
-    await wait(task, Timer(1), return_when="FIRST_COMPLETED")
-    await NullTrigger()
-    assert not task.cancelled()
-    assert await task == 123
 
 
 @cocotb.test
@@ -146,7 +84,7 @@ async def test_select(_: object) -> None:
         raises_after(wait=3),
         AwaitableThing(1, ret=31),
         Timer(2),
-        return_exception=True,
+        return_exceptions=True,
     )
     assert idx == 1
     assert res2 == 31
@@ -163,7 +101,7 @@ async def test_select(_: object) -> None:
         raises_after(wait=1),
         AwaitableThing(2, ret=12),
         Timer(3),
-        return_exception=True,
+        return_exceptions=True,
     )
     assert idx == 0
     assert isinstance(res3, MyException)
@@ -173,11 +111,212 @@ async def test_select(_: object) -> None:
 
 
 @cocotb.test
-async def test_cancel_while_waiting(_: object) -> None:
+async def test_gather_single(_: object) -> None:
+    """gather with one awaitable still returns a single-element tuple."""
+    (result,) = await gather(coro(wait=1, ret=42))
+    assert result == 42
+
+
+@cocotb.test
+async def test_select_single(_: object) -> None:
+    """select with one awaitable returns index 0 and its result."""
+    idx, res = await select(coro(wait=1, ret=42))
+    assert idx == 0
+    assert res == 42
+
+
+@cocotb.test
+async def test_gather_outer_cancel(_: object) -> None:
+    """Cancelling the task awaiting gather propagates CancelledError and cancels children."""
+    child_completed = False
+
+    async def child() -> None:
+        nonlocal child_completed
+        await Timer(10)
+        child_completed = True
+
     async def waiter() -> None:
-        await wait(Timer(2), return_when="ALL_COMPLETED")
+        await gather(child(), Timer(20))
 
     task = cocotb.start_soon(waiter())
     await Timer(1)
     task.cancel()
     await Timer(1)
+    assert task.cancelled()
+    # Children were cancelled before they could finish.
+    assert not child_completed
+
+
+@cocotb.test
+async def test_gather_outer_cancel_return_exceptions(_: object) -> None:
+    """return_exceptions=True must NOT swallow outer cancellation."""
+    child_completed = False
+
+    async def child() -> None:
+        nonlocal child_completed
+        await Timer(10)
+        child_completed = True
+
+    async def waiter() -> None:
+        await gather(child(), Timer(20), return_exceptions=True)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    task.cancel()
+    await Timer(1)
+    assert task.cancelled(), (
+        "outer cancellation should propagate even with return_exceptions=True"
+    )
+    assert not child_completed
+
+
+@cocotb.test
+async def test_select_outer_cancel(_: object) -> None:
+    """Cancelling the task awaiting select propagates CancelledError and cancels children."""
+    child_completed = False
+
+    async def child() -> None:
+        nonlocal child_completed
+        await Timer(10)
+        child_completed = True
+
+    async def waiter() -> None:
+        await select(child(), Timer(20))
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    task.cancel()
+    await Timer(1)
+    assert task.cancelled()
+    assert not child_completed
+
+
+@cocotb.test
+async def test_gather_child_cancelled_default(_: object) -> None:
+    """When a child is cancelled and return_exceptions=False, gather re-raises CancelledError
+    and cancels the remaining children."""
+    sibling_completed = False
+
+    async def sibling() -> None:
+        nonlocal sibling_completed
+        await Timer(10)
+        sibling_completed = True
+
+    victim_task = cocotb.start_soon(coro(wait=20, ret=0))
+
+    async def waiter() -> None:
+        await gather(victim_task, sibling())
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    victim_task.cancel()
+    await Timer(2)
+    assert task.done()
+    assert isinstance(task.exception(), CancelledError)
+    assert not sibling_completed
+
+
+@cocotb.test
+async def test_gather_child_cancelled_return_exceptions(_: object) -> None:
+    """When a child is cancelled and return_exceptions=True, gather returns CancelledError
+    in the tuple and other children continue."""
+    victim_task = cocotb.start_soon(coro(wait=20, ret=0))
+
+    async def waiter() -> tuple[object, ...]:
+        return await gather(victim_task, coro(wait=10, ret=99), return_exceptions=True)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    victim_task.cancel()
+    await Timer(15)
+    assert task.done()
+    a, b = task.result()
+    assert isinstance(a, CancelledError)
+    assert b == 99
+
+
+@cocotb.test
+async def test_select_child_cancelled(_: object) -> None:
+    """When the winning child was cancelled, select raises CancelledError by default
+    and returns it when return_exception=True."""
+    victim_task = cocotb.start_soon(coro(wait=20, ret=0))
+
+    async def waiter_raises() -> None:
+        await select(victim_task, Timer(30))
+
+    t1 = cocotb.start_soon(waiter_raises())
+    await Timer(1)
+    victim_task.cancel()
+    await Timer(2)
+    assert t1.done()
+    assert isinstance(t1.exception(), CancelledError)
+
+    victim_task2 = cocotb.start_soon(coro(wait=20, ret=0))
+
+    async def waiter_returns() -> tuple[int, object]:
+        return await select(victim_task2, Timer(30), return_exception=True)
+
+    t2 = cocotb.start_soon(waiter_returns())
+    await Timer(1)
+    victim_task2.cancel()
+    await Timer(2)
+    assert t2.done()
+    idx, exc = t2.result()
+    assert idx == 0
+    assert isinstance(exc, CancelledError)
+
+
+@cocotb.test
+async def test_gather_preserves_cancel_message(_: object) -> None:
+    """When return_exceptions=True, the original CancelledError instance (with its message)
+    is returned, not a fresh one."""
+    victim_task = cocotb.start_soon(coro(wait=20, ret=0))
+
+    async def waiter() -> tuple[object, ...]:
+        return await gather(victim_task, coro(wait=5, ret=1), return_exceptions=True)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    victim_task.cancel("specific reason")
+    await Timer(10)
+    assert task.done()
+    a, _ = task.result()
+    assert isinstance(a, CancelledError)
+    assert a.args == ("specific reason",), (
+        f"expected original CancelledError message preserved, got args={a.args!r}"
+    )
+
+
+@cocotb.test
+async def test_gather_does_not_cancel_passed_tasks(_: object) -> None:
+    """Tasks passed to gather are not cancelled when gather tears down its waiters
+    after a sibling fails."""
+
+    async def completes() -> int:
+        await Timer(10)
+        return 7
+
+    task = cocotb.start_soon(completes())
+    # raises_after fires first; gather cancels the waiter wrapping `task`,
+    # but `task` itself must keep running.
+    with pytest.raises(MyException):
+        await gather(task, raises_after(wait=1))
+    await NullTrigger()
+    assert not task.cancelled()
+    assert await task == 7
+
+
+@cocotb.test
+async def test_select_does_not_cancel_passed_tasks(_: object) -> None:
+    """Tasks passed to select are not cancelled when select returns (only internal waiters are)."""
+
+    async def completes() -> int:
+        await Timer(10)
+        return 7
+
+    task = cocotb.start_soon(completes())
+    # Timer(1) wins; the waiter wrapping task is cancelled, but task itself keeps running.
+    await select(task, Timer(1))
+    await NullTrigger()
+    assert not task.cancelled()
+    assert await task == 7
