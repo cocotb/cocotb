@@ -1,0 +1,1 @@
+JUnit XML (``results.xml``) files are no longer pretty-printed to reduce file size and improve serialization performance. Use external tools like `xmllint <https://xmllint.com/>`_ if you need to format these files.
