@@ -249,6 +249,13 @@ jobs:
         make -j $(sysctl -n hw.logicalcpu)
         sudo make install
 
+    - name: Set up RyuSim (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ryusim'
+      run: |
+        sudo apt-get install -y --no-install-recommends clang cmake
+        curl -fsSL https://ryusim.seiraiyu.com/install.sh | bash -s -- --version ${{matrix.sim-version}}
+        echo "$HOME/.ryusim/bin" >> "$GITHUB_PATH"
+
       # Windows Testing
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
