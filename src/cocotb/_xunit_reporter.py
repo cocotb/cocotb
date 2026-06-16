@@ -23,7 +23,7 @@ from pathlib import Path
 from platform import node
 from traceback import format_exception
 from typing import Any, Literal
-from xml.etree.ElementTree import Element, ElementTree, SubElement, indent
+from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 Status = Literal["passed", "failed", "skipped", "error"]
 """Status of test case.
@@ -192,7 +192,6 @@ class XUnitReporter:
         # Create directory
         Path(filename).parent.mkdir(parents=True, exist_ok=True)
 
-        indent(self._root)
         ElementTree(self._root).write(
             str(filename), encoding="utf-8", xml_declaration=True
         )
