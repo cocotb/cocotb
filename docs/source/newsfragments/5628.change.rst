@@ -1,1 +1,1 @@
-Disabled two-space characters indentation of generated JUnit XML ``results.xml`` files to reduce their size. They are not pretty-formatted anymore. Use external libraries or tools to reformat and reindent generated JUnit XML files. For example, you can use the ``xmllint --format results.xml`` command for that.
+JUnit XML (``results.xml``) files are no longer pretty-printed to reduce file size and improve serialization performance. Use external tools like `xmllint <https://xmllint.com/>`_ if you need to format these files.
