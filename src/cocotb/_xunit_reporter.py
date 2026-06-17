@@ -19,6 +19,7 @@ import os
 import re
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timezone
+from functools import cache
 from pathlib import Path
 from platform import node
 from traceback import format_exception
@@ -75,7 +76,6 @@ class XUnitReporter:
         self,
         name: str = "cocotb tests",
         relative_to: Path | str | None = None,
-        default_properties: Mapping[str, Any] | None = None,
         default_attachments: Iterable[Path | str] | None = None,
     ) -> None:
         """Create new instance of xUnit reporter.
@@ -83,7 +83,6 @@ class XUnitReporter:
         Args:
             name: Name of xUnit reporter. Used as name for the XML test suites root element.
             relative_to: If provided, all reported absolute paths will be converted to relative paths.
-            default_properties: Additional common default properties that will be added to all created test cases.
             default_attachments: Additional common default file attachments that will be added to all created test cases.
         """
         # The root of the XML document
@@ -95,16 +94,13 @@ class XUnitReporter:
         # List of all created and cached test suite elements
         self._testsuites: dict[str, TestSuite] = {}
 
-        # Common properties that will be added to all created test cases
-        self._default_properties = dict(default_properties or {})
-
         # If present, all reported absolute paths will be converted to relative paths
         self._relative_to = Path(relative_to).resolve() if relative_to else None
         self._relative_to_str = f"{self._relative_to}{os.path.sep}"
 
         # Common file attachments that will be added to all created test cases
         self._default_attachments: list[str] = [
-            self._normalize_path(attachment) for attachment in default_attachments or ()
+            self.normalize_path(attachment) for attachment in default_attachments or ()
         ]
 
         # A text block with a list of file attachments separated by a newline
@@ -148,23 +144,14 @@ class XUnitReporter:
             time=f"{time:.3f}",
         )
 
-        properties = self._default_properties.copy()
-
-        if extra_properties:
-            properties.update(extra_properties)
-
-        properties_root = SubElement(testcase, "properties")
-
-        for key, item in properties.items():
-            value = self._normalize_path(item) if key == "file" else str(item)
-            properties_root.append(Element("property", name=key, value=value))
-
-        for value in self._default_attachments:
-            properties_root.append(Element("property", name="attachment", value=value))
+        default_attachments: list[str] | None = self._default_attachments
+        text_attachments: str | None = self._text_attachments
 
         if status == "skipped":
             self._add_simple(testcase, "skipped", reason)
             testsuite.skipped += 1
+            default_attachments = None
+            text_attachments = None
 
         elif status == "error":
             self._add_simple(testcase, "error", reason)
@@ -174,8 +161,20 @@ class XUnitReporter:
             self._add_simple(testcase, "failure", reason)
             testsuite.failures += 1
 
-        if self._text_attachments:
-            system_out = _ensure_newline(system_out) + self._text_attachments
+        properties_root = SubElement(testcase, "properties")
+
+        if extra_properties:
+            for key, value in extra_properties.items():
+                properties_root.append(Element("property", name=key, value=str(value)))
+
+        if default_attachments:
+            for value in default_attachments:
+                properties_root.append(
+                    Element("property", name="attachment", value=value)
+                )
+
+        if text_attachments:
+            system_out = _ensure_newline(system_out) + text_attachments
 
         if system_out:
             SubElement(testcase, "system-out").text = self._normalize_text(system_out)
@@ -232,7 +231,8 @@ class XUnitReporter:
 
         return self._testsuite
 
-    def _normalize_path(self, path: Any) -> str:
+    @cache
+    def normalize_path(self, path: Any) -> str:
         """Convert provided path to relative path."""
         if self._relative_to:
             try:
