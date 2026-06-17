@@ -47,14 +47,6 @@ def test_report(tmp_path: Path) -> None:
     xunit: XUnitReporter = XUnitReporter(
         relative_to=tmp_path,
         default_attachments=attachments,
-        # Common default properties that will be added to all created test cases
-        default_properties={
-            "cocotb": True,
-            "random_seed": 100,
-            "sim_time_duration": 0.0,
-            "sim_time_unit": "ns",
-            "sim_time_ratio": 0.0,
-        },
     )
 
     xunit.add_testcase(
@@ -63,7 +55,10 @@ def test_report(tmp_path: Path) -> None:
         status="passed",
         time=4.0,
         extra_properties={
+            "cocotb": True,
+            "random_seed": 100,
             "sim_time_duration": 0.200,
+            "sim_time_unit": "ns",
             "sim_time_ratio": 2.0,
             "file": "module.py",
             "line": 10,
@@ -76,7 +71,10 @@ def test_report(tmp_path: Path) -> None:
         time=8.0,
         status="skipped",
         extra_properties={
+            "cocotb": True,
+            "random_seed": 100,
             "sim_time_duration": 0.400,
+            "sim_time_unit": "ns",
             "sim_time_ratio": 4.0,
             "file": "module.py",
             "line": 12,
@@ -90,7 +88,10 @@ def test_report(tmp_path: Path) -> None:
         status="skipped",
         reason="Test skipped",
         extra_properties={
+            "cocotb": True,
+            "random_seed": 100,
             "sim_time_duration": 0.800,
+            "sim_time_unit": "ns",
             "sim_time_ratio": 8.0,
             "file": "module.py",
             "line": 14,
@@ -109,6 +110,9 @@ def test_report(tmp_path: Path) -> None:
             system_out="Test log",
             system_err="Test failed with COCOTB_RANDOM_SEED=100",
             extra_properties={
+                "cocotb": True,
+                "random_seed": 100,
+                "sim_time_unit": "ns",
                 "sim_time_duration": 0.400,
                 "sim_time_ratio": 4.0,
                 "file": "module.py",
@@ -126,6 +130,11 @@ def test_report(tmp_path: Path) -> None:
             status="error",
             reason=e,
             extra_properties={
+                "cocotb": True,
+                "random_seed": 100,
+                "sim_time_unit": "ns",
+                "sim_time_duration": 0,
+                "sim_time_ratio": 0,
                 "file": "module.py",
                 "line": 18,
             },
@@ -201,11 +210,11 @@ def test_report(tmp_path: Path) -> None:
     # Testcase 1
     properties = testcases[1].findall("properties")[0].findall("property")
 
-    assert len(properties) == 9
+    assert len(properties) == 7
     assert len(testcases[1].findall("error")) == 0
     assert len(testcases[1].findall("failure")) == 0
     assert len(testcases[1].findall("skipped")) == 1
-    assert len(testcases[1].findall("system-out")) == 1
+    assert len(testcases[1].findall("system-out")) == 0
     assert len(testcases[1].findall("system-err")) == 0
 
     skipped: Element = testcases[1].findall("skipped")[0]
@@ -216,11 +225,11 @@ def test_report(tmp_path: Path) -> None:
     # Testcase 2
     properties = testcases[2].findall("properties")[0].findall("property")
 
-    assert len(properties) == 9
+    assert len(properties) == 7
     assert len(testcases[2].findall("error")) == 0
     assert len(testcases[2].findall("failure")) == 0
     assert len(testcases[2].findall("skipped")) == 1
-    assert len(testcases[2].findall("system-out")) == 1
+    assert len(testcases[2].findall("system-out")) == 0
     assert len(testcases[2].findall("system-err")) == 0
 
     skipped = testcases[2].findall("skipped")[0]
@@ -346,7 +355,7 @@ def test_properties(tmp_path: Path) -> None:
         extra_properties={
             "cocotb": True,
             "coverage": False,
-            "file": results,
+            "file": xunit.normalize_path(results),
             "line": 10,
             "sim_time_unit": "ns",
             "sim_time_ratio": 0.0,

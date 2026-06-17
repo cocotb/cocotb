@@ -238,18 +238,6 @@ class RegressionManager:
             relative_to=os.getenv("COCOTB_RESULTS_RELATIVE_TO"),
             # Common default file attachments that will be added to all created test cases
             default_attachments=_env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
-            # Common default properties that will be added to all created test cases
-            default_properties={
-                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
-                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
-                "cocotb": True,
-                "random_seed": self._regression_seed,
-                "sim_time_unit": "ns",
-                "sim_time_start": 0.0,
-                "sim_time_stop": 0.0,
-                "sim_time_duration": 0.0,
-                "sim_time_ratio": 0.0,
-            },
         )
 
     def discover_tests(self, *modules: str) -> None:
@@ -709,7 +697,10 @@ class RegressionManager:
             status="skipped",
             reason="Test was skipped",
             extra_properties={
-                "file": inspect.getfile(self._test.func),
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
+                "cocotb": True,
+                "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
             },
         )
@@ -754,7 +745,11 @@ class RegressionManager:
             reason="Test initialization failed",
             system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
             extra_properties={
-                "file": inspect.getfile(self._test.func),
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
+                "cocotb": True,
+                "random_seed": self._regression_seed,
+                "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
             },
         )
@@ -810,8 +805,13 @@ class RegressionManager:
             time=wall_time_s,
             status="passed",
             extra_properties={
-                "file": inspect.getfile(self._test.func),
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
+                "cocotb": True,
+                "random_seed": self._regression_seed,
+                "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
+                "sim_time_unit": "ns",
                 "sim_time_start": sim_time_start,
                 "sim_time_stop": sim_time_stop,
                 "sim_time_duration": sim_time_duration,
@@ -857,8 +857,13 @@ class RegressionManager:
             time=wall_time_s,
             status="passed",
             extra_properties={
-                "file": inspect.getfile(self._test.func),
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
+                "cocotb": True,
+                "random_seed": self._regression_seed,
+                "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
+                "sim_time_unit": "ns",
                 "sim_time_start": sim_time_start,
                 "sim_time_stop": sim_time_stop,
                 "sim_time_duration": sim_time_duration,
@@ -915,8 +920,13 @@ class RegressionManager:
             reason=result or msg,
             system_err=f"Test failed with COCOTB_RANDOM_SEED={self._regression_seed}",
             extra_properties={
-                "file": inspect.getfile(self._test.func),
+                # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
+                # especially after merging multiple XML reports from different sources (e. g. CI jobs)
+                "cocotb": True,
+                "random_seed": self._regression_seed,
+                "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
+                "sim_time_unit": "ns",
                 "sim_time_start": sim_time_start,
                 "sim_time_stop": sim_time_stop,
                 "sim_time_duration": sim_time_duration,
