@@ -26,13 +26,14 @@ from traceback import format_exception
 from typing import Any, Literal
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-Status = Literal["passed", "failed", "skipped", "error"]
+Status = Literal["passed", "failed", "skipped", "error", "xfailed"]
 """Status of test case.
 
 - ``passed`` - Test passed.
 - ``failed`` - Test failed. Test case will include the ``failure`` XML element.
 - ``skipped`` - Test was skipped. Test case will include the ``skipped`` XML element.
 - ``error`` - An unexpected error when test was executed. Test case will include the ``error`` XML element.
+- ``xfailed`` - Expected exception was raised when test was executed. Test case will include the ``skipped`` XML element.
 """
 
 
@@ -148,7 +149,7 @@ class XUnitReporter:
         text_attachments: str | None = self._text_attachments
 
         if status == "skipped":
-            self._add_simple(testcase, "skipped", reason)
+            self._add_simple(testcase, "skipped", reason, kind="cocotb.skip")
             testsuite.skipped += 1
             default_attachments = None
             text_attachments = None
@@ -160,6 +161,10 @@ class XUnitReporter:
         elif status == "failed":
             self._add_simple(testcase, "failure", reason)
             testsuite.failures += 1
+
+        elif status == "xfailed":
+            self._add_simple(testcase, "skipped", reason, kind="cocotb.xfail")
+            testsuite.skipped += 1
 
         properties_root = SubElement(testcase, "properties")
 
@@ -247,6 +252,7 @@ class XUnitReporter:
         parent: Element,
         name: str,
         reason: str | BaseException | None = None,
+        kind: str | None = None,
     ) -> Element:
         """Create and add a simple XML element to XML parent.
 
@@ -254,13 +260,17 @@ class XUnitReporter:
             parent: XML parent element.
             name: Name of XML element.
             reason: Reason to be included in created XML element.
+            kind: The value of the ``type`` XML attribute.
 
         Returns:
             Added XML element.
         """
+        if kind:
+            return SubElement(parent, name, type=kind, message=_escape(reason))
+
         if isinstance(reason, BaseException):
             kind = _escape(type(reason).__name__)
-            element = SubElement(parent, name, message=_escape(reason), type=kind)
+            element = SubElement(parent, name, type=kind, message=_escape(reason))
             text = self._normalize_text(
                 "".join(format_exception(type(reason), reason, reason.__traceback__))
             )
