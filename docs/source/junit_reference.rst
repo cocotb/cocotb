@@ -200,12 +200,16 @@ If present, test was skipped.
 List of supported attributes:
 
 * ``message`` - (optional) reason why test was skipped.
+* ``type`` - type of skipped test:
+
+  * ``cocotb.skip`` - when test was decorated with the :deco:`cocotb.skip` decorator.
+  * ``cocotb.xfail`` - when test was decorated with the :deco:`cocotb.xfail` decorator and expected exception was raised.
 
 Example:
 
 .. code:: xml
 
-    <skipped message="Test was skipped" />
+    <skipped type="cocotb.skip" message="Test was skipped" />
 
 
 .. _junit-attributes-error:
@@ -318,7 +322,7 @@ The first test (``dff_simple_test``) passed, the next (``dff_simple_test_failed`
             <property name="file" value="examples/simple_dff/test_dff.py" />
             <property name="line" value="52" />
           </properties>
-          <skipped message="Test was skipped" />
+          <skipped type="cocotb.skip" message="Test was skipped" />
           <system-out>[[ATTACHMENT|sim_build/dff.ghw]]
     </system-out>
         </testcase>

@@ -13,6 +13,8 @@ from platform import node
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
+import pytest
+
 from cocotb._xunit_reporter import XUnitReporter
 
 
@@ -32,7 +34,11 @@ def test_empty_testsuite(tmp_path: Path) -> None:
     assert len(root.findall("testsuite")) == 0
 
 
-def test_report(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "skip_reason",
+    [None, "", "Test skipped"],
+)
+def test_report(tmp_path: Path, skip_reason: str | None) -> None:
     """xUnit XML report with mixed test results."""
     results: Path = tmp_path / "subdir" / "results.xml"
 
@@ -86,7 +92,7 @@ def test_report(tmp_path: Path) -> None:
         name="test",
         time=12.0,
         status="skipped",
-        reason="Test skipped",
+        reason=skip_reason,
         extra_properties={
             "cocotb": True,
             "random_seed": 100,
@@ -219,7 +225,8 @@ def test_report(tmp_path: Path) -> None:
 
     skipped: Element = testcases[1].findall("skipped")[0]
 
-    assert not skipped.attrib
+    assert skipped.get("type") == "cocotb.skip"
+    assert skipped.get("message") == ""
     assert not skipped.text
 
     # Testcase 2
@@ -234,8 +241,9 @@ def test_report(tmp_path: Path) -> None:
 
     skipped = testcases[2].findall("skipped")[0]
 
-    assert len(skipped.attrib) == 1
-    assert skipped.get("message") == "Test skipped"
+    assert len(skipped.attrib) == 2
+    assert skipped.get("type") == "cocotb.skip"
+    assert skipped.get("message") == ("" if skip_reason is None else skip_reason)
     assert not skipped.text
 
     # Testcase 3

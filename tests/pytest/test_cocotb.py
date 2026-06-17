@@ -70,7 +70,8 @@ timescale = ("1ps", "1ps")
 
 
 @pytest.mark.parametrize("reduced_log_fmt", ["1", "0"])
-def test_cocotb(reduced_log_fmt):
+@pytest.mark.parametrize("cocotb_preview", ["1", "0"])
+def test_cocotb(reduced_log_fmt, cocotb_preview):
     runner = get_runner(sim)
 
     runner.build(
@@ -88,7 +89,10 @@ def test_cocotb(reduced_log_fmt):
         gpi_interfaces=gpi_interfaces,
         test_args=sim_args,
         timescale=None if sim in ("xcelium",) else timescale,
-        extra_env={"COCOTB_REDUCED_LOG_FMT": reduced_log_fmt},
+        extra_env={
+            "COCOTB_REDUCED_LOG_FMT": reduced_log_fmt,
+            "COCOTB_PREVIEW": cocotb_preview,
+        },
     )
 
 

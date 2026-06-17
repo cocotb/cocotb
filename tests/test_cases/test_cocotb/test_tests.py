@@ -228,6 +228,23 @@ async def test_bad_xfail(dut: object) -> None:
 
 
 @cocotb.test
+@cocotb.parametrize(reason=[None, "Inactive skip condition"])
+async def test_inactive_skipif_reason(dut: object, reason: str | None) -> None:
+    @cocotb.skipif(False, reason=reason)
+    @cocotb.skipif(True, reason="Active skip condition")
+    async def skipped(_: object) -> None:
+        pass
+
+    @cocotb.skipif(False, reason=reason)
+    @cocotb.xfail(reason="Expected failure")
+    async def xfailed(_: object) -> None:
+        pass
+
+    assert next(iter(skipped.generate_tests())).reason == "Active skip condition"
+    assert next(iter(xfailed.generate_tests())).reason == "Expected failure"
+
+
+@cocotb.test
 async def test_end_in_main_coro(dut: object) -> None:
     cocotb.end_test("Finished test early")
     assert False, "Test should have ended before this assertion"
