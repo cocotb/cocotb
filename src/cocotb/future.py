@@ -20,7 +20,7 @@ class Future(DocStrEnum):
 
     XFAIL_IN_RESULTS = (
         "xfail_in_results",
-        "Use the XFAIL status in the terminal results summary for xfailed tests",
+        "Use the ``XFAIL`` status in the terminal results summary and the ``skipped`` XML element in the generated JUnit XML file for xfailed tests",
     )
 
 
