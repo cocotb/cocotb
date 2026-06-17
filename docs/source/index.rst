@@ -174,6 +174,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
    :hidden:
 
    troubleshooting
+   debugpy
    timing_model
    build_systems
 
