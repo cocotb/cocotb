@@ -150,12 +150,13 @@ async def select(
 
     Regardless of the value of *return_exceptions*, after the first *awaitable* completes, whether it was cancelled, resulted in an exception, or resulted in a value,
     the remaining *awaitables* are cancelled.
+    This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments, only :term:`coroutines <coroutine>`,  :term:`triggers <trigger>`, or other user-defined :term:`!awaitables`.
     Control returns to the caller after all *awaitables* have completed and/or been cancelled.
 
     Regardless of the value of *return_exceptions*, if the task awaiting a call to this function is cancelled before completion,
     all *awaitables* which have not yet completed are cancelled and :exc:`!CancelledError` is raised.
 
-    Is it possible for multiple *awaitables* to complete at the same time,
+    It is possible for multiple *awaitables* to complete at the same time,
     however due to how the cocotb scheduler works, only one will complete *first*.
     It is good practice to avoid relying on the order of completion of multiple *awaitables* which complete at the same time.
 
