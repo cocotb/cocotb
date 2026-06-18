@@ -320,6 +320,8 @@ class build_ext(_build_ext):
                     # `GLIBCXX_3.4.29' not found (required by
                     # /path/to/libcocotbvhpi_modelsim.so)."
                     ext.extra_link_args += ["-static-libstdc++"]
+                    if lib_name == "libgpi":
+                        ext.extra_link_args += ["-Wl,-soname,libgpi.so"]
 
                 ext.extra_link_args += [f"-Wl,-rpath,{rpath}" for rpath in rpaths]
 
