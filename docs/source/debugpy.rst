@@ -4,21 +4,24 @@
 Remote Debugging Python with ``debugpy``
 **********************************************
 
-When running a cocotb simulation, the Python interpreter is embedded inside the HDL simulator
-process via the :term:`VPI`, :term:`VHPI`, or :term:`FLI` interface.
+When running a cocotb simulation,
+the Python interpreter is embedded inside the HDL simulator process
+via the :term:`VPI`, :term:`VHPI`, or :term:`FLI` interface.
 This means that Python is **not** launched as a standalone process by you,
-and the simulator often interferes with ``stdin``, making interactive debuggers like :mod:`pdb`
-difficult or impossible to use directly.
+and the simulator often interferes with ``stdin``,
+making interactive debuggers like :mod:`pdb` difficult or impossible to use directly.
 
 Microsoft's `debugpy <https://github.com/microsoft/debugpy>`__ implements the
 `Debug Adapter Protocol (DAP) <https://microsoft.github.io/debug-adapter-protocol/>`__,
-which allows a debugger **client** (e.g., VS Code, PyCharm) to connect to a running Python
-process over TCP. This makes it possible to set breakpoints, inspect variables, and step through
-your cocotb test coroutines interactively — even inside a simulation.
+which allows a debugger **client** (e.g., VS Code, PyCharm) to connect to a running Python process over TCP.
+This makes it possible to set breakpoints,
+inspect variables,
+and step through your cocotb test coroutines interactively — even inside a simulation.
 
 .. note::
    ``debugpy`` works with any IDE that supports the Debug Adapter Protocol (DAP),
-   including Visual Studio Code (with the Python extension), PyCharm Professional,
+   including Visual Studio Code (with the Python extension),
+   PyCharm Professional,
    and Eclipse with the PyDev plugin.
 
 Installation
@@ -39,9 +42,10 @@ Or, if you are using ``uv`` (the recommended cocotb development tool):
 Starting the Debug Server in a cocotb Test
 ==========================================
 
-Inside your cocotb test file, add the following snippet **before** the code you want to debug.
-This starts a ``debugpy`` server that listens on TCP port ``5678`` and **waits** for a debugger
-client to connect before proceeding.
+Inside your cocotb test file,
+add the following snippet **before** the code you want to debug.
+This starts a ``debugpy`` server that listens on TCP port ``5678``
+and **waits** for a debugger client to connect before proceeding.
 
 .. code-block:: python
 
@@ -62,18 +66,19 @@ client to connect before proceeding.
        assert dut.output.value == 1
 
 .. warning::
-   ``debugpy.wait_for_client()`` will block the simulation indefinitely until a debugger
-   connects. Do not leave this in production test code. Remove it after debugging.
+   ``debugpy.wait_for_client()`` will block the simulation indefinitely until a debugger connects.
+   Do not leave this in production test code.
+   Remove it after debugging.
 
-   If your simulation appears to hang, check whether a debugger client is connected.
+   If your simulation appears to hang,
+   check whether a debugger client is connected.
 
 Attaching from Visual Studio Code
 ===================================
 
 1.  Open the repository folder in VS Code.
 
-2.  Create or edit your ``.vscode/launch.json`` file to add a ``Python: Remote Attach``
-    configuration:
+2.  Create or edit your ``.vscode/launch.json`` file to add a ``Python: Remote Attach`` configuration:
 
     .. code-block:: json
 
@@ -102,11 +107,11 @@ Attaching from Visual Studio Code
 3.  Run your cocotb simulation normally (e.g., ``make SIM=icarus``).
 
 4.  As soon as the simulation prints ``Waiting for debugger to attach on port 5678...``,
-    switch to VS Code and press :kbd:`F5` (or select **Run > Start Debugging** and choose
-    ``cocotb: Attach debugpy``).
+    switch to VS Code and press :kbd:`F5`
+    (or select **Run > Start Debugging** and choose ``cocotb: Attach debugpy``).
 
-5.  VS Code will connect, and the simulation will resume. Breakpoints set in your test file
-    will be hit normally.
+5.  VS Code will connect and the simulation will resume.
+    Breakpoints set in your test file will be hit normally.
 
 Attaching from PyCharm
 ========================
@@ -118,16 +123,18 @@ Attaching from PyCharm
     - **IDE host name**: ``localhost``
     - **Port**: ``5678``
 
-4.  Click **OK**, then click the **Debug** button (green bug icon) to start the debug server client.
-5.  Run your cocotb simulation. PyCharm will connect once the simulation reaches
-    ``debugpy.listen()``.
+4.  Click **OK**,
+    then click the **Debug** button (green bug icon) to start the debug server client.
+5.  Run your cocotb simulation.
+    PyCharm will connect once the simulation reaches ``debugpy.listen()``.
 
 Debugging Without Blocking (Non-Waiting Mode)
 ==============================================
 
-If you do not want the simulation to pause and wait for a client, you can remove
-:func:`debugpy.wait_for_client`. In this case, the server starts in the background and
-a debugger can attach at any time during the simulation run:
+If you do not want the simulation to pause and wait for a client,
+you can remove :func:`debugpy.wait_for_client`.
+In this case, the server starts in the background
+and a debugger can attach at any time during the simulation run:
 
 .. code-block:: python
 
@@ -145,7 +152,8 @@ Choosing a Port
 ===============
 
 The default port ``5678`` is used in the examples above.
-If you need to run multiple simulations simultaneously or port ``5678`` is already in use,
+If you need to run multiple simulations simultaneously,
+or port ``5678`` is already in use,
 choose a different port number and update your IDE configuration to match:
 
 .. code-block:: python
@@ -158,7 +166,8 @@ Troubleshooting
 
 **VS Code says "Connection refused"**
    The simulation has not yet reached the ``debugpy.listen()`` call.
-   Wait until you see the ``Waiting for debugger...`` message in the terminal, then attach.
+   Wait until you see the ``Waiting for debugger...`` message in the terminal,
+   then attach.
 
 **Simulation hangs after attaching**
    Ensure you have called ``debugpy.wait_for_client()`` only when you intend to block.
@@ -166,8 +175,8 @@ Troubleshooting
 
 **Breakpoints are not hit**
    Ensure ``justMyCode`` is set to ``false`` in your VS Code ``launch.json``.
-   Also verify that the ``pathMappings`` in ``launch.json`` correctly maps your
-   local workspace folder to the remote root (``"."``).
+   Also verify that the ``pathMappings`` in ``launch.json``
+   correctly maps your local workspace folder to the remote root (``"."``).
 
 **``debugpy`` is not installed**
    Run ``pip install debugpy`` inside the same Python environment used by your simulator.
@@ -178,7 +187,8 @@ Troubleshooting
       python -c "import debugpy; print(debugpy.__version__)"
 
 **Port already in use**
-   Another process is using port ``5678``. Choose a different port and update both
+   Another process is using port ``5678``.
+   Choose a different port and update both
    ``debugpy.listen()`` in your test file and the ``port`` in your IDE configuration.
 
 See Also
