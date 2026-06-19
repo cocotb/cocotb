@@ -455,7 +455,7 @@ class Runner(ABC):
         self.log_file: PathLike | None = log_file
         self.cwd = self.build_dir if cwd is None else cwd
 
-        self.waves = _env.as_bool("WAVES", waves)
+        self.waves = _env.get_bool("WAVES", waves)
 
         self._set_env_build()
 
@@ -587,8 +587,8 @@ class Runner(ABC):
             self.env["COCOTB_RANDOM_SEED"] = str(seed)
 
         self.log_file = log_file
-        self.waves = _env.as_bool("WAVES", waves)
-        self.gui = _env.as_bool("GUI", gui)
+        self.waves = _env.get_bool("WAVES", waves)
+        self.gui = _env.get_bool("GUI", gui)
         self.timescale = timescale
 
         waves_file: str | None = self._waves_file() if self.waves else None
@@ -610,7 +610,7 @@ class Runner(ABC):
             self.verbose = verbose
 
         # Pytest test name is used by the next couple sections.
-        pytest_current_test: str = _env.as_str("PYTEST_CURRENT_TEST")
+        pytest_current_test: str = _env.get_str("PYTEST_CURRENT_TEST")
 
         if pytest_current_test:
             self.current_test_name = pytest_current_test.rsplit(":", maxsplit=1)[
@@ -677,7 +677,7 @@ class Runner(ABC):
             sys.exit(simulator_exit_code)
 
         if pytest_current_test and self._use_external_viewer() and self.gui:
-            viewer: str = _env.as_str("COCOTB_WAVEFORM_VIEWER")
+            viewer: str = _env.get_str("COCOTB_WAVEFORM_VIEWER")
             if viewer:
                 viewer_path = shutil.which(viewer)
                 if viewer_path is None:

@@ -144,16 +144,18 @@ def _init() -> None:
     """
     global strip_ansi
 
-    strip_ansi = not _env.as_bool(
+    strip_ansi = not _env.get_bool(
         "COCOTB_ANSI_OUTPUT",
-        sys.stdout.isatty() and not _env.as_str("NO_COLOR") and not _env.as_bool("GUI"),
+        sys.stdout.isatty()
+        and not _env.get_str("NO_COLOR")
+        and not _env.get_bool("GUI"),
     )
 
     _setup_gpi_logger()
 
     # Set "cocotb" and "gpi" logger based on environment variables
     def set_level(logger_name: str, envvar: str) -> None:
-        log_level: str = _env.as_str(envvar).upper()
+        log_level: str = _env.get_str(envvar).upper()
         if not log_level:
             return
 
@@ -195,7 +197,7 @@ def _setup_gpi_logger() -> None:
 
 def _configure() -> None:
     """Configure basic logging."""
-    reduced_log_fmt: bool = _env.as_bool("COCOTB_REDUCED_LOG_FMT", True)
+    reduced_log_fmt: bool = _env.get_bool("COCOTB_REDUCED_LOG_FMT", True)
     prefix_format: str = os.getenv("COCOTB_LOG_PREFIX", "")
     default_config(reduced_log_fmt=reduced_log_fmt, prefix_format=prefix_format)
 

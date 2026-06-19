@@ -49,40 +49,40 @@ def test_env_exists_undefined(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_env_bool_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_bool` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_BOOL", "")
-    assert not _env.as_bool("TEST_BOOL")
+    assert not _env.get_bool("TEST_BOOL")
 
 
 def test_env_bool_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_bool` when environment variable is undefined."""
     monkeypatch.delenv("TEST_BOOL", raising=False)
-    assert not _env.as_bool("TEST_BOOL")
+    assert not _env.get_bool("TEST_BOOL")
 
 
 def test_env_bool_default(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` with default value."""
+    """Test :func:`cocotb_tools._env.get_bool` with default value."""
     monkeypatch.delenv("TEST_BOOL", raising=False)
-    assert _env.as_bool("TEST_BOOL", True)
-    assert not _env.as_bool("TEST_BOOL", False)
+    assert _env.get_bool("TEST_BOOL", True)
+    assert not _env.get_bool("TEST_BOOL", False)
 
 
 def test_env_bool_true(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` with environment variable set to true."""
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to true."""
     for value in ("1", "yes", "y", "ON", "True", "Enable"):
         monkeypatch.setenv("TEST_BOOL", value)
-        assert _env.as_bool("TEST_BOOL")
+        assert _env.get_bool("TEST_BOOL")
 
 
 def test_env_bool_false(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` with environment variable set to false."""
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to false."""
     for value in ("0", "no", "n", "OFF", "False", "Disable"):
         monkeypatch.setenv("TEST_BOOL", value)
-        assert not _env.as_bool("TEST_BOOL")
+        assert not _env.get_bool("TEST_BOOL")
 
 
 def test_env_bool_invalid(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_bool` with environment variable set to invalid value."""
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to invalid value."""
     for value in ("-1", "2", "l", "x", "y3s", "0N", "Tru3", "3n4b13"):
         with raises(
             ValueError,
@@ -92,133 +92,133 @@ def test_env_bool_invalid(monkeypatch: MonkeyPatch) -> None:
             ),
         ):
             monkeypatch.setenv("TEST_BOOL", value)
-            _env.as_bool("TEST_BOOL")
+            _env.get_bool("TEST_BOOL")
 
 
 def test_env_path_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_path` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_path` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_PATH", "")
-    assert _env.as_path("TEST_PATH") == Path().resolve()
+    assert _env.get_path("TEST_PATH") == Path().resolve()
 
 
 def test_env_path_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_path` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_path` when environment variable is undefined."""
     monkeypatch.delenv("TEST_PATH", raising=False)
-    assert _env.as_path("TEST_PATH") == Path().resolve()
+    assert _env.get_path("TEST_PATH") == Path().resolve()
 
 
 def test_env_path_default(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    """Test :func:`cocotb_tools._env.as_path` with default value."""
+    """Test :func:`cocotb_tools._env.get_path` with default value."""
     monkeypatch.delenv("TEST_PATH", raising=False)
-    assert _env.as_path("TEST_PATH", tmp_path) == tmp_path.resolve()
+    assert _env.get_path("TEST_PATH", tmp_path) == tmp_path.resolve()
 
 
 def test_env_path_set(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    """Test :func:`cocotb_tools._env.as_path` with environment variable set to path."""
+    """Test :func:`cocotb_tools._env.get_path` with environment variable set to path."""
     monkeypatch.setenv("TEST_PATH", str(tmp_path))
-    assert _env.as_path("TEST_PATH") == tmp_path.resolve()
-    assert _env.as_path("TEST_PATH", "default") == tmp_path.resolve()
+    assert _env.get_path("TEST_PATH") == tmp_path.resolve()
+    assert _env.get_path("TEST_PATH", "default") == tmp_path.resolve()
 
 
 def test_env_str_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_str` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_str` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_STRING", "")
-    assert _env.as_str("TEST_STRING") == ""
+    assert _env.get_str("TEST_STRING") == ""
 
 
 def test_env_str_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_str` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_str` when environment variable is undefined."""
     monkeypatch.delenv("TEST_STRING", raising=False)
-    assert _env.as_str("TEST_STRING") == ""
+    assert _env.get_str("TEST_STRING") == ""
 
 
 def test_env_str_default(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_str` with default value."""
+    """Test :func:`cocotb_tools._env.get_str` with default value."""
     monkeypatch.delenv("TEST_STRING", raising=False)
-    assert _env.as_str("TEST_STRING", "default") == "default"
+    assert _env.get_str("TEST_STRING", "default") == "default"
 
 
 def test_env_str_set(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_str` with environment variable set to string."""
+    """Test :func:`cocotb_tools._env.get_str` with environment variable set to string."""
     monkeypatch.setenv("TEST_STRING", "  value ")
-    assert _env.as_str("TEST_STRING") == "value"
+    assert _env.get_str("TEST_STRING") == "value"
 
 
 def test_env_int_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_int` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_int` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_INT", "")
-    assert _env.as_int("TEST_INT") == 0
+    assert _env.get_int("TEST_INT") == 0
 
 
 def test_env_int_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_int` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_int` when environment variable is undefined."""
     monkeypatch.delenv("TEST_INT", raising=False)
-    assert _env.as_int("TEST_INT") == 0
+    assert _env.get_int("TEST_INT") == 0
 
 
 def test_env_int_default(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_int` with default value."""
+    """Test :func:`cocotb_tools._env.get_int` with default value."""
     monkeypatch.delenv("TEST_INT", raising=False)
 
     for value in (-13, -1, 0, 1, 20):
-        assert _env.as_int("TEST_INT", value) == value
+        assert _env.get_int("TEST_INT", value) == value
 
 
 def test_env_int_set(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_int` with environment variable set to integer."""
+    """Test :func:`cocotb_tools._env.get_int` with environment variable set to integer."""
     for value in (-13, -1, 0, 1, 20):
         monkeypatch.setenv("TEST_INT", str(value))
-        assert _env.as_int("TEST_INT") == value
+        assert _env.get_int("TEST_INT") == value
 
 
 def test_env_args_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_args` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_args` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_ARGS", "")
-    assert _env.as_args("TEST_ARGS") == []
+    assert _env.get_args("TEST_ARGS") == []
 
 
 def test_env_args_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_args` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_args` when environment variable is undefined."""
     monkeypatch.delenv("TEST_ARGS", raising=False)
-    assert _env.as_args("TEST_ARGS") == []
+    assert _env.get_args("TEST_ARGS") == []
 
 
 def test_env_args_default(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_args` with default value."""
+    """Test :func:`cocotb_tools._env.get_args` with default value."""
     expected: str = "arg1 arg2 'arg3 arg4' arg5"
     monkeypatch.delenv("TEST_ARGS", raising=False)
-    assert _env.as_args("TEST_ARGS", expected) == shlex.split(expected)
+    assert _env.get_args("TEST_ARGS", expected) == shlex.split(expected)
 
 
 def test_env_args_set(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_args` with environment variable set to arguments."""
+    """Test :func:`cocotb_tools._env.get_args` with environment variable set to arguments."""
     expected: str = "arg1 arg2 'arg3 arg4' arg5"
     monkeypatch.setenv("TEST_ARGS", expected)
-    assert _env.as_args("TEST_ARGS", "default") == shlex.split(expected)
+    assert _env.get_args("TEST_ARGS", "default") == shlex.split(expected)
 
 
 def test_env_list_empty(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_list` when environment variable is defined but empty."""
+    """Test :func:`cocotb_tools._env.get_list` when environment variable is defined but empty."""
     monkeypatch.setenv("TEST_LIST", "")
-    assert _env.as_list("TEST_LIST") == []
+    assert _env.get_list("TEST_LIST") == []
 
 
 def test_env_list_undefined(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_list` when environment variable is undefined."""
+    """Test :func:`cocotb_tools._env.get_list` when environment variable is undefined."""
     monkeypatch.delenv("TEST_LIST", raising=False)
-    assert _env.as_list("TEST_LIST") == []
+    assert _env.get_list("TEST_LIST") == []
 
 
 def test_env_list_default(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_list` with default value."""
+    """Test :func:`cocotb_tools._env.get_list` with default value."""
     monkeypatch.delenv("TEST_LIST", raising=False)
-    assert _env.as_list("TEST_LIST", ["a", "b", "c", "d"]) == ["a", "b", "c", "d"]
+    assert _env.get_list("TEST_LIST", ["a", "b", "c", "d"]) == ["a", "b", "c", "d"]
 
 
 def test_env_list_set(monkeypatch: MonkeyPatch) -> None:
-    """Test :func:`cocotb_tools._env.as_list` with environment variable set to arguments."""
+    """Test :func:`cocotb_tools._env.get_list` with environment variable set to arguments."""
     monkeypatch.setenv("TEST_LIST", " a,  b ,c,,d ,")
-    assert _env.as_list("TEST_LIST", "default") == ["a", "b", "c", "d"]
+    assert _env.get_list("TEST_LIST", "default") == ["a", "b", "c", "d"]
 
 
 def test_env_cocotb_testcase_deprecated(monkeypatch: MonkeyPatch) -> None:

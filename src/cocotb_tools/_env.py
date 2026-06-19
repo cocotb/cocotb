@@ -30,7 +30,7 @@ def exists(name: str) -> bool:
     return name in os.environ
 
 
-def as_str(name: str, default: str | None = None) -> str:
+def get_str(name: str, default: str | None = None) -> str:
     """Convert value of environment variable to Python string type.
 
     Args:
@@ -43,7 +43,7 @@ def as_str(name: str, default: str | None = None) -> str:
     return os.environ.get(name, "").strip() or default or ""
 
 
-def as_bool(name: str, default: bool | None = None) -> bool:
+def get_bool(name: str, default: bool | None = None) -> bool:
     """Convert value of environment variable to Python boolean type.
 
     Function is case-insensitive.
@@ -60,7 +60,7 @@ def as_bool(name: str, default: bool | None = None) -> bool:
     Raises:
         :exc:`ValueError` in case of an unexpected value.
     """
-    envvar: str = as_str(name)  # Keep original case for ValueError
+    envvar: str = get_str(name)  # Keep original case for ValueError
     value: str = envvar.lower()
 
     if not value:
@@ -78,7 +78,7 @@ def as_bool(name: str, default: bool | None = None) -> bool:
     )
 
 
-def as_list(
+def get_list(
     name: str, default: Iterable[str] | None = None, separator: str = ","
 ) -> list[str]:
     """Convert value of environment variable to Python list of strings type.
@@ -93,12 +93,14 @@ def as_list(
     Returns:
         List of stripped and non-empty strings.
     """
-    items: list[str] = list(filter(None, map(str.strip, as_str(name).split(separator))))
+    items: list[str] = list(
+        filter(None, map(str.strip, get_str(name).split(separator)))
+    )
 
     return list(items or default or ())
 
 
-def as_int(name: str, default: int | None = None) -> int:
+def get_int(name: str, default: int | None = None) -> int:
     """Convert value of environment variable to Python integer type.
 
     Args:
@@ -108,10 +110,10 @@ def as_int(name: str, default: int | None = None) -> int:
     Returns:
         Integer. If value was not set, it will return zero (0).
     """
-    return int(as_str(name) or default or 0)
+    return int(get_str(name) or default or 0)
 
 
-def as_path(name: str, default: Path | str | None = None) -> Path:
+def get_path(name: str, default: Path | str | None = None) -> Path:
     """Convert value of environment variable to Python path type.
 
     Args:
@@ -121,10 +123,10 @@ def as_path(name: str, default: Path | str | None = None) -> Path:
     Returns:
         The resolved path. If not set, the current working directory will be returned.
     """
-    return Path(as_str(name) or default or "").resolve()
+    return Path(get_str(name) or default or "").resolve()
 
 
-def as_args(name: str, default: str | None = None) -> list[str]:
+def get_args(name: str, default: str | None = None) -> list[str]:
     """Convert value of environment variable to list of arguments respecting shell syntax.
 
     Args:
@@ -134,4 +136,4 @@ def as_args(name: str, default: str | None = None) -> list[str]:
     Returns:
         List of arguments split based on shell syntax.
     """
-    return shlex.split(as_str(name) or default or "")
+    return shlex.split(get_str(name) or default or "")

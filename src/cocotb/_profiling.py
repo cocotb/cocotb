@@ -16,7 +16,7 @@ from cocotb_tools import _env
 profiling_context: AbstractContextManager[None, None]
 
 
-if _env.as_bool("COCOTB_ENABLE_PROFILING"):
+if _env.get_bool("COCOTB_ENABLE_PROFILING"):
     _profile: cProfile.Profile
 
     def _init() -> None:

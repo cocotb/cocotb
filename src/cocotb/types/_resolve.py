@@ -69,7 +69,7 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
 
 
 def _init() -> Callable[[str], str] | None:
-    resolver = _env.as_str("COCOTB_RESOLVE_X").lower()
+    resolver = _env.get_str("COCOTB_RESOLVE_X").lower()
 
     # no resolver
     if not resolver:

@@ -112,7 +112,7 @@ def _start_user_coverage() -> None:
     enable_coverage: bool = False
 
     if _env.exists("COCOTB_USER_COVERAGE"):
-        enable_coverage = _env.as_bool("COCOTB_USER_COVERAGE")
+        enable_coverage = _env.get_bool("COCOTB_USER_COVERAGE")
 
     elif _env.exists("COVERAGE"):
         warnings.warn(
@@ -120,7 +120,7 @@ def _start_user_coverage() -> None:
             DeprecationWarning,
             stacklevel=2,
         )
-        enable_coverage = _env.as_bool("COVERAGE")
+        enable_coverage = _env.get_bool("COVERAGE")
 
     if enable_coverage:
         try:
@@ -130,7 +130,7 @@ def _start_user_coverage() -> None:
                 "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
             ) from None
         else:
-            config_filepath: str = _env.as_str("COVERAGE_RCFILE")
+            config_filepath: str = _env.get_str("COVERAGE_RCFILE")
             if not config_filepath:
                 # Exclude cocotb libraries from coverage collection.
                 log.info(
@@ -168,14 +168,14 @@ def _setup_random_seed() -> None:
     seed: int = int(time.time())
 
     if _env.exists("COCOTB_RANDOM_SEED"):
-        seed = _env.as_int("COCOTB_RANDOM_SEED", seed)
+        seed = _env.get_int("COCOTB_RANDOM_SEED", seed)
 
     elif _env.exists("RANDOM_SEED"):
         warnings.warn(
             "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
             DeprecationWarning,
         )
-        seed = _env.as_int("RANDOM_SEED", seed)
+        seed = _env.get_int("RANDOM_SEED", seed)
 
     elif "ntb_random_seed" in cocotb.plusargs:
         warnings.warn(
