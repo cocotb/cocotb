@@ -77,22 +77,22 @@ class Option:
         # Map command line argument to option in configuration file
         # Environment variable set by user can override default value for option
         if action == "store_true":
-            default = _env.as_bool(self.environment, default)
+            default = _env.get_bool(self.environment, default)
             ini_type = "bool"
         elif nargs:
-            default = _env.as_list(self.environment, default)
+            default = _env.get_list(self.environment, default)
             ini_type = "paths" if argtype == Path else "args"
         elif argtype is int:
-            default = _env.as_int(self.environment, default)
+            default = _env.get_int(self.environment, default)
             ini_type = "int"
         elif argtype is Path:
-            default = _env.as_path(self.environment, default)
+            default = _env.get_path(self.environment, default)
             ini_type = "string"
         elif argtype is shlex.split:
-            default = _env.as_args(self.environment, default)
+            default = _env.get_args(self.environment, default)
             ini_type = "args"
         elif choices:
-            default = _env.as_str(self.environment, default).lower()
+            default = _env.get_str(self.environment, default).lower()
             ini_type = "string"
 
             # Resolve values passed from environment variables
@@ -108,7 +108,7 @@ class Option:
                     f"Expecting one of {(*choices,)}"
                 )
         else:
-            default = _env.as_str(self.environment, default)
+            default = _env.get_str(self.environment, default)
             ini_type = "string"
 
         # Add option entry to configuration files (pyproject.toml, pytest.ini, ...)

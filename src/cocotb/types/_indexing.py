@@ -6,7 +6,7 @@ from __future__ import annotations
 from cocotb.types._range import Range
 from cocotb_tools import _env
 
-do_indexing_changed_warning: bool = _env.as_bool("COCOTB_INDEXING_CHANGED_WARNING")
+do_indexing_changed_warning: bool = _env.get_bool("COCOTB_INDEXING_CHANGED_WARNING")
 
 
 def indexing_changed(range: Range) -> bool:

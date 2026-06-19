@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from cocotb_tools import _env
 
-debug: bool = _env.as_bool("COCOTB_SCHEDULER_DEBUG")
+debug: bool = _env.get_bool("COCOTB_SCHEDULER_DEBUG")
 """Global flag to enable additional debugging functionality.
 
 Defaults to ``True`` if the :envvar:`COCOTB_SCHEDULER_DEBUG` environment variable is set,

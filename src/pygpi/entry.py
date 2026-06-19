@@ -10,7 +10,7 @@ from cocotb_tools import _env
 def load_entry() -> None:
     """Gather entry point information by parsing :envvar:`PYGPI_USERS`."""
 
-    entry_points_str: list[str] = _env.as_list(
+    entry_points_str: list[str] = _env.get_list(
         "PYGPI_USERS",
         (
             "cocotb_tools._coverage:start_cocotb_library_coverage",

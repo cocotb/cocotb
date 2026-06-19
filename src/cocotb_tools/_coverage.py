@@ -7,7 +7,7 @@ from cocotb_tools import _env
 
 
 def start_cocotb_library_coverage() -> None:  # pragma: no cover
-    if not _env.as_bool("COCOTB_LIBRARY_COVERAGE"):
+    if not _env.get_bool("COCOTB_LIBRARY_COVERAGE"):
         return
     try:
         import coverage  # noqa: PLC0415

@@ -225,11 +225,11 @@ class RegressionManager:
         self._mode = RegressionMode.REGRESSION
         self._regression_terminated: BaseException | None = None
         self._regression_seed = cocotb.RANDOM_SEED
-        self._random_test_order = _env.as_bool(
+        self._random_test_order = _env.get_bool(
             "COCOTB_RANDOM_TEST_ORDER", default=False
         )
         self._random_state: Any
-        self._max_failures = _env.as_int("COCOTB_MAX_FAILURES", default=0)
+        self._max_failures = _env.get_int("COCOTB_MAX_FAILURES", default=0)
         self._random_x_resolver_state: Any
 
         # Setup xUnit
@@ -237,7 +237,7 @@ class RegressionManager:
         self.xunit = XUnitReporter(
             relative_to=os.getenv("COCOTB_RESULTS_RELATIVE_TO"),
             # Common default file attachments that will be added to all created test cases
-            default_attachments=_env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
+            default_attachments=_env.get_list("COCOTB_RESULTS_ATTACHMENTS"),
         )
 
     def discover_tests(self, *modules: str) -> None:
@@ -1126,7 +1126,7 @@ def _setup_regression_manager() -> None:
     _manager_inst = RegressionManager()
 
     # discover tests
-    modules: list[str] = _env.as_list("COCOTB_TEST_MODULES")
+    modules: list[str] = _env.get_list("COCOTB_TEST_MODULES")
     if not modules:
         raise RuntimeError(
             "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
@@ -1135,8 +1135,8 @@ def _setup_regression_manager() -> None:
     _manager_inst.discover_tests(*modules)
 
     # filter tests
-    testcases: list[str] = _env.as_list("COCOTB_TESTCASE")
-    test_filter: str = _env.as_str("COCOTB_TEST_FILTER")
+    testcases: list[str] = _env.get_list("COCOTB_TESTCASE")
+    test_filter: str = _env.get_str("COCOTB_TEST_FILTER")
     if testcases and test_filter:
         raise RuntimeError("Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER")
     elif testcases:
@@ -1168,7 +1168,7 @@ def _run_regression() -> None:
 
     _setup_regression_manager()
 
-    if _env.as_bool("COCOTB_LIST_TESTS", False):
+    if _env.get_bool("COCOTB_LIST_TESTS", False):
         _manager_inst.list_tests()
     else:
         _manager_inst.start_regression()

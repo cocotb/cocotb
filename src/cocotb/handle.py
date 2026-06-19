@@ -762,7 +762,7 @@ class _OldImmediate(_Action[_ValueT]):
 _apply_writes_cb: TriggerCallback | None = None
 
 
-_trust_inertial: bool = _env.as_bool("COCOTB_TRUST_INERTIAL_WRITES")
+_trust_inertial: bool = _env.get_bool("COCOTB_TRUST_INERTIAL_WRITES")
 if _trust_inertial:
 
     def _apply_scheduled_writes() -> None:

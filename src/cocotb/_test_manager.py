@@ -26,7 +26,7 @@ from cocotb_tools import _env
 if sys.version_info < (3, 11):
     from exceptiongroup import BaseExceptionGroup
 
-_pdb_on_exception = _env.as_bool("COCOTB_PDB_ON_EXCEPTION")
+_pdb_on_exception = _env.get_bool("COCOTB_PDB_ON_EXCEPTION")
 
 
 class TestManager:
