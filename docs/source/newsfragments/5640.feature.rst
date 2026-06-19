@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_FUTURE` envvar to allow users to opt-in to experimental features or breaking changes.

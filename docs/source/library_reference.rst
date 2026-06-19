@@ -932,6 +932,28 @@ Other Runtime Information
 
     .. versionadded:: 2.1
 
+Future Features
+---------------
+
+.. envvar:: COCOTB_FUTURE
+
+    Type: :ref:`env-list`
+
+    A comma-separated list of experimental features or breaking changes that can be enabled or disabled.
+    If this variable is not defined, all experimental features and breaking changes are disabled.
+
+    See :class:`cocotb.future.Future` for a list of available features.
+    The lowercase name of the feature is used to enable it.
+    Setting the value to ``1``, ``true``, or ``yes`` enables all features,
+    while ``0``, ``false``, or ``no`` disables all features.
+
+    .. versionadded:: 2.1
+
+.. automodule:: cocotb.future
+    :members:
+    :member-order: bysource
+    :synopsis: Experimental features or breaking changes that can be enabled or disabled.
+
 Debugging
 ---------
 

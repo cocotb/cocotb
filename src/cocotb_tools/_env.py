@@ -60,21 +60,37 @@ def get_bool(name: str, default: bool | None = None) -> bool:
     Raises:
         :exc:`ValueError` in case of an unexpected value.
     """
-    envvar: str = get_str(name)  # Keep original case for ValueError
-    value: str = envvar.lower()
+    value = get_str(name)  # Keep original case for ValueError
 
     if not value:
         return default or False
 
+    try:
+        return as_bool(value)
+    except ValueError:
+        raise ValueError(
+            f"Unexpected value {value!r} for environment variable: {name!r}. "
+            f"Expecting one of {(*TRUE,)} or {(*FALSE,)} (case-insensitive)"
+        ) from None
+
+
+def as_bool(value: str) -> bool:
+    """Convert envvar string value to Python boolean type.
+
+    Args:
+        value: String value to convert. Case-insensitive.
+
+    Returns:
+        :data:`True` if the value is ``1``, ``yes``, ``y``, ``on``, ``true`` or ``enable``.
+        :data:`False` if the value is ``0``, ``no``, ``n``, ``off``, ``false`` or ``disable``.
+    """
+    value = value.lower()
     if value in TRUE:
         return True
-
     if value in FALSE:
         return False
-
     raise ValueError(
-        f"Unexpected value {envvar!r} for environment variable: {name!r}. "
-        f"Expecting one of {(*TRUE,)} or {(*FALSE,)} (case-insensitive)"
+        f"Unexpected value: {value!r}. Expecting one of {(*TRUE,)} or {(*FALSE,)} (case-insensitive)"
     )
 
 

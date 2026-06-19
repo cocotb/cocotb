@@ -15,15 +15,15 @@ from collections.abc import Iterable
 from enum import Enum, IntEnum
 from functools import wraps
 from types import TracebackType
-from typing import (
-    Any,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import Any, TypeVar, cast, overload
+
+from cocotb._compat import StrEnum
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 ExceptionTuple: TypeAlias = tuple[type[BaseException], BaseException, TracebackType]
 
@@ -167,14 +167,22 @@ class DocEnum(Enum):
         return self
 
 
-IntEnumT = TypeVar("IntEnumT", bound=IntEnum)
-
-
 class DocIntEnum(IntEnum):
     """Like DocEnum but for :class:`IntEnum` enum types."""
 
-    def __new__(cls: type[IntEnumT], value: int, doc: str | None = None) -> IntEnumT:
+    def __new__(cls, value: int, doc: str | None = None) -> Self:
         self = int.__new__(cls, value)
+        self._value_ = value
+        if doc is not None:
+            self.__doc__ = doc
+        return self
+
+
+class DocStrEnum(StrEnum):
+    """Like DocEnum but for :class:`StrEnum` enum types."""
+
+    def __new__(cls, value: str, doc: str | None = None) -> Self:
+        self = str.__new__(cls, value)
         self._value_ = value
         if doc is not None:
             self.__doc__ = doc

@@ -18,6 +18,7 @@ from typing import cast
 import cocotb
 import cocotb._profiling
 import cocotb._shutdown
+import cocotb.future
 import cocotb.handle
 import cocotb.logging
 import cocotb.simtime
@@ -31,6 +32,7 @@ def init_package_from_simulation() -> None:
     """Initialize the cocotb package from a simulation context."""
 
     # Initialize subsystems
+    cocotb.future._init()
     cocotb._shutdown._init()
     cocotb.logging._init()
     cocotb._profiling._init()
