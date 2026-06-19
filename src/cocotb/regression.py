@@ -29,13 +29,14 @@ import cocotb._shutdown as shutdown
 import cocotb.handle
 import cocotb.simulator
 import cocotb.types._resolve
+from cocotb import future
 from cocotb import logging as cocotb_logging
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager, TestSuccess
 from cocotb._utils import DocEnum, safe_divide
-from cocotb._xunit_reporter import XUnitReporter
+from cocotb._xunit_reporter import Status, XUnitReporter
 from cocotb.logging import ANSI
 from cocotb.simtime import get_sim_time
 from cocotb_tools import _env
@@ -219,6 +220,8 @@ class RegressionManager:
         """The current number of skipped tests."""
         self.failures = 0
         """The current number of failed tests."""
+        self.xfailed = 0
+        """The current number of xfailed tests."""
         self._tearing_down = False
         self._test_queue: list[Test] = []
         self._filters: list[re.Pattern[str]] = []
@@ -776,7 +779,22 @@ class RegressionManager:
         result: BaseException | None,
         msg: str | None,
     ) -> None:
-        start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
+        status: Status
+
+        if future.is_enabled(future.Future.XFAIL_IN_RESULTS):
+            # Use the XFAIL status for xfailed tests (like pytest)
+            outcome = _TestOutcome.XFAIL
+            color = self.COLOR_XFAILED
+            status = "xfailed"
+            self.xfailed += 1
+        else:
+            # Use the PASS status for xfailed tests
+            outcome = _TestOutcome.PASS
+            color = self.COLOR_PASSED
+            status = "passed"
+            self.passed += 1
+
+        start_hilight = "" if cocotb_logging.strip_ansi else color
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is None:
             rest = ""
@@ -787,9 +805,10 @@ class RegressionManager:
         else:
             result_was = f" (result was {type(result).__qualname__})"
         self.log.info(
-            "%s %spassed%s%s%s",
+            "%s %s%s%s%s%s",
             self._test.fullname,
             start_hilight,
+            status,
             stop_hilight,
             rest,
             result_was,
@@ -803,7 +822,7 @@ class RegressionManager:
             name=self._test.name,
             classname=self._test.module,
             time=wall_time_s,
-            status="passed",
+            status=status,
             extra_properties={
                 # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
                 # especially after merging multiple XML reports from different sources (e. g. CI jobs)
@@ -820,14 +839,13 @@ class RegressionManager:
         )
 
         # update running passed/failed/skipped counts
-        self.passed += 1
         self.count += 1
 
         # save details for summary
         self._test_results.append(
             _TestResults(
                 test_fullname=self._test.fullname,
-                outcome=_TestOutcome.PASS,
+                outcome=outcome,
                 sim_time_ns=sim_time_duration,
                 wall_time_s=wall_time_s,
             )
@@ -973,6 +991,9 @@ class RegressionManager:
         REAL_FIELD = "REAL TIME (s)"
         RATIO_FIELD = "RATIO (ns/s)"
         TOTAL_NAME = f"TESTS={self.total_tests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
+
+        if future.is_enabled(future.Future.XFAIL_IN_RESULTS):
+            TOTAL_NAME += f" XFAIL={self.xfailed}"
 
         TEST_FIELD_LEN = max(
             len(TEST_FIELD),
