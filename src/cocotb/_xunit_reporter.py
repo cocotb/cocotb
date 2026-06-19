@@ -26,7 +26,7 @@ from traceback import format_exception
 from typing import Any, Literal
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-Status = Literal["passed", "failed", "skipped", "error"]
+Status = Literal["passed", "failed", "skipped", "error", "xfailed"]
 """Status of test case.
 
 - ``passed`` - Test passed.
