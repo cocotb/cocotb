@@ -253,6 +253,7 @@ async def gather(
 
     When *return_exceptions* is ``False``, if any *awaitable* results in an exception or is cancelled,
     the remaining *awaitables* are cancelled and the exception or :exc:`~asyncio.CancelledError` is re-raised.
+    This does not cancel :class:`~cocotb.task.Task`\ s passed as arguments, only :term:`coroutines <coroutine>`,  :term:`triggers <trigger>`, or other user-defined :term:`!awaitables`.
     When *return_exceptions* is ``True``, all exceptions and cancellations are treated as successful results and returned in the resulting tuple.
     Control returns to the caller after all *awaitables* have completed and/or been cancelled.
 
