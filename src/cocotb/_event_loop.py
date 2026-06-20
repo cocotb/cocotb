@@ -70,5 +70,12 @@ class EventLoop:
         self._callbacks.append(cb)
         return cb
 
+    def schedule_left(self, func: Callable[[], object]) -> ScheduledCallback:
+        cb = ScheduledCallback(func)
+        if debug.debug:
+            self.log.debug("Scheduling %r to the left", cb)
+        self._callbacks.appendleft(cb)
+        return cb
+
 
 _inst: EventLoop = EventLoop()

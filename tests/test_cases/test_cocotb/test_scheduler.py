@@ -423,20 +423,6 @@ async def test_task_repr(_) -> None:
     assert re.match(
         (
             r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
-            r"<Task \d+ created coro=coroutine_wait\(\)>, "
-            r"<Timer of 2000.00ps at \w+>"
-            r"\)>"
-        ),
-        repr(coro_task),
-    )
-
-    # wait for coroutine_wait to start
-    await NullTrigger()  # start_soon on _wait_callback
-
-    log.info(repr(coro_task))
-    assert re.match(
-        (
-            r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
             r"<Task \d+ scheduled coro=coroutine_wait\(\)>, "
             r"<Timer of 2000.00ps at \w+>"
             r"\)>"
