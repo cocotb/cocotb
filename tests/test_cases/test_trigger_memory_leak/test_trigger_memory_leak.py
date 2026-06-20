@@ -35,11 +35,17 @@ from cocotb.triggers import (
     Timer,
     ValueChange,
 )
+from cocotb_tools.sim_versions import QuestaVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 proc = psutil.Process(os.getpid())
 # diff less than n * 4k for ASLR, if use THP, maybe lessthan n * 2MB
 MEMORY_LEAK_TH = 2**22 if SIM_NAME.startswith("riviera") else 2**21
+
+
+questa_before_2025 = SIM_NAME.startswith("modelsim") and QuestaVersion(
+    cocotb.SIM_VERSION
+) < QuestaVersion("2025")
 
 
 @cocotb.test
@@ -52,57 +58,66 @@ async def test_next_time_step_leak(dut):
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await NextTimeStep()
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(
+    questa_before_2025, reason="Questa before 2025 leaks callback objects after firing"
+)
 async def test_timer_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await Timer(1, unit="ns")
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(
+    questa_before_2025, reason="Questa before 2025 leaks callback objects after firing"
+)
 async def test_readonly_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await ReadOnly()
         await Timer(1, unit="ns")
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(
+    questa_before_2025, reason="Questa before 2025 leaks callback objects after firing"
+)
 async def test_readwrite_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await Timer(1, unit="ns")
         await ReadWrite()
 
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
@@ -116,12 +131,12 @@ async def test_rising_edge_leak(dut):
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await RisingEdge(dut.clk)
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
@@ -135,12 +150,12 @@ async def test_falling_edge_leak(dut):
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await FallingEdge(dut.clk)
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
@@ -154,30 +169,36 @@ async def test_value_change_leak(dut):
     cocotb.start_soon(clk.start())
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await ValueChange(dut.clk)
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
-@cocotb.test()
-async def test_null_triger_leak(dut):
+@cocotb.test
+@cocotb.xfail(
+    questa_before_2025, reason="Questa before 2025 leaks callback objects after firing"
+)
+async def test_null_trigger_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         await NullTrigger()
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(
+    questa_before_2025, reason="Questa before 2025 leaks callback objects after firing"
+)
 async def test_event_leak(dut):
     e = Event()
 
@@ -190,11 +211,11 @@ async def test_event_leak(dut):
     await Timer(1_000, unit="ns")
     rss_start = proc.memory_info().rss
     await Timer(100_000, unit="ns")
-    rss_no_triger = proc.memory_info().rss
+    rss_no_trigger = proc.memory_info().rss
     for _ in range(100_000):
         e.set()
         await Timer(1, "ns")
     gc.collect()
-    rss_triger = proc.memory_info().rss
-    diff = rss_triger - rss_no_triger - rss_no_triger + rss_start
+    rss_trigger = proc.memory_info().rss
+    diff = rss_trigger - rss_no_trigger - rss_no_trigger + rss_start
     assert diff <= MEMORY_LEAK_TH, "Memory leak"
