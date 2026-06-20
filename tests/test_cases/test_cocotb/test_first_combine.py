@@ -16,7 +16,7 @@ import pytest
 from common import MyException, _check_traceback, assert_takes
 
 import cocotb
-from cocotb.triggers import Combine, Event, First, Timer, Trigger, select
+from cocotb.triggers import Combine, Event, First, Timer, Trigger, gather, select
 
 
 class MyTrigger(Trigger):
@@ -33,8 +33,8 @@ class MyTrigger(Trigger):
 
 
 @cocotb.test
-async def test_First_unfired_triggers_killed(_: object) -> None:
-    """Test that un-fired trigger(s) in First don't later cause a spurious wakeup."""
+async def test_select_unfired_triggers_killed(_: object) -> None:
+    """Test that un-fired trigger(s) in select don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
 
@@ -48,8 +48,8 @@ async def test_First_unfired_triggers_killed(_: object) -> None:
 
 
 @cocotb.test
-async def test_First_unfired_triggers_killed_on_exception(_: object) -> None:
-    """Test that un-fired trigger(s) in First after exception don't later cause a spurious wakeup."""
+async def test_select_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) in select after exception don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
 
@@ -66,8 +66,8 @@ async def test_First_unfired_triggers_killed_on_exception(_: object) -> None:
 
 
 @cocotb.test
-async def test_Combine_unfired_triggers_killed_on_exception(_: object) -> None:
-    """Test that un-fired trigger(s) in Combine after exception don't later cause a spurious wakeup."""
+async def test_gather_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) in gather after exception don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
 
@@ -75,7 +75,35 @@ async def test_Combine_unfired_triggers_killed_on_exception(_: object) -> None:
         raise ValueError("I am a failure")
 
     with pytest.raises(ValueError):
-        await select(fails(), *triggers)
+        await gather(fails(), *triggers)
+
+    # test all triggers were unprimed
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_nested_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) in nested First after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    async def fails() -> None:
+        raise ValueError("I am a failure")
+
+    with pytest.raises(ValueError):
+        await select(fails(), gather(*triggers))
+
+    # test all triggers were unprimed
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    with pytest.raises(ValueError):
+        await select(fails(), select(gather(*triggers)))
 
     # test all triggers were unprimed
     for t in triggers:
