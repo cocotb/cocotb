@@ -1,0 +1,1 @@
+Document the per-simulator syntax for overriding top-level Verilog ``parameter`` and VHDL ``generic`` values from the Makefile flow.
