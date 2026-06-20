@@ -16,8 +16,7 @@ import pytest
 from common import MyException, _check_traceback, assert_takes
 
 import cocotb
-from cocotb.task import Task
-from cocotb.triggers import Combine, Event, First, Timer, Trigger
+from cocotb.triggers import Combine, Event, First, Timer, Trigger, select
 
 
 class MyTrigger(Trigger):
@@ -34,13 +33,13 @@ class MyTrigger(Trigger):
 
 
 @cocotb.test
-async def test_First_unfired_triggers_killed(_) -> None:
+async def test_First_unfired_triggers_killed(_: object) -> None:
     """Test that un-fired trigger(s) in First don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
 
     timer = Timer(1, "ns")
-    res = await First(timer, *triggers)
+    _, res = await select(timer, *triggers)
     assert res is timer
 
     for t in triggers:
@@ -49,7 +48,7 @@ async def test_First_unfired_triggers_killed(_) -> None:
 
 
 @cocotb.test
-async def test_First_unfired_triggers_killed_on_exception(_) -> None:
+async def test_First_unfired_triggers_killed_on_exception(_: object) -> None:
     """Test that un-fired trigger(s) in First after exception don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
@@ -57,8 +56,8 @@ async def test_First_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
-        await First(Task(fails()), *triggers)
+    with pytest.raises(ValueError):
+        await select(fails(), *triggers)
 
     # test all triggers were unprimed
     for t in triggers:
@@ -67,7 +66,7 @@ async def test_First_unfired_triggers_killed_on_exception(_) -> None:
 
 
 @cocotb.test
-async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
+async def test_Combine_unfired_triggers_killed_on_exception(_: object) -> None:
     """Test that un-fired trigger(s) in Combine after exception don't later cause a spurious wakeup."""
 
     triggers = [MyTrigger() for _ in range(3)]
@@ -75,8 +74,8 @@ async def test_Combine_unfired_triggers_killed_on_exception(_) -> None:
     async def fails() -> None:
         raise ValueError("I am a failure")
 
-    with pytest.raises(ValueError), pytest.warns(DeprecationWarning):
-        await Combine(Task(fails()), *triggers)
+    with pytest.raises(ValueError):
+        await select(fails(), *triggers)
 
     # test all triggers were unprimed
     for t in triggers:
