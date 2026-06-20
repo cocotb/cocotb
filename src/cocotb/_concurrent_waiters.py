@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from asyncio import CancelledError
 from collections.abc import Iterable
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
@@ -77,28 +76,17 @@ async def _wait(
     # Use dict (insertion-ordered) so cancellation order is deterministic and we have O(1) insertion and removals.
     remaining = dict.fromkeys(waiters)
     done = _InternalEvent(_repr)
-    cancelling: bool = False
     # The first task to complete, stored regardless of return_when condition.
     first_completed: Task[Any] | None = None
-
-    def cancel() -> None:
-        nonlocal cancelling
-        if cancelling:
-            return
-        cancelling = True
-        for t in remaining:
-            t.cancel()
 
     if return_when == ReturnWhen.FIRST_COMPLETED:
 
         def done_callback(task: Task[Any]) -> None:
             del remaining[task]
-            if not remaining:
-                done.set()
             nonlocal first_completed
             if first_completed is None:
                 first_completed = task
-                cancel()
+                done.set()
 
     elif return_when == ReturnWhen.FIRST_EXCEPTION:
 
@@ -111,7 +99,7 @@ async def _wait(
                 task.cancelled() or task.exception() is not None
             ):
                 first_completed = task
-                cancel()
+                done.set()
 
     else:
 
@@ -126,9 +114,13 @@ async def _wait(
 
     try:
         await done
-    except CancelledError:
-        cancel()
-        raise
+    finally:
+        # Cancel remaining tasks. No-op if everything has finished (ALL_COMPLETED)
+        # or the return_when condition is specified, but all tasks happen to complete
+        # before this Task runs again. Cancels whatever is remaining and rethrows if
+        # the caller is cancelled.
+        for task in remaining:
+            task.cancel()
 
     return waiters, first_completed
 
