@@ -1,0 +1,1 @@
+:class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` now only return after all child awaitables have finished, including via cancellation, to ensure any stateful clean-up code was hit before continuing.
