@@ -977,9 +977,14 @@ class Icarus(Runner):
                 )
 
         build_args = [arg.value for arg in self._build_args]
+
+        # Icarus `-s` (toplevel selection) is sensitive to its position in the
+        # argument list; placing it after all sources is the documented robust
+        # ordering. See https://github.com/cocotb/cocotb/issues/4077.
+        toplevel_args: list[str] = ["-s", self.hdl_toplevel]
         if self.waves:
             self._create_iverilog_dump_file()
-            build_args += ["-s", "cocotb_iverilog_dump"]
+            toplevel_args += ["-s", "cocotb_iverilog_dump"]
 
         if self.timescale is not None:
             self._create_cmd_file()
@@ -992,8 +997,6 @@ class Icarus(Runner):
                     "iverilog",
                     "-o",
                     str(self.sim_file),
-                    "-s",
-                    self.hdl_toplevel,
                     "-g2012",
                 ]
                 + self._get_define_options(self.defines)
@@ -1006,6 +1009,7 @@ class Icarus(Runner):
                     for source_file in [self.iverilog_dump_file]
                     if self.waves
                 ]
+                + toplevel_args
             ]
 
         else:

@@ -1,0 +1,1 @@
+Fix the Icarus Python Runner placing the ``-s <toplevel>`` argument before the source files, which can cause unreliable elaboration. The toplevel selection now follows all sources.
