@@ -2188,13 +2188,18 @@ class RyuSim(Runner):
         return [f"-D{name}={as_sv_literal(value)}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
-        return [
-            f"-P{name}={as_sv_literal(value)}" for name, value in parameters.items()
-        ]
+        # RyuSim's -G expects the raw SV value text (like Verilator); wrapping it
+        # in an SV string literal would make ryusim read e.g. "8" as the string's
+        # ASCII value rather than the integer 8.
+        return [f"-G{name}={value}" for name, value in parameters.items()]
 
     @property
     def sim_file(self) -> Path:
-        return self.build_dir / f"lib{self.hdl_toplevel}.so"
+        # ``sim_hdl_toplevel`` is only set by ``test()``; ``hdl_toplevel`` only by
+        # ``build()``. Resolve whichever is available so ``sim_file`` works both in
+        # the build path (``outdated()`` check) and the test-only path.
+        toplevel = getattr(self, "sim_hdl_toplevel", None) or self.hdl_toplevel
+        return self.build_dir / f"lib{toplevel}.so"
 
     def _use_external_viewer(self) -> bool:
         return True
