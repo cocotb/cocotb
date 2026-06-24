@@ -1,0 +1,1 @@
+Added :func:`cocotb.triggers.wait` for waiting on multiple awaitables concurrently with a configurable return condition.

@@ -16,7 +16,7 @@ from typing import Any, TypeVar, cast, overload
 
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger
-from cocotb._concurrent_waiters import gather, select
+from cocotb._concurrent_waiters import _wait, select
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import FallingEdge, RisingEdge, Timer, ValueChange
 from cocotb.simtime import RoundMode, TimeUnit
@@ -93,7 +93,12 @@ class Combine(Waitable["Combine"]):
         if len(self._triggers) == 0:
             await NullTrigger()
         else:
-            await gather(*self._triggers, _repr=self.__repr__)  # type: ignore[call-overload]
+            idx, tasks = await _wait(
+                self._triggers, return_when="FIRST_EXCEPTION", _repr=self.__repr__
+            )
+            if idx is not None:
+                tasks[idx].result()
+            return self
         return self
 
     def __repr__(self) -> str:
@@ -177,8 +182,11 @@ class First(Waitable[object]):
         self._triggers = triggers
 
     async def _wait(self) -> object:
-        _, result = await select(*self._triggers, _repr=self.__repr__)  # type: ignore[call-overload]
-        return result
+        idx, tasks = await _wait(
+            self._triggers, return_when="FIRST_COMPLETED", _repr=self.__repr__
+        )
+        assert idx is not None
+        return tasks[idx].result()
 
     def __repr__(self) -> str:
         # no _pointer_str here, since this is not a trigger, so identity

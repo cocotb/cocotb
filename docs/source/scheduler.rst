@@ -10,7 +10,7 @@ including the following topics:
 * :term:`tasks <task>`
 * :term:`concurrency`
 * Running independent concurrent tasks with :func:`cocotb.start_soon`.
-* Waiting for multiple things to finish with :func:`~cocotb.triggers.gather` and :func:`~cocotb.triggers.select`.
+* Waiting for multiple things to finish with :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`.
 * Structured concurrency with :class:`~cocotb.triggers.TaskManager`.
 * Inter-task communication with :class:`~cocotb.triggers.Event` and :class:`~cocotb.queue.Queue`.
 * Inter-task synchronization with :class:`~cocotb.triggers.Lock`.
@@ -506,9 +506,9 @@ We are also taking advantage of the fact that cancellation raises a :exc:`!Cance
             self._task = None
 
 
-***********************************
-:func:`!gather` and :func:`!select`
-***********************************
+***************************************************
+:func:`!gather`, :func:`!select`, and :func:`!wait`
+***************************************************
 
 Another common concurrency use case you may run into is needing to wait for multiple tasks to finish before proceeding.
 For specific examples:
@@ -517,20 +517,90 @@ For specific examples:
 * Waiting for multiple testbench components to quiesce during test end.
 * Timing out an operation.
 
-cocotb provides two functions for this purpose, :func:`~cocotb.triggers.gather` and :func:`~cocotb.triggers.select`.
+cocotb provides three functions for this purpose, :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`.
+These functions not only allow you to wait for multiple *anything* to finish,
+but provide useful return values and provide cancellation and clean-up guarantees.
+These cancellation and clean-up guarantees are what is meant by "structured concurrency."
 
-Both of these functions take a variable number of :term:`awaitable objects <awaitable>` and wait for all (:func:`!gather`) or any (:func:`!select`) of them to finish before proceeding.
-:func:`!gather` returns a list of results corresponding to each of the :term:`!awaitable objects <awaitable>` passed in,
-while :func:`!select` returns a tuple of the result of the first awaitable to return and the index in the argument list it corresponds to.
+:func:`!gather`
+===============
 
-This is accomplished by creating an "internal waiter Task" that :keyword:`await`\ s each of the :term:`!awaitable objects <awaitable>`.
-These functions provide value by guaranteeing that no internal waiter task will be left running unintentionally after they finish.
-If any of the :term:`!awaitable objects <awaitable>` raise an exception, that exception is propagated to the caller of :func:`!gather` or :func:`!select`.
-After an exception is raised, all unfinished internal waiter :class:`!Task`\ s are cancelled.
-Likewise, as soon as the first awaitable in a :func:`!select` returns, all unfinished internal waiter :class:`!Task`\ s are cancelled.
-These guarantees are what is meant by "structured concurrency."
+:func:`!gather` waits for all ``awaitables`` to complete and returns a list of their results in the same order as the ``awaitables`` were passed in.
+If any of the ``awaitables`` raise an exception, that exception is propagated to the caller of :func:`!gather` and all unfinished ``awaitables`` are cancelled.
 
-These two functions compose with each other easily to create more complex waiting conditions.
+.. code-block:: python
+
+    @cocotb.test()
+    async def my_test(dut):
+        # Wait for the design and scoreboard to quiesce before finishing the test.
+        results = await gather(
+            RisingEdge(dut.done),
+            scoreboard.quiesce(),
+        )
+
+:func:`!select`
+===============
+
+:func:`!select` waits for the first ``awaitable`` in its argument list to complete
+and returns a tuple of the index (0-based into the argument list) of the first completed ``awaitable`` and its result.
+Once the first ``awaitable`` completes, all unfinished ``awaitables`` are cancelled.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def my_test(dut):
+        # Ensure that the design meets the timing requirement.
+        i, result = await select(
+            RisingEdge(dut.condition),
+            Timer(10, "us")
+        )
+        if i == 0:
+            cocotb.log.info("Condition met!")
+        else:
+            cocotb.log.error("Condition not met within 10 us!")
+
+:func:`!wait`
+=============
+
+:func:`!wait` is the lower-level building block that :func:`!gather` and :func:`!select` are built on.
+It waits for multiple ``awaitables`` to finish, using the keyword argument *return_when* to determine when to return.
+
+* ``"FIRST_COMPLETED"``: Returns when the first awaitable finishes, for any reason.
+* ``"FIRST_EXCEPTION"``: Returns when the first awaitable raises an exception or is cancelled, or when all complete successfully.
+* ``"ALL_COMPLETED"``: Returns when all awaitables finish regardless of outcome.
+
+:func:`!wait` returns a tuple of the index (0-based into the argument list) of the first completed awaitable or ``None`` if no *first* event occurred,
+and a tuple of the waiter :class:`~cocotb.task.Task` objects.
+
+The caller is expected to inspect these :class:`!Task`\ s with :meth:`~cocotb.task.Task.result`, :meth:`~cocotb.task.Task.exception`, and :meth:`~cocotb.task.Task.cancelled`.
+
+Reach for :func:`!wait` when you don't want exceptions thrown to the caller, but instead want to handle them yourself.
+
+One special use-case for :func:`!wait` over :func:`!gather` and :func:`!select` is when you want to continue execution after an exception is raised in one of the siblings.
+In this case, use the ``"ALL_COMPLETED"`` return condition and inspect the returned :class:`!Task`\ s for exceptions.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def my_test(dut):
+        ...  # set up test
+
+        _, tasks = await wait(
+            sequencer_a.run(10000),
+            sequencer_b.run(10000),
+            check_for_data_loss(),
+            return_when="ALL_COMPLETED",
+        )
+        if (exc := tasks[2].exception()) is not None:
+            cocotb.log.error("Lost data: %r", exc)
+
+        ...  # check other results
+
+Composing :func:`!gather`, :func:`!select`, and :func:`!wait`
+=============================================================
+
+These functions compose with each other easily to create more complex waiting conditions,
+which we can see by joining the two examples from the :func:`!gather` and :func:`!select` sections above.
 
 .. code-block:: python
 
@@ -538,32 +608,24 @@ These two functions compose with each other easily to create more complex waitin
     async def my_test(arbitrator):
         ...  # set up test
 
-        # 10k transactions on each sequencer running simultaneously
-        await gather(
-            sequencer_a.run(10000),
-            sequencer_b.run(10000),
-        )
-
-        res, i = await select(
-            # Wait for scoreboard and the design to quiesce
+        # Implement a timeout after 10us.
+        i, res = await select(
+            # Wait for scoreboard and the design to quiesce.
             gather(
-                scoreboard.wait_for_quiescence(),
-                RisingEdge(dut.empty),
+                RisingEdge(dut.done),
+                scoreboard.quiesce(),
             ),
-            # Timeout after 100 us
-            Timer(100, unit="us"),
+            Timer(10, unit="us"),
         )
         if i == 0:
-            print("Design quiesced!")
+            cocotb.log.info("Design quiesced successfully!")
+            # continue checking results
         else:
-            raise TimeoutError("Design did not quiesce within 100 us!")
-
-        ...  # check results of the test
+            raise TimeoutError("Design did not quiesce within 10 us!")
 
 .. note::
-   If you pass a :class:`Task <cocotb.task.Task>` object to :func:`!gather` or :func:`!select` and an exception occurs
-   or :func:`!select` returns before that task finishes,
-   the passed in task will *not* be cancelled, only the internal waiter Task.
+   If you pass a :class:`Task <cocotb.task.Task>` object to :func:`!gather`, :func:`!select`, or :func:`!wait` and the call returns before that task finishes,
+   the passed in task will *not* be cancelled.
 
 .. note::
     You may be familiar with :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` which can also be used to wait for multiple things,
@@ -572,7 +634,7 @@ These two functions compose with each other easily to create more complex waitin
     This often forces the user to use :func:`cocotb.start_soon` and manage task lifetimes themselves
     which is verbose and rarely done correctly leading to :term:`!tasks` "leaking".
 
-    They also do not return useful results like :func:`!gather` and :func:`!select` do.
+    They also do not return useful results like :func:`!gather`, :func:`!select`, and :func:`!wait` do.
 
     For those reasons they are no longer recommended except for passing to functions or objects where specifically :term:`!triggers` are expected.
 
