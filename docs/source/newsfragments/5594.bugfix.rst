@@ -1,0 +1,1 @@
+Fixed race between currently scheduled Tasks and waiter Task start-up in :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine`.

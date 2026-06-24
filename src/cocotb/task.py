@@ -244,6 +244,13 @@ class Task(Generic[ResultType]):
             raise RuntimeError("Cannot start a finished Task")
         # RUNNING, SCHEDULED, PENDING are already running
 
+    def _start_next(self) -> None:
+        if self._state != _TaskState.UNSTARTED:
+            raise RuntimeError(
+                "Cannot _start_next() on a Task that has already been started"
+            )
+        cocotb._event_loop._inst.schedule_left(self._resume)
+
     def _set_outcome(
         self,
         result: ResultType | BaseException,

@@ -488,3 +488,29 @@ async def test_First_task_being_waited_cancelled(_: Any) -> None:
     assert waiter_task.done()
     for t in tasks[1:]:
         assert not t.done()
+
+
+@cocotb.test(timeout_time=5, timeout_unit="ns")
+async def test_5594(_: object) -> None:
+
+    async def other_coro(e1: Event, e2: Event) -> None:
+        # wait for e1 to be set by the test
+        await e1.wait()
+
+        # set e2 to let the test know we passed the wait
+        e2.set()
+        e2.clear()
+
+    e1 = Event()
+    e2 = Event()
+    cocotb.start_soon(other_coro(e1, e2))
+
+    # Ensure other_coro is waiting on e1 before we set it
+    await Timer(1, "ns")
+
+    # Wake up other_coro
+    e1.set()
+    e1.clear()
+
+    # Wait for other_coro to set e2
+    await First(e2.wait())
