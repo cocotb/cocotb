@@ -4,15 +4,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Awaitable, Iterable
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
+from typing import Any, Callable, Literal, TypeVar, overload
 
 from cocotb._base_triggers import _InternalEvent
 from cocotb.task import Task
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable
 
 
 class ReturnWhen(Enum):
@@ -68,10 +65,7 @@ async def _wait(
     .. versionadded:: 2.1
     """
 
-    async def waiter(aw: Awaitable[T]) -> T:
-        return await aw
-
-    waiters = [Task[Any](waiter(a)) for a in awaitables]
+    waiters = [Task[Any](a) for a in awaitables]
     # Use dict (insertion-ordered) so cancellation order is deterministic and we have O(1) insertion and removals.
     remaining = dict.fromkeys(waiters)
     # Set when we meet the return condition.

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import sys
 from asyncio import CancelledError
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -1162,3 +1162,14 @@ async def test_context_block_continue_on_error(
         assert task1.cancelled()
         assert task2.cancelled()
         assert task3.cancelled()
+
+
+@cocotb.test
+async def test_fork_on_function_that_returns_awaitable(_: object) -> None:
+    def coro_func() -> Awaitable[Any]:
+        return Timer(1)
+
+    async with TaskManager() as tm:
+        task = tm.fork(coro_func)
+        result = await task
+        assert isinstance(result, Timer)
