@@ -3,14 +3,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import collections.abc
 import inspect
 import logging
 import sys
 import traceback
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
-from collections.abc import Coroutine, Generator
+from collections.abc import Awaitable, Coroutine, Generator
 from enum import auto
 from functools import cached_property
 from types import CoroutineType, SimpleNamespace
@@ -20,6 +19,7 @@ from typing import (
     Generic,
     TypeVar,
     cast,
+    overload,
 )
 
 import cocotb
@@ -66,27 +66,61 @@ class Task(Generic[ResultType]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
-    Use :func:`cocotb.create_task` to create a Task object
-    or :func:`cocotb.start_soon` to create a Task and schedule it to run.
+    Use :func:`cocotb.create_task` to create a :class:`!Task` object
+    or :func:`cocotb.start_soon` to create a :class:`!Task` and schedule it to run.
+
+    Args:
+        inst: A coroutine to run as a :class:`!Task`, or any :class:`!Awaitable` to wrap in a coroutine and run as a :class:`!Task`.
+        name: Optional name. If not provided, a generic name is generated.
+
+    Raises:
+        TypeError: If *inst* is not Awaitable.
 
     .. versionchanged:: 1.8
-        Moved to the ``cocotb.task`` module.
+        Moved to the :mod:`cocotb.task` module.
 
     .. versionchanged:: 2.0
         The ``retval``, ``_finished``, and ``__bool__`` methods were removed.
         Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
+
+    .. versionadded:: 2.1
+        Added support for giving any :class:`~collections.abc.Awaitable` to the constructor, not just coroutines.
+        This implicitly wraps the Awaitable in a coroutine that :keyword:`await`s it.
+
+        If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this class,
+        read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
 
     _id_count = 0  # used by the scheduler for debug
 
+    @overload
     def __init__(
         self, inst: Coroutine[Trigger, None, ResultType], *, name: str | None = None
-    ) -> None:
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, inst: Awaitable[ResultType], *, name: str | None = None
+    ) -> None: ...
+
+    def __init__(self, inst: Awaitable[ResultType], *, name: str | None = None) -> None:
         self._native_coroutine: bool
+        self._coro: Coroutine[Trigger, Any, ResultType]
         if inspect.iscoroutine(inst):
             self._native_coroutine = True
-        elif isinstance(inst, collections.abc.Coroutine):
+            self._coro = inst
+        elif isinstance(inst, Coroutine):
             self._native_coroutine = False
+            self._coro = inst
+        elif isinstance(inst, Awaitable):
+            self._native_coroutine = True
+
+            async def waiter() -> ResultType:
+                return await inst
+
+            # TODO consider better naming for this coroutine,
+            # perhaps delegating to the Awaitable.
+            self._coro = waiter()
         elif inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
@@ -97,9 +131,8 @@ class Task(Generic[ResultType]):
                 "You likely used the yield keyword instead of await."
             )
         else:
-            raise TypeError(f"{inst} isn't a valid coroutine!")
+            raise TypeError(f"Expected Awaitable, got {type(inst).__name__}")
 
-        self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: ResultType | BaseException
         self._trigger: Trigger

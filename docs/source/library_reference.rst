@@ -321,6 +321,34 @@ Test Management
 Task Management
 ===============
 
+.. _awaitable-design-note:
+
+.. warning::
+    If you are passing a bespoke :class:`~collections.abc.Awaitable` object to :class:`Task` :func:`cocotb.start_soon`, :func:`cocotb.start`, or :func:`cocotb.create_task`,
+    you must ensure that the setup and cleanup are handled correctly.
+
+    When passing an object to one of these functions it may schedule the Task to run,
+    but the Task may be cancelled before it is :keyword:`await`\ ed.
+    If you put setup code in the constructor of a bespoke :class:`!Awaitable` and this occurs,
+    cleanup code in :meth:`!__await__` may never be executed.
+
+    It is also not advisable to put cleanup code in :meth:`!__del__` as this may never be called due to the way Python's garbage collector works.
+
+    Instead, prefer putting both setup and cleanup code in :meth:`!__await__` and only use the constructor to store parameters.
+
+    .. code-block:: python
+
+        class MyAwaitable:
+            def __init__(self, param):
+                self.param = param
+
+            def __await__(self):
+                self._setup(self.param)
+                try:
+                    yield some_trigger
+                finally:
+                    self._cleanup()
+
 .. currentmodule:: None
 
 .. autofunction:: cocotb.start_soon

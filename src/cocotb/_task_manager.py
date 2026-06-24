@@ -6,16 +6,15 @@
 
 from __future__ import annotations
 
-import inspect
 import sys
 from asyncio import CancelledError
 from bdb import BdbQuit
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
 from cocotb._base_triggers import NullTrigger
 from cocotb.task import Task, current_task
-from cocotb.triggers import Event, Trigger
+from cocotb.triggers import Event
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -107,16 +106,6 @@ class TaskManager:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
         self._ensure_can_add()
-
-        if isinstance(aw, Coroutine):
-            # This must come before Awaitable since Coroutine is a subclass of Awaitable
-            pass
-        elif isinstance(aw, Awaitable):
-            aw = _waiter(aw)
-        else:
-            raise TypeError(
-                f"start_soon() expected an Awaitable, got {type(aw).__name__}"
-            )
         task = Task[T](aw, name=name)
         self._add_task(task, continue_on_error=continue_on_error)
         return task
@@ -124,25 +113,29 @@ class TaskManager:
     @overload
     def fork(
         self,
-        coro_func: Callable[[], Coroutine[Trigger, None, T]],
+        coro_func: Callable[[], Awaitable[T]],
         /,
     ) -> Task[T]: ...
 
     @overload
     def fork(
         self, *, continue_on_error: bool
-    ) -> Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]: ...
+    ) -> Callable[[Callable[[], Awaitable[T]]], Task[T]]: ...
 
     def fork(
         self,
-        coro_func: Callable[..., Coroutine[Trigger, None, T]] | None = None,
+        coro_func: Callable[..., Awaitable[T]] | None = None,
         *,
         continue_on_error: bool | None = None,
-    ) -> Task[T] | Callable[[Callable[[], Coroutine[Trigger, None, T]]], Task[T]]:
+    ) -> Task[T] | Callable[[Callable[[], Awaitable[T]]], Task[T]]:
         r"""Decorate a coroutine function to run it concurrently.
 
+        .. note::
+            This does not necessarily have to be a coroutine function.
+            Any callable which returns a :class:`~collections.abc.Awaitable` can be used.
+
         Args:
-            coro_func: A :term:`coroutine function` to run concurrently. Typically only passed as a decorator.
+            coro_func: A :term:`coroutine function` to run concurrently. Typically this is the decorated function.
             continue_on_error: Value of *continue_on_error* for this Task only.
 
                 If not specified, defaults to the value of the :class:`!TaskManager`'s *default_continue_on_error* argument.
@@ -174,7 +167,7 @@ class TaskManager:
                 )
 
             def deco(
-                coro: Callable[[], Coroutine[Trigger, None, T]],
+                coro: Callable[[], Awaitable[T]],
             ) -> Task[T]:
                 return self.fork(  # type: ignore[call-overload]
                     coro,
@@ -183,11 +176,12 @@ class TaskManager:
 
             return deco
 
-        if not inspect.iscoroutinefunction(coro_func):
+        try:
+            task = Task[T](coro_func(), name=coro_func.__name__)
+        except TypeError:
             raise TypeError(
                 f"fork() expected a coroutine function, got {type(coro_func).__name__}"
-            )
-        task = Task[T](coro_func(), name=coro_func.__name__)
+            ) from None
         self._add_task(task, continue_on_error=continue_on_error)
         return task
 
