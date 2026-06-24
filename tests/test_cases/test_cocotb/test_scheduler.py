@@ -1138,3 +1138,17 @@ async def test_957_2(dut: Any) -> None:
     # pending coroutine doesn't interfere with this test.
     cocotb.start_soon(wait_edge(dut))
     await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_start_soon_awaitable(_: object) -> None:
+    """Test that cocotb.start_soon() works with any Awaitable, not just coroutines."""
+
+    class AwaitableThing:
+        def __await__(self) -> Generator[Trigger, None, int]:
+            yield Timer(1)
+            return 42
+
+    task = cocotb.start_soon(AwaitableThing())
+    result = await task
+    assert result == 42

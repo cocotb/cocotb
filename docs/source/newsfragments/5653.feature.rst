@@ -1,0 +1,1 @@
+Add support for passing *any* :class:`~collections.abc.Awaitable` to :func:`cocotb.create_task`, :func:`cocotb.start_soon`, and :func:`cocotb.start`. This wraps the :term:`awaitable` in a waiter :term:`coroutine`.
