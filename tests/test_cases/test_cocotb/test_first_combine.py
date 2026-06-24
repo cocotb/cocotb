@@ -498,7 +498,6 @@ async def test_5594(_: object) -> None:
         await e1.wait()
 
         # set e2 to let the test know we passed the wait
-        # it will never see it though because `First` delays the await on e2.wait() trigger
         e2.set()
         e2.clear()
 
