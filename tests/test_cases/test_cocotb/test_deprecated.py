@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import sys
 import warnings
+from collections.abc import Generator
 from typing import Any
 
 import pytest
@@ -16,7 +17,7 @@ from cocotb._base_triggers import Lock
 from cocotb.clock import Clock
 from cocotb.regression import TestFactory
 from cocotb.task import Join, current_task
-from cocotb.triggers import Edge, Event, First, Timer
+from cocotb.triggers import Edge, Event, First, Timer, Trigger
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -367,3 +368,18 @@ async def test_pass_test_in_expect_error(dut: object) -> None:
 async def test_pass_test_in_expect_fail(dut: object) -> None:
     with pytest.warns(DeprecationWarning):
         cocotb.pass_test("Finished test early")
+
+
+@cocotb.test
+async def test_cocotb_start_awaitable(_: object) -> None:
+    """Test that cocotb.start() works with any Awaitable, not just coroutines."""
+
+    class AwaitableThing:
+        def __await__(self) -> Generator[Trigger, None, int]:
+            yield Timer(1)
+            return 42
+
+    with pytest.warns(DeprecationWarning):
+        task = await cocotb.start(AwaitableThing())
+    result = await task
+    assert result == 42

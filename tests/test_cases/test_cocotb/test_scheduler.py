@@ -1155,3 +1155,17 @@ async def test_task_start_soon(_: object) -> None:
         task.start_soon()
     await Timer(2)
     assert task.done()
+
+
+@cocotb.test
+async def test_start_soon_awaitable(_: object) -> None:
+    """Test that cocotb.start_soon() works with any Awaitable, not just coroutines."""
+
+    class AwaitableThing:
+        def __await__(self) -> Generator[Trigger, None, int]:
+            yield Timer(1)
+            return 42
+
+    task = cocotb.start_soon(AwaitableThing())
+    result = await task
+    assert result == 42

@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import inspect
 import sys
 from asyncio import CancelledError
 from bdb import BdbQuit
@@ -107,16 +106,6 @@ class TaskManager:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
         self._ensure_can_add()
-
-        if isinstance(aw, Coroutine):
-            # This must come before Awaitable since Coroutine is a subclass of Awaitable
-            pass
-        elif isinstance(aw, Awaitable):
-            aw = _waiter(aw)
-        else:
-            raise TypeError(
-                f"start_soon() expected an Awaitable, got {type(aw).__name__}"
-            )
         task = Task[T](aw, name=name)
         self._add_task(task, continue_on_error=continue_on_error)
         return task
@@ -183,11 +172,12 @@ class TaskManager:
 
             return deco
 
-        if not inspect.iscoroutinefunction(coro_func):
+        try:
+            task = Task[T](coro_func(), name=coro_func.__name__)
+        except TypeError:
             raise TypeError(
                 f"fork() expected a coroutine function, got {type(coro_func).__name__}"
-            )
-        task = Task[T](coro_func(), name=coro_func.__name__)
+            ) from None
         self._add_task(task, continue_on_error=continue_on_error)
         return task
 
