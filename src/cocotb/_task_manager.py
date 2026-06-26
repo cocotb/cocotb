@@ -12,9 +12,8 @@ from bdb import BdbQuit
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from cocotb._base_triggers import NullTrigger
 from cocotb.task import Task, current_task
-from cocotb.triggers import Event
+from cocotb.triggers import Event, NullTrigger
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -231,6 +230,13 @@ class TaskManager:
     ) -> None:
         self._finishing = True
 
+        # Propagate special exceptions immediately.
+        # The GeneratorExit case is there so if the block is cancelled due to a child Task failure,
+        # and the block squashes the CancelledError and does an await, a GeneratorExit is thrown at the await, which may end up here.
+        if isinstance(exc, (KeyboardInterrupt, SystemExit, BdbQuit, GeneratorExit)):
+            self._cancel()
+            return None  # re-raise exception
+
         if self._cancelled:
             # The context block was cancelled due to a child Task failure.
             if isinstance(exc, CancelledError):
@@ -238,22 +244,16 @@ class TaskManager:
                 exc = None
                 self._parent_task._uncancel()
             else:
-                # The context block ignored the cancellation. Hard fail the test.
-                # There is a special case in Task if a cancelled Task finishes without
-                # raising CancelledError, it fails the test. So we just await *something*
-                # here to hit that code path.
-                # TODO Make this force a test failure.
-                self._cancel()
+                # The context block ignored the cancellation and either threw some other exception or finished successfully.
+                # We await a token NullTrigger to allow the parent Task to kill the Task due to ignored CancelledError.
                 await NullTrigger()
+                # This will never run as a GeneratorExit will be thrown at the above await.
+                return None  # pragma: no cover
         elif exc is not None:
             if isinstance(exc, CancelledError):
-                # Something else cancelled the parent task. Propagate CancelledError.
+                # Something else cancelled the parent task. Propagate CancelledError immediately.
                 self._cancel()
                 return None  # re-raise CancelledError
-            elif isinstance(exc, (KeyboardInterrupt, SystemExit, BdbQuit)):
-                # Certain BaseExceptions should be immediately propagated like they are in Task.
-                self._cancel()
-                return None  # re-raise exception
             elif not self._context_continue_on_error:
                 # Block finished with an exception and we are not continuing on error.
                 self._cancel()
