@@ -351,6 +351,7 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 if debug.debug:
                     self._log.debug("Task %r was cancelled but exited normally", self)
+                self._coro.close()
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
@@ -397,6 +398,7 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 if debug.debug:
                     self._log.debug("Task %r was cancelled but continued running", self)
+                self._coro.close()
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
