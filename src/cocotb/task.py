@@ -273,28 +273,32 @@ class Task(Generic[ResultType]):
         """
         if self._state is not _TaskState.UNSTARTED:
             raise RuntimeError("Can only start_soon() an unstarted Task")
-        self._schedule_resume()
-
-    def _ensure_started(self) -> None:
-        state = self._state
-        if state is _TaskState.UNSTARTED:
-            if debug.debug:
-                self._log.debug("Starting %r", self)
-            self._schedule_resume()
-        elif state in (
-            _TaskState.FINISHED,
-            _TaskState.ERRORED,
-            _TaskState.CANCELLED,
-        ):
-            raise RuntimeError("Cannot start a finished Task")
-        # RUNNING, SCHEDULED, PENDING are already running
+        if debug.debug:
+            self._log.debug("Starting %r", self)
+        # Schedule the Task to run
+        self._state = _TaskState.SCHEDULED
+        self._exc = None
+        self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume)
 
     def _start_next(self) -> None:
+        """Queues an unstarted Task to start running, but schedules it to run before other scheduled Tasks.
+
+        Currently private until someone needs it.
+        This is a potential footgun in the hands of a novice.
+
+        Raises:
+            RuntimeError: If the Task has already started.
+        """
         if self._state != _TaskState.UNSTARTED:
             raise RuntimeError(
                 "Cannot _start_next() on a Task that has already been started"
             )
-        cocotb._event_loop._inst.schedule_left(self._resume)
+        if debug.debug:
+            self._log.debug("Starting %r", self)
+        # Schedule the Task to run
+        self._state = _TaskState.SCHEDULED
+        self._exc = None
+        self._schedule_callback = cocotb._event_loop._inst.schedule_left(self._resume)
 
     def _set_outcome(
         self,
@@ -601,6 +605,10 @@ class Task(Generic[ResultType]):
         if self._must_cancel > 0:
             self._must_cancel -= 1
 
+    def _unstarted(self) -> bool:
+        """Return ``True`` if the Task has not started executing."""
+        return self._state is _TaskState.UNSTARTED
+
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
         return self._state is _TaskState.CANCELLED
@@ -663,8 +671,9 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Trigger, None, ResultType]:
+        if self._unstarted():
+            self.start_soon()
         if not self.done():
-            self._ensure_started()
             yield self.complete
         return self.result()
 
