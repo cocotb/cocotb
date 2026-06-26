@@ -8,30 +8,12 @@ Common utilities shared by many tests in this directory
 from __future__ import annotations
 
 import operator
-import re
-import traceback
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Callable
 
 from cocotb.simtime import TimeUnit
 from cocotb.utils import get_sim_steps, get_sim_time, get_time_from_sim_steps
-
-
-async def _check_traceback(running_coro, exc_type, pattern, *match_args):
-    try:
-        await running_coro
-    except exc_type:
-        tb_text = traceback.format_exc()
-    else:
-        assert False, "Exception was not raised"
-
-    assert re.match(pattern, tb_text, *match_args), (
-        "Traceback didn't match - got:\n\n"
-        f"{tb_text}\n"
-        "which did not match the pattern:\n\n"
-        f"{pattern}"
-    )
 
 
 class MyException(Exception): ...

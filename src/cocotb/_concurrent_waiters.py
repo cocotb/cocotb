@@ -125,45 +125,58 @@ async def _wait(
     waiters = [Task[Any](a) for a in awaitables]
     # Use dict (insertion-ordered) so cancellation order is deterministic and we have O(1) insertion and removals.
     remaining = dict.fromkeys(waiters)
-    # Set when we meet the return condition.
+    # Set when all tasks have complete, regardless if cancelled or ended naturally.
     done = _InternalEvent(_repr)
-    # Set when all tasks have completed, regardless of reason.
-    complete = _InternalEvent(_repr)
     # The first task to complete, stored regardless of return_when condition.
     first_completed: Task[Any] | None = None
+    # We are cancelling remaining tasks, so don't try to cancel them again.
+    cancelled: bool = False
+
+    def cancel_remaining() -> None:
+        nonlocal cancelled
+        if cancelled:
+            return
+        cancelled = True
+        for task in remaining:
+            task.cancel()
 
     if return_when == "FIRST_COMPLETED":
 
         def done_callback(task: Task[Any]) -> None:
+            # Finish once all tasks have completed.
             del remaining[task]
             if not remaining:
-                complete.set()
+                done.set()
+
+            # Record first and cancel remaining if we met the return_when condition
             nonlocal first_completed
             if first_completed is None:
                 first_completed = task
-                done.set()
+                cancel_remaining()
 
     elif return_when == "FIRST_EXCEPTION":
 
         def done_callback(task: Task[Any]) -> None:
+            # Finish once all tasks have completed.
             del remaining[task]
             if not remaining:
                 done.set()
-                complete.set()
+
+            # Record first and cancel remaining if we met the return_when condition
             nonlocal first_completed
             if first_completed is None and (
                 task.cancelled() or task.exception() is not None
             ):
                 first_completed = task
-                done.set()
+                cancel_remaining()
 
     else:
 
         def done_callback(task: Task[Any]) -> None:
+            # Finish once all tasks have completed.
             del remaining[task]
             if not remaining:
                 done.set()
-                complete.set()
 
     for task in reversed(waiters):
         task._add_done_callback(done_callback)
@@ -171,18 +184,14 @@ async def _wait(
 
     try:
         await done
-    finally:
-        # Cancel remaining tasks. No-op if everything has finished (ALL_COMPLETED)
-        # or the return_when condition is specified, but all tasks happen to complete
-        # before this Task runs again. Cancels whatever is remaining and rethrows if
-        # the caller is cancelled.
-        for task in remaining:
-            task.cancel()
-
-    # Wait until all children tasks have finished before returning.
-    # Ensures any side-effectful clean-up has completed.
-    if not complete.is_set():
-        await complete
+    except BaseException:
+        # This is mostly limited to:
+        # * CancelledError: if the parent is cancelled before we're done.
+        # * GeneratorExit: if the parent ignored CancelledError and this is the next await.
+        # * Possibly SystemExit, BdbQuit, or KeyboardInterrupt.
+        # Regardless, we can't squash any of them, so do a token cancellation and re-raise immediately.
+        cancel_remaining()
+        raise
 
     idx = waiters.index(first_completed) if first_completed is not None else None
     return idx, tuple(waiters)

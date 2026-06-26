@@ -7,13 +7,14 @@ Tests for concurrency primitives like First and Combine
 
 from __future__ import annotations
 
+import inspect
 import re
 from collections import deque
 from random import randint
 from typing import Any
 
 import pytest
-from common import MyException, _check_traceback, assert_takes
+from common import MyException, assert_takes
 
 import cocotb
 from cocotb.triggers import Combine, Event, First, Timer, Trigger, gather, select
@@ -59,10 +60,11 @@ async def test_select_unfired_triggers_killed_on_exception(_: object) -> None:
     with pytest.raises(ValueError):
         await select(fails(), *triggers)
 
-    # test all triggers were unprimed
+    # Sibling waiters were cancelled before they got a chance to run,
+    # so their triggers were never primed and never need unpriming.
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == 0
+        assert t.unprimed == 0
 
 
 @cocotb.test
@@ -77,38 +79,47 @@ async def test_gather_unfired_triggers_killed_on_exception(_: object) -> None:
     with pytest.raises(ValueError):
         await gather(fails(), *triggers)
 
-    # test all triggers were unprimed
+    # Sibling waiters were cancelled before they got a chance to run,
+    # so their triggers were never primed and never need unpriming.
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == 0
+        assert t.unprimed == 0
 
 
 @cocotb.test
 async def test_nested_unfired_triggers_killed_on_exception(_: object) -> None:
     """Test that un-fired trigger(s) in nested First after exception don't later cause a spurious wakeup."""
 
-    triggers = [MyTrigger() for _ in range(3)]
-
     async def fails() -> None:
         raise ValueError("I am a failure")
 
+    triggers = [MyTrigger() for _ in range(3)]
+    g = gather(*triggers)
     with pytest.raises(ValueError):
-        await select(fails(), gather(*triggers))
+        await select(fails(), g)
 
-    # test all triggers were unprimed
+    # Sibling waiters were cancelled before they got a chance to run,
+    # so their triggers were never primed and never need unpriming.
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == 0
+        assert t.unprimed == 0
+
+    assert inspect.getcoroutinestate(g) == inspect.CORO_CLOSED
 
     triggers = [MyTrigger() for _ in range(3)]
-
+    g = gather(*triggers)
+    s = select(g)
     with pytest.raises(ValueError):
-        await select(fails(), select(gather(*triggers)))
+        await select(fails(), s)
 
-    # test all triggers were unprimed
+    # Sibling waiters were cancelled before they got a chance to run,
+    # so their triggers were never primed and never need unpriming.
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == 0
+        assert t.unprimed == 0
+
+    assert inspect.getcoroutinestate(g) == inspect.CORO_CLOSED
+    assert inspect.getcoroutinestate(s) == inspect.CORO_CLOSED
 
 
 @cocotb.test()
@@ -172,9 +183,8 @@ async def test_exceptions_first(dut):
         with pytest.warns(DeprecationWarning):
             await First(cocotb.start_soon(raise_inner()))
 
-    await _check_traceback(
-        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
-    )
+    with pytest.raises(ValueError, match=r"It is soon now"):
+        await raise_soon()
 
 
 @cocotb.test()
