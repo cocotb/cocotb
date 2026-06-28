@@ -294,6 +294,8 @@ class Task(Generic[ResultType]):
             raise RuntimeError(
                 "Cannot _start_next() on a Task that has already been started"
             )
+        self._state = _TaskState.SCHEDULED
+        self._exc = None
         cocotb._event_loop._inst.schedule_left(self._resume)
 
     def _set_outcome(
