@@ -1,0 +1,4 @@
+node: $Format:%H$
+node-date: $Format:%cI$
+describe-name: $Format:%D$
+ref-names: $Format:%D$
