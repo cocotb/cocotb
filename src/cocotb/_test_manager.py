@@ -236,6 +236,9 @@ def start_soon(
 
             .. versionadded:: 2.0
 
+    Raises:
+        RuntimeError: If a :class:`!Task` was given and it has already completed.
+
     Returns:
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
@@ -249,9 +252,10 @@ def start_soon(
             read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
     task = create_task(coro, name=name)
-    # This is _ensure_started() rather than start_soon() for backwards compatibility.
-    # Calling cocotb.start_soon(task) on a task that already started should not fail.
-    task._ensure_started()
+    if task._unstarted():
+        task.start_soon()
+    elif task.done():
+        raise RuntimeError("Cannot schedule a Task that has already completed.")
     return task
 
 
