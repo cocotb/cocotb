@@ -1138,3 +1138,20 @@ async def test_957_2(dut: Any) -> None:
     # pending coroutine doesn't interfere with this test.
     cocotb.start_soon(wait_edge(dut))
     await Timer(10, "ns")
+
+
+@cocotb.test
+async def test_task_start_soon(_: object) -> None:
+    """Test functionality of Task.start_soon()."""
+
+    async def coro() -> None:
+        await Timer(2)
+
+    task = Task(coro())
+    task.start_soon()
+    await Timer(1)
+    assert not task.done()
+    with pytest.raises(RuntimeError):
+        task.start_soon()
+    await Timer(2)
+    assert task.done()
