@@ -30,10 +30,6 @@ if sys.version_info >= (3, 10):
 T = TypeVar("T")
 
 
-async def _waiter(aw: Awaitable[T]) -> T:
-    return await aw
-
-
 class TaskManager:
     r"""An :term:`asynchronous context manager` which runs :term:`coroutine function`\ s or :term:`awaitable`\ s concurrently until all finish.
 
@@ -61,30 +57,25 @@ class TaskManager:
             else default_continue_on_error
         )
 
+        # We don't keep all children Tasks around, just the ones that haven't finished yet,
+        # so we have to save the exceptions for the ExceptionGroup we raise at the end of the context block.
         self._exceptions: set[BaseException] = set()
         # dict value is per-Task continue_on_error setting
         self._remaining_tasks: dict[Task[Any], bool] = {}
         self._none_remaining = Event()
+        # Children were cancelled due to a child Task/block failure.
         self._cancelled: bool = False
+        # We started __aexit__. Ensures we dont add more Tasks after the context block has started finishing.
         self._finishing: bool = False
+        # For protecting against adding Tasks before entering the context block
         self._entered: bool = False
-        # parent task will not exist if we aren't using this as a context manager
-        self._parent_task: Task[Any] | None = None
+        # The parent Task which entered the context block.
+        # Used to ensure only the parent Task can add child Tasks,
+        # and to cancel the parent Task if a child Task fails while the block is still running.
+        self._parent_task: Task[Any]
 
         # Start with no remaining tasks
         self._none_remaining.set()
-
-    def _ensure_can_add(self) -> None:
-        if self._cancelled:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
-        elif self._finishing:
-            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
-        elif not self._entered:
-            raise RuntimeError(
-                "Cannot add new Tasks to TaskManager before entering context"
-            )
-        if current_task() is not self._parent_task:
-            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
 
     def start_soon(
         self,
@@ -105,9 +96,31 @@ class TaskManager:
         Returns:
             A :class:`~cocotb.task.Task` which is awaiting *aw* concurrently.
         """
-        self._ensure_can_add()
+        # Ensure that we can add a new Task to this TaskManager before creating the Task.
+        # We would have to close it if it failed.
+        if self._cancelled:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after error")
+        elif self._finishing:
+            raise RuntimeError("Cannot add new Tasks to TaskManager after finishing")
+        elif not self._entered:
+            raise RuntimeError(
+                "Cannot add new Tasks to TaskManager before entering context"
+            )
+        if current_task() is not self._parent_task:
+            raise RuntimeError("Cannot add new Tasks to TaskManager from another Task")
+
+        # Create the Task and tie it to this TaskManager via the done callback.
         task = Task[T](aw, name=name)
-        self._add_task(task, continue_on_error=continue_on_error)
+        task._add_done_callback(self._done_callback)
+        # Track the Task and store per-Task continue_on_error setting
+        self._remaining_tasks[task] = (
+            continue_on_error
+            if continue_on_error is not None
+            else self._default_continue_on_error
+        )
+        self._none_remaining.clear()
+        # Start the Task to running.
+        task.start_soon()
         return task
 
     @overload
@@ -158,8 +171,7 @@ class TaskManager:
                     # Do other stuff in parallel to my_func
                     ...
         """
-        self._ensure_can_add()
-
+        # Handle the case where fork is called as a function and returns the decorator.
         if coro_func is None:
             if continue_on_error is None:
                 raise TypeError(
@@ -176,30 +188,9 @@ class TaskManager:
 
             return deco
 
-        try:
-            task = Task[T](coro_func(), name=coro_func.__name__)
-        except TypeError:
-            raise TypeError(
-                f"fork() expected a coroutine function, got {type(coro_func).__name__}"
-            ) from None
-        self._add_task(task, continue_on_error=continue_on_error)
-        return task
-
-    def _add_task(
-        self,
-        task: Task[Any],
-        *,
-        continue_on_error: bool | None = None,
-    ) -> None:
-        # Track the Task and store per-Task continue_on_error setting
-        task._add_done_callback(self._done_callback)
-        if continue_on_error is None:
-            continue_on_error = self._default_continue_on_error
-        self._remaining_tasks[task] = continue_on_error
-        self._none_remaining.clear()
-
-        # Schedule the Task to run soon
-        task.start_soon()
+        return self.start_soon(
+            coro_func(), name=coro_func.__name__, continue_on_error=continue_on_error
+        )
 
     def _done_callback(self, task: Task[Any]) -> None:
         """Callback run when a child Task finishes."""
@@ -221,7 +212,7 @@ class TaskManager:
 
         # If a child Task fails while we are in the middle of a TaskManager block,
         # cancel the parent Task to force the block to end.
-        if not self._finishing and self._parent_task is not None:
+        if not self._finishing:
             self._parent_task.cancel()
 
         # Cancel all child Tasks.
@@ -240,12 +231,11 @@ class TaskManager:
     ) -> None:
         self._finishing = True
 
-        if self._parent_task is not None and self._cancelled:
+        if self._cancelled:
             # The context block was cancelled due to a child Task failure.
             if isinstance(exc, CancelledError):
                 # Suppress CancelledError in this case to allow child Tasks to finish cancelling.
                 exc = None
-                assert self._parent_task is not None
                 self._parent_task._uncancel()
             else:
                 # The context block ignored the cancellation. Hard fail the test.
@@ -282,11 +272,8 @@ class TaskManager:
             # This is likely because we ignored a CancelledError since there is no other
             # way to fail this await AFAICT. Cancel children and let it pass up as there's
             # nothing we can do.
-            # TODO Make this force a test failure. Special case KeyboardInterrupt/SystemExit/BdbQuit
             self._cancel()
             raise
-
-        self._finished = True
 
         # Build BaseExceptionGroup if there were any errors. Ignore CancelledError.
         if exc is not None and not isinstance(exc, CancelledError):
