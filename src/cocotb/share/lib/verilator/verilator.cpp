@@ -29,7 +29,7 @@ using verilated_trace_t = VerilatedSaifC;
 #include <verilated_vcd_c.h>
 using verilated_trace_t = VerilatedVcdC;
 #endif
-static verilated_trace_t *tfp;
+static verilated_trace_t tfp;
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
@@ -61,10 +61,8 @@ void wrap_up() {
     VerilatedVpi::callCbs(cbEndOfSimulation);
 
 #if VM_TRACE
-    if (tfp) {
-        delete tfp;
-        tfp = nullptr;
-    }
+    tfp.flush();
+    tfp.close();
 #endif
 
     // VM_COVERAGE is a define which is set if Verilator is
@@ -137,9 +135,8 @@ int main(int argc, char **argv) {
 #if VM_TRACE
     Verilated::traceEverOn(true);
     if (traceOn) {
-        tfp = new verilated_trace_t;
-        top->trace(tfp, 99);
-        tfp->open(traceFile);
+        top->trace(&tfp, 99);
+        tfp.open(traceFile);
     }
 #endif
 
@@ -171,10 +168,10 @@ int main(int argc, char **argv) {
         VerilatedVpi::callCbs(cbReadOnlySynch);
 
 #if VM_TRACE
-        if (tfp) {
-            tfp->dump(main_time);
+        if (tfp.isOpen()) {
+            tfp.dump(main_time);
             if (traceFlush) {
-                tfp->flush();
+                tfp.flush();
             }
         }
 #endif
