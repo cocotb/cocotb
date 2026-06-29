@@ -7,6 +7,7 @@ import inspect
 import logging
 import sys
 import traceback
+import warnings
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
 from collections.abc import Awaitable, Coroutine, Generator
@@ -678,6 +679,17 @@ class Task(Generic[ResultType]):
         if not self.done():
             yield self.complete
         return self.result()
+
+    def __del__(self) -> None:
+        if self._unstarted():
+            # Complain if we never started the Task.
+            warnings.warn(
+                f"Task {self._name!r} was never started. Did you forget to call start_soon()?",
+                ResourceWarning,
+                source=self,
+            )
+            # But close the coroutine so we don't get another ResourceWarning about an un-awaited coroutine.
+            self._coro.close()
 
 
 _current_task: Task[Any] | None = None

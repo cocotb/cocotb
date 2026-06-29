@@ -12,6 +12,8 @@ Test for scheduler and coroutine behavior
 from __future__ import annotations
 
 import contextlib
+import gc
+import inspect
 import logging
 import os
 import random
@@ -1169,3 +1171,24 @@ async def test_start_soon_awaitable(_: object) -> None:
     task = cocotb.start_soon(AwaitableThing())
     result = await task
     assert result == 42
+
+
+@cocotb.test
+async def test_task_closes_coro_when_never_started(_: object) -> None:
+    """Test that Task closes coroutine when never started."""
+
+    async def coro() -> None:
+        await Timer(1)
+
+    c = coro()
+    task = Task(c)
+
+    assert inspect.getcoroutinestate(c) == inspect.CORO_CREATED
+
+    # Ensure ResourceWarning is raised
+    with pytest.warns(ResourceWarning, match="Task '.*' was never started."):
+        del task
+        gc.collect()
+
+    # Ensure child was closed
+    assert inspect.getcoroutinestate(c) == inspect.CORO_CLOSED
