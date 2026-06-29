@@ -141,10 +141,12 @@ def dev_test(
     gpi_interface: str,
 ) -> None:
     """Run all development tests and merge coverage."""
+    clean(session)
     build_cocotb_for_dev_test(session)
     configure_test_env(session)
-    # Collect coverage of cocotb
-    session.env["COCOTB_LIBRARY_COVERAGE"] = "1"
+    # Starts subprocess patch coverage collection.
+    # Points coverage configuration at the project's pyproject.toml.
+    session.env["COVERAGE_PROCESS_START"] = str(Path("pyproject.toml").absolute())
     dev_test_nosim(session)
     dev_test_sim(session, sim, toplevel_lang, gpi_interface)
     dev_coverage_combine(session)
@@ -203,13 +205,6 @@ def dev_test_sim(
         "-s",
         "-v",
         "--doctest-modules",
-        "--cov=cocotb",
-        "--cov-branch",
-        # Don't display coverage report here
-        "--cov-report=",
-        # Append to the .coverage file created in the previous pytest
-        # invocation in this session.
-        "--cov-append",
         *pytest_sourcetree,
     )
 
@@ -218,15 +213,10 @@ def dev_test_sim(
         "pytest",
         "-s",
         "-v",
-        "--cov=cocotb",
-        "--cov-branch",
-        # Don't display coverage report here
-        "--cov-report=",
         "-k",
         "simulator_required",
         env=env,
     )
-    Path(".coverage").rename(".coverage.pytest")
 
     session.log(f"Running examples against a simulator {config_str}")
     pytest_example_tree = [
@@ -264,12 +254,11 @@ def dev_test_sim(
 
     # Combine coverage produced during the test runs, and place it in a file
     # with a name specific to this invocation of dev_test_sim().
-    coverage_files = glob.glob("**/.coverage.cocotb", recursive=True)
+    coverage_files = glob.glob("**/.coverage.*", recursive=True)
     if not coverage_files:
         session.error(
             "No coverage files found. Something went wrong during the test execution."
         )
-    coverage_files.append(".coverage.pytest")
     session.run("coverage", "combine", "--append", *coverage_files)
     Path(".coverage").rename(coverage_file)
 
@@ -293,17 +282,21 @@ def dev_test_nosim(session: nox.Session) -> None:
         "pytest",
         "-s",
         "-v",
-        "--cov=cocotb",
-        "--cov-branch",
-        # Don't display coverage report here
-        "--cov-report=",
         "-k",
         "not simulator_required",
     )
 
     session.log("All tests passed!")
 
-    # Rename the .coverage file to make it unique to the session.
+    # Combine parallel-suffixed .coverage.* files written by the pytest
+    # process and any subprocess children it spawned (driven by
+    # COVERAGE_PROCESS_START + [tool.coverage.run] patch = ["subprocess"]).
+    coverage_files = glob.glob("**/.coverage.*", recursive=True)
+    if not coverage_files:
+        session.error(
+            "No coverage files found. Something went wrong during the test execution."
+        )
+    session.run("coverage", "combine", "--append", *coverage_files)
     Path(".coverage").rename(coverage_file)
 
     session.log(f"Stored Python coverage for this test run in {coverage_file}.")
@@ -475,6 +468,7 @@ def release_test(
     session: nox.Session, sim: str, toplevel_lang: str, gpi_interface: str, source: str
 ) -> None:
     """Run all tests against a cocotb release build."""
+    clean(session)
     if source == "sdist":
         release_install_from_sdist(session)
     else:
@@ -639,3 +633,17 @@ def docs_spelling(session: nox.Session) -> None:
         "spelling",
         *session.posargs,
     )
+
+
+@nox.session(venv_backend="none")
+def clean(session: nox.Session) -> None:
+
+    # Remove any .coverage files from previous runs.
+    for coverage_file in glob.glob("**/.coverage*", recursive=True):
+        os.unlink(coverage_file)
+
+    # Remove results.xml and combined_results.xml files from previous runs.
+    for xml_file in glob.glob("**/results.xml", recursive=True) + glob.glob(
+        "**/combined_results.xml", recursive=True
+    ):
+        os.unlink(xml_file)

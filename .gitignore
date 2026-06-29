@@ -13,7 +13,7 @@
 # Python and C++ code coverage
 .cov.*
 .coverage
-.coverage.cocotb
+.coverage.*
 *.gcno
 *.gcda
 *.gcov
