@@ -1,0 +1,1 @@
+Added the ``--gpi-extra`` option to :ref:`cocotb-config <cocotb-config>` to generate entries for the :envvar:`GPI_EXTRA` list.

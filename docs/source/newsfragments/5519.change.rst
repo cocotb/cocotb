@@ -1,0 +1,1 @@
+The custom entry point for :envvar:`GPI_EXTRA` has been removed. :envvar:`!GPI_EXTRA` is now only for specifying additional GPI implementation libraries to load. See :envvar:`GPI_USERS` for the custom entry point functionality.

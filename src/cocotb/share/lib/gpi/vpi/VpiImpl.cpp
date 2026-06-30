@@ -838,15 +838,14 @@ static void vpi_main() {
               from_bootstrap ? "Bootstrap" : "Sim (vlog_startup_routines)");
 }
 
-// This is run by GPI when requested for mixed-language simulations
-static void register_impl() {
+extern "C" {
+COCOTBVPI_EXPORT void GPI_REGISTER_IMPL() {
     LOG_TRACE("GPI Init => [ VPI (register_impl) ]");
     auto vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
     LOG_TRACE("[ VPI (register_impl) ] => GPI Init");
 }
 
-extern "C" {
 COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
     gpi_init_logging_and_debug, vpi_main, nullptr};
 
@@ -860,5 +859,3 @@ COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
     LOG_TRACE("[ VPI (vlog_startup_routines_bootstrap) ] => Sim");
 }
 }
-
-GPI_ENTRY_POINT(cocotbvpi, register_impl)
