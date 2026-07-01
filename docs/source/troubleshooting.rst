@@ -119,6 +119,12 @@ accessible via a TCP socket:
 
       telnet 127.0.0.1 4000
 
+For a more IDE-friendly debugging experience —
+with full breakpoint support, variable inspection,
+and call stack navigation in editors such as VS Code and PyCharm —
+use ``debugpy``.
+See :doc:`debugpy` for a complete step-by-step guide.
+
 
 Embedding an IPython shell
 ==========================
