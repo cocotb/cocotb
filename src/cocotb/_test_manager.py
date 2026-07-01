@@ -6,11 +6,13 @@ from __future__ import annotations
 import pdb
 import sys
 from asyncio import CancelledError
-from collections.abc import Coroutine
+from collections.abc import Awaitable, Coroutine
 from typing import (
     Any,
     Callable,
     NoReturn,
+    TypeVar,
+    overload,
 )
 
 import cocotb
@@ -195,8 +197,29 @@ class TestManager:
             self._abort(e)
 
 
+TriggerT = TypeVar("TriggerT", bound=Trigger)
+
+
+@overload
 def start_soon(
-    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
+    coro: Task[ResultType]
+    | Coroutine[Trigger, None, ResultType]
+    | Awaitable[ResultType],
+    *,
+    name: str | None = None,
+) -> Task[ResultType]: ...
+
+
+@overload
+def start_soon(
+    coro: TriggerT,
+    *,
+    name: str | None = None,
+) -> Task[TriggerT]: ...
+
+
+def start_soon(
+    coro: Awaitable[Any],
     *,
     name: str | None = None,
 ) -> Task[ResultType]:
@@ -217,20 +240,48 @@ def start_soon(
         The :class:`~cocotb.task.Task` that is scheduled to be run.
 
     .. versionadded:: 1.6
+
+    .. versionchanged:: 2.1
+        This function now accepts any :class:`~collections.abc.Awaitable` object, not just :term:`coroutines <coroutine>`.
+
+        .. warning::
+            If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this function,
+            read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
     task = create_task(coro, name=name)
     # This is _ensure_started() rather than start_soon() for backwards compatibility.
     # Calling cocotb.start_soon(task) on a task that already started should not fail.
-    task._ensure_started()
+    if task._unstarted():
+        task.start_soon()
+    elif task.done():
+        raise RuntimeError("Cannot schedule a Task that has already completed.")
     return task
+
+
+@overload
+async def start(
+    coro: Task[ResultType]
+    | Coroutine[Trigger, None, ResultType]
+    | Awaitable[ResultType],
+    *,
+    name: str | None = None,
+) -> Task[ResultType]: ...
+
+
+@overload
+async def start(
+    coro: TriggerT,
+    *,
+    name: str | None = None,
+) -> Task[TriggerT]: ...
 
 
 @deprecated("Use ``cocotb.start_soon`` instead.")
 async def start(
-    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
+    coro: Awaitable[Any],
     *,
     name: str | None = None,
-) -> Task[ResultType]:
+) -> Task[Any]:
     """
     Schedule a :term:`coroutine` to be run concurrently, then yield control to allow pending tasks to execute.
 
@@ -267,17 +318,42 @@ async def start(
             task_started = Event()
             task = cocotb.start_soon(coro(task_started))
             await task_started.wait()
+
+    .. versionchanged:: 2.1
+        This function now accepts any :class:`~collections.abc.Awaitable` object, not just :term:`coroutines <coroutine>`.
+
+        .. warning::
+            If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this function,
+            read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
     task = start_soon(coro, name=name)
     await NullTrigger()
     return task
 
 
+@overload
 def create_task(
-    coro: Task[ResultType] | Coroutine[Trigger, None, ResultType],
+    coro: Task[ResultType]
+    | Coroutine[Trigger, None, ResultType]
+    | Awaitable[ResultType],
     *,
     name: str | None = None,
-) -> Task[ResultType]:
+) -> Task[ResultType]: ...
+
+
+@overload
+def create_task(
+    coro: TriggerT,
+    *,
+    name: str | None = None,
+) -> Task[TriggerT]: ...
+
+
+def create_task(
+    coro: Awaitable[Any],
+    *,
+    name: str | None = None,
+) -> Task[Any]:
     """
     Construct a :term:`!coroutine` into a :class:`~cocotb.task.Task` without scheduling the task.
 
@@ -294,6 +370,13 @@ def create_task(
         Either the provided :class:`~cocotb.task.Task` or a new Task wrapping the coroutine.
 
     .. versionadded:: 1.6
+
+    .. versionchanged:: 2.1
+        This function now accepts any :class:`~collections.abc.Awaitable` object, not just :term:`coroutines <coroutine>`.
+
+        .. warning::
+            If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this function,
+            read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
     if _current_test is None:
         raise RuntimeError("No test is currently running; cannot schedule new Task.")
@@ -305,7 +388,7 @@ def create_task(
             coro.set_name(name)
         return coro
 
-    task = Task[ResultType](coro, name=name)
+    task = Task(coro, name=name)
     _current_test.add_task(task)
 
     return task

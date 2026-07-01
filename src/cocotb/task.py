@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import collections.abc
 import inspect
 import logging
 import sys
 import traceback
+import warnings
 from asyncio import CancelledError, InvalidStateError
 from bdb import BdbQuit
-from collections.abc import Coroutine, Generator
+from collections.abc import Awaitable, Coroutine, Generator
 from enum import auto
 from functools import cached_property
 from types import CoroutineType, SimpleNamespace
@@ -20,6 +20,7 @@ from typing import (
     Generic,
     TypeVar,
     cast,
+    overload,
 )
 
 import cocotb
@@ -66,27 +67,61 @@ class Task(Generic[ResultType]):
     """Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
-    Use :func:`cocotb.create_task` to create a Task object
-    or :func:`cocotb.start_soon` to create a Task and schedule it to run.
+    Use :func:`cocotb.create_task` to create a :class:`!Task` object
+    or :func:`cocotb.start_soon` to create a :class:`!Task` and schedule it to run.
+
+    Args:
+        inst: A coroutine to run as a :class:`!Task`, or any :class:`!Awaitable` to wrap in a coroutine and run as a :class:`!Task`.
+        name: Optional name. If not provided, a generic name is generated.
+
+    Raises:
+        TypeError: If *inst* is not Awaitable.
 
     .. versionchanged:: 1.8
-        Moved to the ``cocotb.task`` module.
+        Moved to the :mod:`cocotb.task` module.
 
     .. versionchanged:: 2.0
         The ``retval``, ``_finished``, and ``__bool__`` methods were removed.
         Use :meth:`result`, :meth:`done`, and :meth:`done` methods instead, respectively.
+
+    .. versionadded:: 2.1
+        Added support for giving any :class:`~collections.abc.Awaitable` to the constructor, not just coroutines.
+        This implicitly wraps the Awaitable in a coroutine that :keyword:`await`s it.
+
+        If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this class,
+        read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
 
     _id_count = 0  # used by the scheduler for debug
 
+    @overload
     def __init__(
         self, inst: Coroutine[Trigger, None, ResultType], *, name: str | None = None
-    ) -> None:
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, inst: Awaitable[ResultType], *, name: str | None = None
+    ) -> None: ...
+
+    def __init__(self, inst: Awaitable[ResultType], *, name: str | None = None) -> None:
         self._native_coroutine: bool
+        self._coro: Coroutine[Trigger, Any, ResultType]
         if inspect.iscoroutine(inst):
             self._native_coroutine = True
-        elif isinstance(inst, collections.abc.Coroutine):
+            self._coro = inst
+        elif isinstance(inst, Coroutine):
             self._native_coroutine = False
+            self._coro = inst
+        elif isinstance(inst, Awaitable):
+            self._native_coroutine = True
+
+            async def waiter() -> ResultType:
+                return await inst
+
+            # TODO consider better naming for this coroutine,
+            # perhaps delegating to the Awaitable.
+            self._coro = waiter()
         elif inspect.iscoroutinefunction(inst):
             raise TypeError(
                 f"Coroutine function {inst} should be called prior to being scheduled."
@@ -97,9 +132,8 @@ class Task(Generic[ResultType]):
                 "You likely used the yield keyword instead of await."
             )
         else:
-            raise TypeError(f"{inst} isn't a valid coroutine!")
+            raise TypeError(f"Expected Awaitable, got {type(inst).__name__}")
 
-        self._coro = inst
         self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: ResultType | BaseException
         self._trigger: Trigger
@@ -240,28 +274,32 @@ class Task(Generic[ResultType]):
         """
         if self._state is not _TaskState.UNSTARTED:
             raise RuntimeError("Can only start_soon() an unstarted Task")
-        self._schedule_resume()
-
-    def _ensure_started(self) -> None:
-        state = self._state
-        if state is _TaskState.UNSTARTED:
-            if debug.debug:
-                self._log.debug("Starting %r", self)
-            self._schedule_resume()
-        elif state in (
-            _TaskState.FINISHED,
-            _TaskState.ERRORED,
-            _TaskState.CANCELLED,
-        ):
-            raise RuntimeError("Cannot start a finished Task")
-        # RUNNING, SCHEDULED, PENDING are already running
+        if debug.debug:
+            self._log.debug("Starting %r", self)
+        # Schedule the Task to run
+        self._state = _TaskState.SCHEDULED
+        self._exc = None
+        self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume)
 
     def _start_next(self) -> None:
+        """Queues an unstarted Task to start running, but schedules it to run before other scheduled Tasks.
+
+        Currently private until someone needs it.
+        This is a potential footgun in the hands of a novice.
+
+        Raises:
+            RuntimeError: If the Task has already started.
+        """
         if self._state != _TaskState.UNSTARTED:
             raise RuntimeError(
                 "Cannot _start_next() on a Task that has already been started"
             )
-        cocotb._event_loop._inst.schedule_left(self._resume)
+        if debug.debug:
+            self._log.debug("Starting %r", self)
+        # Schedule the Task to run
+        self._state = _TaskState.SCHEDULED
+        self._exc = None
+        self._schedule_callback = cocotb._event_loop._inst.schedule_left(self._resume)
 
     def _set_outcome(
         self,
@@ -314,6 +352,7 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 if debug.debug:
                     self._log.debug("Task %r was cancelled but exited normally", self)
+                self._coro.close()
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but exited normally. Did you forget to re-raise the CancelledError?"
@@ -360,6 +399,7 @@ class Task(Generic[ResultType]):
             if self._must_cancel:
                 if debug.debug:
                     self._log.debug("Task %r was cancelled but continued running", self)
+                self._coro.close()
                 self._set_outcome(
                     RuntimeError(
                         "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
@@ -568,6 +608,10 @@ class Task(Generic[ResultType]):
         if self._must_cancel > 0:
             self._must_cancel -= 1
 
+    def _unstarted(self) -> bool:
+        """Return ``True`` if the Task has not started executing."""
+        return self._state is _TaskState.UNSTARTED
+
     def cancelled(self) -> bool:
         """Return ``True`` if the Task was cancelled."""
         return self._state is _TaskState.CANCELLED
@@ -630,10 +674,22 @@ class Task(Generic[ResultType]):
         self._done_callbacks.append(callback)
 
     def __await__(self) -> Generator[Trigger, None, ResultType]:
+        if self._unstarted():
+            self.start_soon()
         if not self.done():
-            self._ensure_started()
             yield self.complete
         return self.result()
+
+    def __del__(self) -> None:
+        if self._unstarted():
+            # Complain if we never started the Task.
+            warnings.warn(
+                f"Task {self._name!r} was never started. Did you forget to call start_soon()?",
+                ResourceWarning,
+                source=self,
+            )
+            # But close the coroutine so we don't get another ResourceWarning about an un-awaited coroutine.
+            self._coro.close()
 
 
 _current_task: Task[Any] | None = None
