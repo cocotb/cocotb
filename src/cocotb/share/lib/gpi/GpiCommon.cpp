@@ -246,9 +246,11 @@ static int gpi_load_users() {
     return 0;
 }
 
-void gpi_entry_point() {
-    LOG_TRACE("=> [ GPI Init ]");
+extern "C" {
+    void gpi_entry_point_callback();
+}
 
+void gpi_entry_point_callback() {
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
@@ -275,6 +277,12 @@ void gpi_entry_point() {
     if (gpi_load_users()) {
         return;
     }
+}
+
+void gpi_entry_point() {
+    LOG_TRACE("=> [ GPI Init ]");
+
+    gpi_entry_point_callback();
 
     gpi_print_registered_impl();
 
