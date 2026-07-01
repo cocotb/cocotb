@@ -190,6 +190,22 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         return NULL;
     }
 
+    // vpiRefObj is a reference/alias (e.g. an interface passed through a
+    // module port). Resolve via vpiActual to determine the real type rather
+    // than assuming any particular type.
+    if (type == vpiRefObj) {
+        vpiHandle actual_hdl = vpi_handle(vpiActual, new_hdl);
+        if (actual_hdl == NULL) {
+            LOG_WARN("VPI: Could not resolve vpiActual for vpiRefObj %s",
+                     fq_name.c_str());
+            return NULL;
+        }
+        type = vpi_get(vpiType, actual_hdl);
+        vpi_free_object(actual_hdl);
+        LOG_DEBUG("VPI: Resolved vpiRefObj %s to type %d", fq_name.c_str(),
+                  type);
+    }
+
     /* What sort of instance is this ?*/
     switch (type) {
         case vpiNet:
