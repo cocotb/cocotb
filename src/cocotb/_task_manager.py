@@ -32,7 +32,7 @@ T = TypeVar("T")
 class TaskManager:
     r"""An :term:`asynchronous context manager` which runs :term:`coroutine function`\ s or :term:`awaitable`\ s concurrently until all finish.
 
-    See :ref:`task_manager_tutorial` for detailed usage information.
+    See :ref:`task-manager-tutorial` for detailed usage information.
 
     Args:
         default_continue_on_error: Default value for *continue_on_error* for child Tasks started by this TaskManager.

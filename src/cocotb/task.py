@@ -64,7 +64,7 @@ class _TaskState(DocEnum):
 
 
 class Task(Generic[ResultType]):
-    """Concurrently executing task.
+    r"""Concurrently executing task.
 
     This class is not intended for users to directly instantiate.
     Use :func:`cocotb.create_task` to create a :class:`!Task` object
@@ -86,7 +86,7 @@ class Task(Generic[ResultType]):
 
     .. versionadded:: 2.1
         Added support for giving any :class:`~collections.abc.Awaitable` to the constructor, not just coroutines.
-        This implicitly wraps the Awaitable in a coroutine that :keyword:`await`s it.
+        This implicitly wraps the Awaitable in a coroutine that :keyword:`await`\ s it.
 
         If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this class,
         read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.

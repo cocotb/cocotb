@@ -130,7 +130,13 @@ Embedding an IPython shell
 
 A prebuilt test is included to easily launch an IPython shell in an existing design.
 
-.. autofunction:: run_ipython
+.. function:: run_ipython(dut)
+
+   A test that launches an interactive IPython shell.
+
+   Do not call this directly - use this as ``make COCOTB_TEST_MODULES=cocotb_tools.ipython_support``.
+
+   Within the shell, a global ``dut`` variable pointing to the design will be present.
 
 To embed a shell within an existing test, where it can inspect local variables, the :func:`embed` function can be used.
 
