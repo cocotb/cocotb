@@ -18,7 +18,10 @@ class Future(DocStrEnum):
     .. versionadded:: 2.1
     """
 
-    PLACEHOLDER = ("placeholder", "This is a placeholder")
+    XFAIL_IN_RESULTS = (
+        "xfail_in_results",
+        "Use the XFAIL status in the terminal results summary for xfailed tests",
+    )
 
 
 _future_strs = {future.value for future in Future}
