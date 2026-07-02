@@ -1,0 +1,1 @@
+Test decorated with the :deco:`cocotb.xfail` will be reported as ``skipped`` in the generated JUnit XML (``results.xml``) files when an expected exception will be raised.
