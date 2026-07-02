@@ -126,7 +126,7 @@ This means you cannot use pytest features directly on cocotb tests.
 The ``pytest`` Plugin
 =====================
 
-The :doc:`pytest plugin <pytest>` is an integrated build, simulation, and test runner that supplants the :class:`!RegressionManager`
+The :doc:`pytest plugin <pytest_plugin>` is an integrated build, simulation, and test runner that supplants the :class:`!RegressionManager`
 in addition to doing builds and running simulations.
 
 In this system, ``pytest`` runs outside of the simulator process where it discovers cocotb tests directly.

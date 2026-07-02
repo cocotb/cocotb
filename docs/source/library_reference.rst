@@ -176,7 +176,7 @@ Discovering Tests
 
 .. envvar:: COCOTB_MAX_FAILURES
 
-    Type: :ref:`_env-int`
+    Type: :ref:`env-integer`
 
     Limits the number of test failures allowed during a regression run.
 
