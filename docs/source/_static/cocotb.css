@@ -256,6 +256,10 @@ code.xref {
   font-weight: normal;
 }
 
+span.xref.std-term {
+  color: var(--color-cocotb-blue);
+}
+
 h1:has(code.xref) code.xref, h2:has(code.xref) code.xref, h3:has(code.xref) code.xref, h4:has(code.xref) code.xref, h5:has(code.xref) code.xref, h6:has(code.xref) code.xref {
   font-weight: bold !important;
 }
