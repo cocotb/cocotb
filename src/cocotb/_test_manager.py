@@ -251,7 +251,10 @@ def start_soon(
     task = create_task(coro, name=name)
     # This is _ensure_started() rather than start_soon() for backwards compatibility.
     # Calling cocotb.start_soon(task) on a task that already started should not fail.
-    task._ensure_started()
+    if task._unstarted():
+        task.start_soon()
+    elif task.done():
+        raise RuntimeError("Cannot schedule a Task that has already completed.")
     return task
 
 
