@@ -107,7 +107,7 @@ Fixtures
 --------
 
 :py:fixture:`cocotb_tools._pytest.plugin.hdl`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plugin provides an :fixture:`~cocotb_tools._pytest.plugin.hdl` fixture that will create a new instance of
 :py:class:`~cocotb_tools._pytest.hdl.HDL` that can be customized and then used in tests.
