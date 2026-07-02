@@ -98,7 +98,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
    writing_testbenches
    scheduler
    runner
-   pytest
+   pytest_plugin
 
 ..
    Examples - completed and working projects that demonstrate how cocotb can be used to solve a particular problem
