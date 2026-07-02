@@ -5,20 +5,22 @@ Coroutines, Triggers, Tasks, and Concurrency
 This document covers in greater depth the features that cocotb provides to make writing complex testbenches possible,
 including the following topics:
 
-* :term:`coroutines <coroutine>`
-* :term:`triggers <trigger>`
-* :term:`tasks <task>`
-* :term:`concurrency`
-* Running independent concurrent tasks with :func:`cocotb.start_soon`.
-* Waiting for multiple things to finish with :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`.
-* Structured concurrency with :class:`~cocotb.triggers.TaskManager`.
-* Inter-task communication with :class:`~cocotb.triggers.Event` and :class:`~cocotb.queue.Queue`.
-* Inter-task synchronization with :class:`~cocotb.triggers.Lock`.
+* :ref:`coroutines <coroutines>`
+* :ref:`triggers <triggers-tutorial>`
+* :ref:`tasks <tasks>`
+* :ref:`concurrency <concurrency>`
+* Running independent concurrent tasks with :ref:`cocotb.start_soon <start-soon>`.
+* Waiting for multiple things to finish with :ref:`gather(), select(), and wait() <gather-select-wait>`.
+* Structured concurrency with :ref:`TaskManager <task-manager-tutorial>`.
+* Inter-task communication and synchronization with :ref:`Event, Queue, and Lock <event-queue-lock>`.
 
 What it will *not* cover is any simulation-specific or testing-specific features such as getting values from a signal, or passing and failing tests.
 
 Now before we can get into concurrency, we need to cover the building blocks of cocotb's concurrency system,
 the first being :term:`!coroutines`.
+
+
+.. _coroutines:
 
 **********
 Coroutines
@@ -27,12 +29,12 @@ Coroutines
 What is a coroutine?
 ====================
 
-A coroutine is a special type of function that can be paused and resumed at certain points in its execution.
+A :term:`coroutine` is a special type of function that can be paused and resumed at certain points in its execution.
 When a coroutine is paused, it yields control to another coroutine, allowing other code to run.
 When a coroutine is resumed, it continues executing from where it left off.
 
-If this sounds a lot like a Python generator, that's because it is.
-In fact, Python's built-in :term:`coroutines <python:coroutine>` are built on top of :term:`generators <python:generator>`.
+If this sounds a lot like a Python :term:`generator <python:generator>`, that's because it is.
+In fact, Python's built-in :term:`coroutines <python:coroutine>` are built on top of :term:`!generators`.
 
 How do I define a coroutine?
 ============================
@@ -49,8 +51,8 @@ is that coroutine functions are defined with :keyword:`async def` instead of jus
 
 What makes coroutine functions useful is that they can contain :keyword:`await` expressions.
 This is similar to :keyword:`yield` expressions in generators:
-execution is paused at the point of the :keyword:`await` expression until the awaited object results in a value,
-then execution of the coroutine resumes from the point of the :keyword:`await` expression.
+execution is paused at the point of the :keyword:`!await` expression until the awaited object results in a value,
+then execution of the coroutine resumes from the point of the :keyword:`!await` expression.
 
 .. code-block:: python
 
@@ -70,10 +72,10 @@ It looks like it could be a regular :keyword:`!def` function and non- :keyword:`
 
 There are two main reasons why we need coroutines:
 
-1. We can :keyword:`await` things that aren't coroutines.
+1. We can :keyword:`!await` things that aren't coroutines.
 2. We can run multiple coroutines concurrently.
 
-In terms of cocotb, the first point is necessary to support :keyword:`await`\ ing :term:`triggers <trigger>`,
+In terms of cocotb, the first point is necessary to support :keyword:`!await`\ ing :term:`triggers <trigger>`,
 which are not coroutines but :term:`awaitable objects <awaitable>` that represent events in the simulation.
 
 .. code-block:: python
@@ -98,7 +100,7 @@ The only difference is that they can use :keyword:`!await` expressions while reg
 
 The other main difference is that coroutine functions, like generator functions, do not run the function body immediately upon calling;
 nor does calling the function (without the :keyword:`!await`) block and return the function result.
-Instead, calling a coroutine function returns a :term:`python:coroutine` object, which is an :term:`awaitable`.
+Instead, calling a coroutine function returns a :term:`!coroutine` object, which is an :term:`!awaitable`.
 The coroutine function's body starts only after that coroutine object is :keyword:`!await`\ ed.
 
 .. code-block:: python
@@ -133,11 +135,13 @@ To best visualize this, consider the following equivalent code below.
         ret = (await coro)
 
 
+.. _triggers-tutorial:
+
 ********************
 :class:`!Trigger`\ s
 ********************
 
-We mentioned earlier that one of the main reasons we need coroutines is to :keyword:`!await` things that aren't other coroutines.
+We mentioned earlier that one of the main reasons we need coroutines is to :keyword:`await` things that aren't other :term:`coroutines <python:coroutine>`.
 In cocotb, that thing is :term:`triggers <trigger>`; they are another building block of cocotb's concurrency system.
 
 cocotb provides triggers that represent various events in the simulation, such as a signal changing value or a certain amount of time passing.
@@ -159,7 +163,7 @@ A gotcha to watch out for is that if an event represented by the trigger will ne
 then the coroutine will be paused indefinitely and your test will hang.
 This is a good argument for specifying ``timeout_time`` and ``timeout_unit`` arguments to :deco:`cocotb.test` as seen above.
 
-The only common API that all :term:`!triggers` share is that they are :term:`awaitable objects <awaitable>`.
+The only common API that all :term:`!triggers` share is that they are :term:`awaitable` objects.
 We will be covering several particular triggers relating to concurrency later in this document,
 so here is a table of the most commonly used simulation triggers which we *won't* be covering in detail in this document.
 
@@ -281,6 +285,8 @@ You cannot use other concurrency frameworks' APIs or objects in a cocotb test,
 nor can you use cocotb's tasks and triggers in other concurrency frameworks.
 
 
+.. _start-soon:
+
 **************************
 :func:`!cocotb.start_soon`
 **************************
@@ -351,6 +357,9 @@ Mapping this back to our earlier discussion of symmetric vs asymmetric concurren
 both of these are examples of symmetric concurrency.
 There is no established relationship between the concurrent assert or the Driver's main thread and any other particular task.
 
+
+.. _tasks:
+
 *****************
 :class:`!Task`\ s
 *****************
@@ -362,7 +371,7 @@ so understanding what they are and why they are necessary is essential to using 
 Why :class:`!Task`\ s?
 ======================
 
-Python coroutines only support being :keyword:`await`\ ed,
+Python :term:`coroutines <python:coroutine>` only support being :keyword:`await`\ ed,
 which blocks the current task until the coroutine finishes and results in the coroutine's return value.
 This is a problem when we want to run multiple coroutines concurrently,
 because we don't want to block the current task until the other coroutine finishes.
@@ -414,7 +423,7 @@ Handling Exceptions
 
 Just like regular Python coroutines, :class:`!Task`\ s can raise exceptions.
 If an exception is raised in a :class:`!Task`, that exception is stored in the task and can be retrieved with the :meth:`~cocotb.task.Task.exception` method.
-If you :keyword:`await` a task that has an exception, or call its :meth:`!result` method, that exception will be re-raised.
+If you :keyword:`!await` a task that has an exception, or call its :meth:`!result` method, that exception will be re-raised.
 
 .. code-block:: python
 
@@ -449,7 +458,10 @@ This is because when you cancel a Task, a :exc:`~asyncio.CancelledError` excepti
 We are rescheduling the task to run with that exception raised.
 That :exc:`!CancelledError` exception will become the Task's result.
 
-One final note is that calling :meth:`!result` or :meth:`!exception` on a cancelled task will raise that same :class:`~asyncio.CancelledError` exception.
+You can see if a task has been cancelled by calling the :meth:`~cocotb.task.Task.cancelled` method.
+
+.. warning::
+    Calling :meth:`!result` or :meth:`!exception` on a cancelled task will raise the :exc:`~asyncio.CancelledError` exception.
 
 .. code-block:: python
 
@@ -506,6 +518,8 @@ We are also taking advantage of the fact that cancellation raises a :exc:`!Cance
             self._task = None
 
 
+.. _gather-select-wait:
+
 ***************************************************
 :func:`!gather`, :func:`!select`, and :func:`!wait`
 ***************************************************
@@ -517,9 +531,9 @@ For specific examples:
 * Waiting for multiple testbench components to quiesce during test end.
 * Timing out an operation.
 
-cocotb provides three functions for this purpose, :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`.
-These functions not only allow you to wait for multiple *anything* to finish,
-but provide useful return values and provide cancellation and clean-up guarantees.
+cocotb provides three functions for this purpose, :func:`!gather`, :func:`!select`, and :func:`!wait`.
+These functions allow you to wait for multiple :term:`awaitables <awaitable>`, including :term:`coroutines <coroutine>` and :class:`~cocotb.task.Task`\ s, simultaneously.
+They also provide useful return values and provide cancellation and clean-up guarantees.
 These cancellation and clean-up guarantees are what is meant by "structured concurrency."
 
 :func:`!gather`
@@ -570,9 +584,9 @@ It waits for multiple :term:`!awaitables` to finish, using the keyword argument 
 * ``"ALL_COMPLETED"``: Returns when all awaitables finish regardless of outcome.
 
 :func:`!wait` returns a tuple of the index (0-based into the argument list) of the first completed awaitable or ``None`` if no *first* event occurred,
-and a tuple of the waiter :class:`~cocotb.task.Task` objects.
+and a tuple of the waiter :class:`!Task` objects.
 
-The caller is expected to inspect these :class:`!Task`\ s with :meth:`~cocotb.task.Task.result`, :meth:`~cocotb.task.Task.exception`, and :meth:`~cocotb.task.Task.cancelled`.
+The caller is expected to inspect these :class:`!Task`\ s with :meth:`!Task.result`, :meth:`!Task.exception`, and :meth:`!Task.cancelled`.
 
 Reach for :func:`!wait` when you don't want exceptions thrown to the caller, but instead want to handle them yourself.
 
@@ -624,12 +638,12 @@ which we can see by joining the two examples from the :func:`!gather` and :func:
             raise TimeoutError("Design did not quiesce within 10 us!")
 
 .. note::
-   If you pass a :class:`Task <cocotb.task.Task>` object to :func:`!gather`, :func:`!select`, or :func:`!wait` and the call returns before that task finishes,
+   If you pass a :class:`!Task` object to :func:`!gather`, :func:`!select`, or :func:`!wait` and the call returns before that task finishes,
    the passed in task will *not* be cancelled.
 
 .. note::
     You may be familiar with :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` which can also be used to wait for multiple things,
-    but they are limited to waiting for :term:`triggers <trigger>` only, not :term:`coroutines <coroutine>` or other :term:`!awaitables`.
+    but they are limited to waiting for :term:`!triggers` only, not :term:`!coroutines` or other :term:`!awaitables`.
 
     This often forces the user to use :func:`cocotb.start_soon` and manage task lifetimes themselves
     which is verbose and rarely done correctly leading to :term:`!tasks` "leaking".
@@ -639,13 +653,13 @@ which we can see by joining the two examples from the :func:`!gather` and :func:
     For those reasons they are no longer recommended except for passing to functions or objects where specifically :term:`!triggers` are expected.
 
 
-.. _task_manager_tutorial:
+.. _task-manager-tutorial:
 
 *********************
 :class:`!TaskManager`
 *********************
 
-The :class:`~cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete.
+The :class:`cocotb.triggers.TaskManager` class is another way to run multiple async routines concurrently and wait for them all to complete.
 It properly manages the lifetime of its "children" and handles exceptions and cancellations gracefully.
 Unlike :func:`~cocotb.triggers.gather` which takes all :term:`awaitable`\ s and :term:`coroutine`\ s at once,
 :class:`!TaskManager` allows adding new :term:`!awaitable`\ s and :term:`!coroutine`\ s dynamically,
@@ -656,7 +670,7 @@ Basic Usage
 ===========
 
 To use :class:`!TaskManager`, first construct it and use it as an :term:`asynchronous context manager` with the :keyword:`async with` statement.
-Inside the context block you can use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`Task <cocotb.task.Task>`\ s concurrently.
+Inside the context block you can use the :deco:`fork <cocotb.triggers.TaskManager.fork>` decorator method to start :class:`!Task`\ s concurrently.
 When control reaches the end of the context block
 the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all child :class:`!Task`\ s complete.
 
@@ -676,26 +690,28 @@ the :class:`!TaskManager` blocks the encompassing :class:`!Task` until all child
 
     # Control returns here when all drive Tasks have completed
 
-In addition to the :deco:`!fork` method for starting :term:`coroutine functions <coroutine function>` concurrently,
-:meth:`~cocotb.triggers.TaskManager.start_soon` can be used for :keyword:`!await`\ ing arbitrary :term:`awaitable`\ s concurrently.
+In addition to the :deco:`!fork` method for starting :term:`!coroutine functions` concurrently,
+:meth:`~cocotb.triggers.TaskManager.start_soon` can be used for :keyword:`!await`\ ing arbitrary :term:`!awaitable`\ s concurrently.
 
 .. code-block:: python
 
-    # Wait for operation to complete or timeout after 1 us
-
     async with TaskManager() as tm:
-        tm.start_soon(RisingEdge(cocotb.top.operation_complete))
+        # Start up task to track whether the watchdog tripped.
+        saw_watchdog = tm.start_soon(RisingEdge(cocotb.top.watchdog))
 
-        @tm.fork
-        async def watchdog():
-            await Timer(1, "us")
-            raise TimeoutError("Operation did not complete in time")
+        # Send the stimulus.
+        await send(cocotb.top, transactions)
+
+        # Fail test if the watchdog tripped during stimulus.
+        if saw_watchdog.done():
+            raise TimeoutError("watchdog tripped!")
+
 
 Inspecting Child Task Results
 =============================
 
 You can inspect the result of child tasks by storing the :class:`!Task` objects returned by the :meth:`!start_soon` method.
-When decorating a :term:`coroutine function` with :deco:`!fork`,
+When decorating a :term:`!coroutine function` with :deco:`!fork`,
 the name of the function will become the returned :class:`!Task` object.
 
 .. code-block:: python
@@ -786,7 +802,7 @@ Failures Within the Context Block
 
 You are permitted to add any :keyword:`await` statement to the body of the context block.
 This means that it is possible for child tasks to start running, and then end with an exception, before the context block has finished.
-In this case, a :exc:`~asyncio.CancelledError` will be raised from the current :keyword:`!await` expression in the context block,
+In this case, a :exc:`!CancelledError` will be raised from the current :keyword:`!await` expression in the context block,
 allowing the user to perform any necessary cleanup.
 This :exc:`!CancelledError` will be squashed when the context block exits,
 and :class:`!TaskManager` continues shutting down as it normally would.
@@ -810,16 +826,16 @@ and :class:`!TaskManager` continues shutting down as it normally would.
         ...  # This code will be skipped
 
 .. warning::
-    Just like with :class:`~cocotb.task.Task`, if a :class:`!TaskManager` context block is cancelled
-    and squashes the resulting :exc:`asyncio.CancelledError`, the test will be forcibly failed immediately.
-    Always remember to re-raise the :exc:`!asyncio.CancelledError` if you catch it.
+    Just like with :class:`!Task`, if a :class:`!TaskManager` context block is cancelled
+    and squashes the resulting :exc:`!CancelledError`, the test will be forcibly failed immediately.
+    Always remember to re-raise the :exc:`!CancelledError` if you catch it.
 
 A context block can also fail with an exception like a child :class:`!Task` could.
 In this case, if the *context_continue_on_error* parameter to the constructor is ``False``, all child :class:`!Task`\ s are cancelled;
 if it is set to ``True``, other child :class:`!Task`\ s are allowed to continue running.
 In either case, after all child :class:`!Task`\ s have finished,
-all exceptions, besides :exc:`~asyncio.CancelledError`, are gathered into an :exc:`ExceptionGroup`,
-or a :exc:`BaseExceptionGroup`, if at least one of the exceptions is a :exc:`BaseException`,
+all exceptions, besides :exc:`!CancelledError`, are gathered into an :exc:`!ExceptionGroup`,
+or a :exc:`!BaseExceptionGroup`, if at least one of the exceptions is a :exc:`!BaseException`,
 and raised in the enclosing scope.
 
 .. code-block:: python
@@ -868,6 +884,8 @@ When any child :class:`!Task` fails, the entire tree of child :class:`!Task`\ s 
     Prefer using :func:`!gather` and :func:`!select` when possible as they are more readable for the cases they can cover.
 
 
+.. _event-queue-lock:
+
 ********************************************
 Synchronization and Inter-Task Communication
 ********************************************
@@ -883,23 +901,23 @@ For example:
 
 cocotb provides several APIs for inter-task communication and synchronization, including:
 
-* :class:`~cocotb.triggers.Event` for notifying waiters that some event has occurred.
-* :class:`~cocotb.queue.Queue` for passing messages between tasks.
-* :class:`~cocotb.triggers.Lock` for ensuring exclusive access to a shared resource.
+* :class:`!cocotb.triggers.Event` for notifying waiters that some event has occurred.
+* :class:`!cocotb.queue.Queue` for passing messages between tasks.
+* :class:`!cocotb.triggers.Lock` for ensuring exclusive access to a shared resource.
 
 Let's go through each of these in turn.
 
 :class:`!Event`
 ===============
 
-An :class:`~cocotb.triggers.Event` allows one or more tasks to wait for an event to occur.
+An :class:`cocotb.triggers.Event` allows one or more tasks to wait for an event to occur.
 Waiting is done by :keyword:`!await`\ ing :meth:`.Event.wait`, which blocks until the Event is set.
 The Event is set by calling :meth:`.Event.set`, which wakes up all tasks that are waiting on that Event.
 
 :class:`!Event`\ s are stateful;
-after an Event is set, any future calls to :meth:`.Event.wait` will not block.
-You can check to see if the Event is in the "set" state with :meth:`.Event.is_set`
-and put the Event back into the "unset" state with :meth:`.Event.clear`.
+after an Event is set, any future calls to :meth:`~cocotb.triggers.Event.wait` will not block.
+You can check to see if the Event is in the "set" state with :meth:`~cocotb.triggers.Event.is_set`
+and put the Event back into the "unset" state with :meth:`~cocotb.triggers.Event.clear`.
 
 .. code-block:: python
 
@@ -938,7 +956,7 @@ and put the Event back into the "unset" state with :meth:`.Event.clear`.
 :class:`!Queue`
 ===============
 
-A :class:`~cocotb.queue.Queue` is a first-in-first-out (FIFO) queue with built-in synchronization,
+A :class:`cocotb.queue.Queue` is a first-in-first-out (FIFO) queue with built-in synchronization,
 somewhat similar to a Mailbox in UVM,
 and very similar to :class:`asyncio.Queue` in the Python standard library.
 It supports multiple producers and consumers,
@@ -999,14 +1017,14 @@ Going back to our earlier Driver example, we can modify it to take stimulus from
 :class:`!Lock`
 ==============
 
-The final synchronization primitive that cocotb provides is :class:`~cocotb.triggers.Lock`.
+The final synchronization primitive that cocotb provides is :class:`cocotb.triggers.Lock`.
 This is a mutual exclusion lock similar to :class:`asyncio.Lock` in the Python standard library.
 
 A :class:`!Lock` has two states, "locked" and "unlocked."
 When a :class:`!Lock` is locked, any task that tries to acquire the lock will block until the lock is unlocked.
 When a :class:`!Lock` is unlocked, any task can acquire the lock, which will change its state to locked.
 
-The methods :meth:`.Lock.acquire` and :meth:`~cocotb.triggers.Lock.release` are used to acquire and release the lock, respectively.
+The methods :meth:`~cocotb.triggers.Lock.acquire` and :meth:`~cocotb.triggers.Lock.release` are used to acquire and release the lock, respectively.
 However, it is recommended to use :class:`!Lock` as an asynchronous context manager with :keyword:`async with`,
 which will automatically acquire the lock at the beginning of the block and release it at the end of the block, even if an exception is raised.
 
@@ -1072,7 +1090,7 @@ Async generators
 One final coroutine feature that Python provides that is worth mentioning is the :term:`async generator`.
 They are conceptually similar to regular Python generators,
 and use the same :keyword:`yield` syntax to send values back to the caller,
-but they also support :keyword:`await`\ ing in their body like regular Python :term:`coroutines <python:coroutine>`.
+but they also support :keyword:`await`\ ing in their body like regular Python :term:`!coroutines`.
 Iteration over :term:`!async generators` is done with :keyword:`async for`:
 
 .. code-block:: python
