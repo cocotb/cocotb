@@ -438,7 +438,11 @@ class Task(Generic[ResultType]):
 
     @deprecated("`task.kill()` is deprecated in favor of `task.cancel()`")
     def kill(self) -> None:
-        """Kill a coroutine."""
+        """Kill a coroutine.
+
+        .. deprecated:: 2.0
+            ``task.kill()`` is deprecated in favor of ``task.cancel()``.
+        """
 
         state = self._state
         if state is _TaskState.PENDING:
