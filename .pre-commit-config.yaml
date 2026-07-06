@@ -34,7 +34,7 @@ repos:
     exclude: "^docs/source/diagrams/(svg|xml)/"
 
 - repo: https://github.com/henryiii/validate-pyproject-schema-store
-  rev: "2026.06.26"
+  rev: "2026.07.06"
   hooks:
     - id: validate-pyproject
       files: pyproject.toml
@@ -71,7 +71,7 @@ repos:
     language_version: "3.11"
 
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.11.25
+  rev: 0.11.26
   hooks:
     - id: uv-lock
 
