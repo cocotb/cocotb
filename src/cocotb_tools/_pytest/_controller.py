@@ -88,6 +88,15 @@ class Controller:
             self._thread = Thread(target=self._handle_test_reports)
             os.environ["COCOTB_PYTEST_REPORTER_ADDRESS"] = str(self._listener.address)
 
+        # Number of cocotb tests skipped from being collected as separate pytest items
+        # (they are bound to their cocotb runner and reported later over IPC). Pytest's
+        # own ``session.testscollected`` only counts collected items (i.e. runners), so
+        # the built-in terminal progress bar overshoots 100% once individual cocotb test
+        # reports start coming in. We track the true count here and correct
+        # ``session.testscollected`` once collection has finished (see
+        # ``pytest_collection``).
+        self._extra_testscollected: int = 0
+
     @hookimpl(tryfirst=True)
     def pytest_configure(self, config: Config) -> None:
         """Configure environment for the main pytest parent process.
@@ -221,6 +230,30 @@ class Controller:
 
         return f"{runner_nodeid}::{report.nodeid}"
 
+    @hookimpl(wrapper=True)
+    def pytest_collection(self, session: Session) -> Generator[None, None, object]:
+        """Correct ``session.testscollected`` once collection has finished.
+
+        Pytest sets ``session.testscollected = len(items)`` at the very end of
+        :meth:`Session.perform_collect`, after all collection hooks (including
+        ``pytest_pycollect_makeitem``) have already run. Cocotb tests are deliberately
+        *not* added as separate items there (see ``_collect``), only their parent
+        cocotb runner is. Correcting the count during collection would therefore just
+        be overwritten. Doing it here, in a wrapper around ``pytest_collection``, runs
+        after that assignment and keeps the built-in terminal progress bar (which
+        divides reported test reports by ``session.testscollected``) from exceeding
+        100% once individual cocotb test reports start arriving over IPC.
+
+        Args:
+            session: Pytest session object.
+
+        Yields:
+            Control back to pytest to perform the actual collection.
+        """
+        result = yield
+        session.testscollected += self._extra_testscollected
+        return result
+
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
         """Start thread to receive test reports from pytest sub-process (simulator)."""
@@ -298,7 +331,11 @@ class Controller:
                             # Add cocotb test keywords to cocotb runner
                             # This will allow to run cocotb runner by using keywords associated with cocotb test
                             runner.item.extra_keyword_matches.update(item.keywords)
-                            # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
+                            # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator.
+                            # It still produces its own test report over IPC (see _handle_test_reports), so count
+                            # it towards session.testscollected (corrected in pytest_collection) to keep the
+                            # built-in terminal progress bar accurate.
+                            self._extra_testscollected += 1
                 else:
                     yield item  # some coroutine test function that is not part of cocotb
 

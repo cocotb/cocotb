@@ -1,0 +1,1 @@
+The pytest plugin's terminal progress bar no longer exceeds 100% when a :func:`pytest.mark.cocotb_runner`-marked test runs multiple :func:`pytest.mark.cocotb_test`-marked tests.
