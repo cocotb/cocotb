@@ -388,13 +388,27 @@ class Task(Generic[ResultType]):
                 remove_traceback_frames(e, ["_resume"]), _TaskState.CANCELLED
             )
         except BaseException as e:
-            if debug.debug:
-                self._log.debug(
-                    "Task %r errored with exception of type %r", self, type(e)
+            if self._must_cancel:
+                if debug.debug:
+                    self._log.debug(
+                        "Task %r was cancelled but raised a different exception of type %r",
+                        self,
+                        type(e),
+                    )
+                self._set_outcome(
+                    RuntimeError(
+                        f"Task was cancelled, but raised a different exception of type {type(e)!r} during cancellation"
+                    ),
+                    _TaskState.ERRORED,
                 )
-            self._set_outcome(
-                remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
-            )
+            else:
+                if debug.debug:
+                    self._log.debug(
+                        "Task %r errored with exception of type %r", self, type(e)
+                    )
+                self._set_outcome(
+                    remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
+                )
         else:
             if self._must_cancel:
                 if debug.debug:
