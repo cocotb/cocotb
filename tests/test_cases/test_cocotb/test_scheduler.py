@@ -788,6 +788,24 @@ async def test_cancel_task_cancellation_error(_: object) -> None:
     await Timer(1, "ns")
 
 
+@cocotb.test
+async def test_raise_exception_during_cancellation(_: object) -> None:
+    async def raises_in_cleanup() -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            raise MyException()
+
+    t = cocotb.start_soon(raises_in_cleanup())
+    await Timer(1)
+    t.cancel()
+
+    await t.complete
+    assert t.done()
+    assert not t.cancelled()
+    assert isinstance(t.exception(), RuntimeError)
+
+
 @cocotb.test()
 async def test_invalid_operations_task(_):
     async def coro():

@@ -1380,9 +1380,12 @@ async def test_second_child_fails_after_group_cancelled(_: object) -> None:
 
     except BaseExceptionGroup as e:
         my_exc, rest = e.split(MyException)
-        assert rest is None
         assert my_exc is not None
-        assert len(my_exc.exceptions) == 2
+        assert len(my_exc.exceptions) == 1
+        runtime_errs, rest = rest.split(RuntimeError)
+        assert runtime_errs is not None
+        assert len(runtime_errs.exceptions) == 1
+        assert rest is None
 
     assert task1.exception() is not None
     assert task2.exception() is not None
