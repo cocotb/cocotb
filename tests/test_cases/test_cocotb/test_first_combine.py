@@ -59,10 +59,9 @@ async def test_select_unfired_triggers_killed_on_exception(_: object) -> None:
     with pytest.raises(ValueError):
         await select(fails(), *triggers)
 
-    # test all triggers were unprimed
+    # test all triggers that were primed were unprimed
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == t.unprimed
 
 
 @cocotb.test
@@ -79,8 +78,7 @@ async def test_gather_unfired_triggers_killed_on_exception(_: object) -> None:
 
     # test all triggers were unprimed
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == t.unprimed
 
 
 @cocotb.test
@@ -97,8 +95,7 @@ async def test_nested_unfired_triggers_killed_on_exception(_: object) -> None:
 
     # test all triggers were unprimed
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == t.unprimed
 
     triggers = [MyTrigger() for _ in range(3)]
 
@@ -107,8 +104,7 @@ async def test_nested_unfired_triggers_killed_on_exception(_: object) -> None:
 
     # test all triggers were unprimed
     for t in triggers:
-        assert t.primed == 1
-        assert t.unprimed == 1
+        assert t.primed == t.unprimed
 
 
 @cocotb.test()

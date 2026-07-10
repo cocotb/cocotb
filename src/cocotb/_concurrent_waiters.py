@@ -128,12 +128,20 @@ async def _wait(
     waiters = [Task[Any](a) for a in awaitables]
     # Use dict (insertion-ordered) so cancellation order is deterministic and we have O(1) insertion and removals.
     remaining = dict.fromkeys(waiters)
-    # Set when we meet the return condition.
-    done = _InternalEvent(_repr)
     # Set when all tasks have completed, regardless of reason.
     complete = _InternalEvent(_repr)
     # The first task to complete, stored regardless of return_when condition.
     first_completed: Task[Any] | None = None
+    # Flag to prevent multiple cancellation
+    cancelled: bool = False
+
+    def cancel_remaining() -> None:
+        nonlocal cancelled
+        if cancelled:
+            return
+        cancelled = True
+        for task in remaining:
+            task.cancel()
 
     if return_when == "FIRST_COMPLETED":
 
@@ -144,28 +152,26 @@ async def _wait(
             nonlocal first_completed
             if first_completed is None:
                 first_completed = task
-                done.set()
+                cancel_remaining()
 
     elif return_when == "FIRST_EXCEPTION":
 
         def done_callback(task: Task[Any]) -> None:
             del remaining[task]
             if not remaining:
-                done.set()
                 complete.set()
             nonlocal first_completed
             if first_completed is None and (
                 task.cancelled() or task.exception() is not None
             ):
                 first_completed = task
-                done.set()
+                cancel_remaining()
 
     else:
 
         def done_callback(task: Task[Any]) -> None:
             del remaining[task]
             if not remaining:
-                done.set()
                 complete.set()
 
     for task in reversed(waiters):
@@ -173,19 +179,10 @@ async def _wait(
         task._start_next()
 
     try:
-        await done
-    finally:
-        # Cancel remaining tasks. No-op if everything has finished (ALL_COMPLETED)
-        # or the return_when condition is specified, but all tasks happen to complete
-        # before this Task runs again. Cancels whatever is remaining and rethrows if
-        # the caller is cancelled.
-        for task in remaining:
-            task.cancel()
-
-    # Wait until all children tasks have finished before returning.
-    # Ensures any side-effectful clean-up has completed.
-    if not complete.is_set():
         await complete
+    except BaseException:
+        cancel_remaining()
+        raise
 
     idx = waiters.index(first_completed) if first_completed is not None else None
     return idx, tuple(waiters)

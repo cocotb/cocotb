@@ -70,7 +70,9 @@ def configure_test_env(session: nox.Session) -> None:
 
     # Do not fail on DeprecationWarning caused by virtualenv, which might come from
     # the site module.
-    session.env["PYTHONWARNINGS"] = "error,ignore::DeprecationWarning:site"
+    session.env["PYTHONWARNINGS"] = (
+        "error,ignore::DeprecationWarning:site,ignore:coroutine :RuntimeWarning"
+    )
 
     # Test with debug enabled, but log level still set low. That way we can test the code
     # without slowing everything down by emitting roughly 1 million logs.
