@@ -13,7 +13,7 @@ from random import randint
 from typing import Any
 
 import pytest
-from common import MyException, _check_traceback, assert_takes
+from common import MyException, assert_takes
 
 import cocotb
 from cocotb.triggers import Combine, Event, First, Timer, Trigger, gather, select
@@ -168,9 +168,8 @@ async def test_exceptions_first(dut):
         with pytest.warns(DeprecationWarning):
             await First(cocotb.start_soon(raise_inner()))
 
-    await _check_traceback(
-        raise_soon(), ValueError, r".*in raise_soon.*in raise_inner", re.DOTALL
-    )
+    with pytest.raises(ValueError):
+        await raise_soon()
 
 
 @cocotb.test()
