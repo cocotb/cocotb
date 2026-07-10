@@ -134,7 +134,6 @@ class Task(Generic[ResultType]):
         else:
             raise TypeError(f"Expected Awaitable, got {type(inst).__name__}")
 
-        self._state: _TaskState = _TaskState.UNSTARTED
         self._outcome: ResultType | BaseException
         self._trigger: Trigger
         self._schedule_callback: cocotb._event_loop.ScheduledCallback
@@ -147,6 +146,10 @@ class Task(Generic[ResultType]):
         self._task_id = self._id_count
         type(self)._id_count += 1
         self._name = f"Task {self._task_id}" if name is None else name
+
+        # Placed at the end so we know the Task was fully constructed.
+        # __del__ assumes if this isn't present, the Task did not finish constructing.
+        self._state: _TaskState = _TaskState.UNSTARTED
 
     @property
     def locals(self) -> SimpleNamespace:
@@ -685,7 +688,10 @@ class Task(Generic[ResultType]):
         return self.result()
 
     def __del__(self) -> None:
-        if self._unstarted():
+        # We have to check for existence of _state because __del__ still runs if __init__ fails.
+        if (
+            state := getattr(self, "_state", None)
+        ) is not None and state is _TaskState.UNSTARTED:
             # Complain if we never started the Task.
             warnings.warn(
                 f"Task {self._name!r} was never started. Did you forget to call start_soon()?",
