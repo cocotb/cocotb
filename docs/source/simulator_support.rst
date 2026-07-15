@@ -312,6 +312,11 @@ The QIS/Qrun flow is chosen automatically if Questa 2025.2 or newer is detected.
 Users can explicitly use the QIS/Qrun flow with :make:var:`SIM=questa-qisqrun <SIM>`.
 If you are passing simulator-specific arguments to the Makefile, we recommend not relying on the automatic flow selection and instead explicitly selecting a flow by using either ``SIM=questa-qisqrun`` or ``SIM=questa-compat`` to ensure they are interpreted as expected.
 
+When using the :ref:`Python Runner <howto-python-runner>`, the two flows are exposed as separate runners:
+``get_runner("questa")`` selects the compat (vsim) flow (:class:`cocotb_tools.runner.Questa`),
+and ``get_runner("questa-qisqrun")`` selects the QIS/Qrun flow (:class:`cocotb_tools.runner.QuestaQIS`).
+The Python Runner does not auto-select between the two flows based on the Questa version.
+
 The **compat flow** uses the commands ``vlog``, ``vopt`` and ``vsim`` to build and run the simulation, together with the ``+acc`` switch to enable design access for cocotb.
 
 The compat flow is used for ModelSim and Questa older than 2025.2.

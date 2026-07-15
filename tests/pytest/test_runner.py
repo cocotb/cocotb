@@ -37,6 +37,7 @@ sim = os.getenv(
 
 pre_cmd_sims = {
     "questa",
+    "questa-qisqrun",
 }
 
 
@@ -155,8 +156,8 @@ def test_runner(parameters, pre_cmd, clean_build):
         extra_env=parameters,
     )
 
-    # Assert pre_cmd result. Questa only, at the moment
-    if sim == "questa":
+    # Assert pre_cmd result. Questa flows only, at the moment
+    if sim in pre_cmd_sims:
         if pre_cmd is not None:
             assert (build_dir / "pre_cmd_test_file").is_file()
         else:

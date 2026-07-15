@@ -1191,6 +1191,220 @@ class Questa(Runner):
         return cmds
 
 
+class QuestaQIS(Runner):
+    """Implementation of :class:`Runner` for the Siemens Questa QIS/qrun flow.
+
+    The build and simulate steps are driven by ``qrun`` using the Questa
+    Information System (QIS), rather than by ``vsim`` as in the :class:`Questa`
+    runner. The Python runner does not auto-select between the two flows the way
+    the ``questa`` Makefile does; select this flow explicitly with
+    ``get_runner("questa-qisqrun")``.
+
+    .. admonition:: Simulator-specific Usage
+
+       * ``gui=True`` opens Visualizer in live-simulation mode. The Makefile's
+         ``postsim`` GUI mode is not exposed through the runner API.
+       * Parameters are applied at build time (baked into the optimized design);
+         parameters passed to :meth:`~Runner.test` are ignored. Re-run
+         :meth:`~Runner.build` to change them.
+    """
+
+    supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
+
+    def _simulator_in_path(self) -> None:
+        if shutil.which("qrun") is None:
+            raise SystemExit("ERROR: qrun executable not found!")
+
+    def test(
+        self,
+        *args: Any,
+        parameters: Mapping[str, object] | None = None,
+        **kwargs: Any,
+    ) -> Path:
+        if parameters:
+            warnings.warn(
+                "QuestaQIS applies parameters at build time (during -optimize); "
+                "parameters passed to test() are ignored. Pass them to build() "
+                "instead, and re-run build() to change them.",
+                stacklevel=2,
+            )
+        return super().test(*args, parameters=parameters, **kwargs)
+
+    def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
+        return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
+
+    def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
+        return [f"+define+{name}={value}" for name, value in defines.items()]
+
+    def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
+        return [f"-g{name}={value}" for name, value in parameters.items()]
+
+    @property
+    def design_file(self) -> Path:
+        return self.build_dir / "design.bin"
+
+    @property
+    def wave_file(self) -> Path:
+        return self.test_dir / "qwave.db"
+
+    @property
+    def qrun_outdir(self) -> Path:
+        # qrun writes its "version" marker (which -simulate checks to accept an
+        # outdir) only when it creates the outdir itself. Place the outdir in a
+        # subdirectory of build_dir, in case the provided build_dir already exists.
+        return self.build_dir / "qrun_out"
+
+    def _build_command(self) -> list[_Command]:
+        verbosity_opts = []
+        if not self.verbose:
+            verbosity_opts += ["-quiet"]
+
+        # Unlike the vsim-based Questa runner, VHDL/Verilog build-arg tags are
+        # not routed to separate compilers here: qrun routes each option to the
+        # appropriate compiler (vcom/vlog) by the option itself within the single
+        # makelib, so all build args are forwarded together.
+        build_args = [_as_tcl_value(arg.value) for arg in self._build_args]
+        hdl_library = _as_tcl_value(self.hdl_library)
+        defines = self._get_define_options(self.defines)
+        includes = self._get_include_options(self.includes)
+
+        # Single qrun invocation: compile all sources into one library, then
+        # optimize. All sources and build args are passed to a single -makelib.
+        sources = list(chain(self._sources, self._vhdl_sources, self._verilog_sources))
+
+        # Verilog compile timescale (a VHDL toplevel sets resolution via -t at
+        # test time instead).
+        timescale_opts: _Command = []
+        if self.timescale is not None:
+            timescale_opts += ["-timescale", "/".join(self.timescale)]
+
+        cmds = []
+        cmds.append(
+            [
+                "qrun",
+                "-optimize",
+                "-outdir",
+                str(self.qrun_outdir),
+                *verbosity_opts,
+                "-top",
+                _as_tcl_value(f"{self.hdl_library}.{self.hdl_toplevel}"),
+                "-voptargs=-access=rw+/.",
+                "-designfile",
+                str(self.design_file),
+                "-sv",
+                "-makelib",
+                hdl_library,
+                *[_as_tcl_value(str(source.value)) for source in sources],
+                *defines,
+                *includes,
+                *timescale_opts,
+                *build_args,
+                "-end",
+                *[
+                    _as_tcl_value(v)
+                    for v in self._get_parameter_options(self.parameters)
+                ],
+            ]
+        )
+        return cmds
+
+    def _test_command(self) -> list[_Command]:
+        cmds = []
+
+        verbosity_opts = []
+        if not self.verbose:
+            verbosity_opts += ["-quiet"]
+
+        if self.pre_cmd is not None:
+            pre_cmd = ["-do", *self.pre_cmd]
+        else:
+            pre_cmd = []
+
+        do_script = ""
+        if self.waves:
+            waves_opts = [
+                "-qwavedb=+signal+memory=all+class+assertion+uvm_schematic+msg+wavefile="
+                + str(self.wave_file),
+            ]
+        else:
+            waves_opts = []
+
+        if not self.gui:
+            do_script += "run -all; quit"
+
+        # A VHDL toplevel has no `timescale directive, so the simulator time
+        # resolution must be set explicitly with -t. For a Verilog toplevel the
+        # -timescale compile option handles this (and honors any finer per-module
+        # directives), so -t is omitted there.
+        if self.hdl_toplevel_lang == "vhdl" and self.timescale is not None:
+            timescale_opts = ["-t", self.timescale[1]]
+        else:
+            timescale_opts = []
+
+        gpi_if_entry = self.gpi_interfaces[0]
+        if gpi_if_entry == "fli":
+            lib_opts = [
+                "-foreign",
+                "cocotb_init "
+                + _as_tcl_value(
+                    cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
+                ),
+            ]
+        elif gpi_if_entry == "vhpi":
+            lib_opts = [
+                "-foreign",
+                "vhpi_startup_routines_bootstrap "
+                + _as_tcl_value(
+                    cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
+                ),
+            ]
+        else:
+            lib_opts = [
+                "-pli",
+                _as_tcl_value(
+                    cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
+                ),
+            ]
+
+        cmds.append(
+            self._get_sim_cmd_prefix()
+            + ["qrun", "-simulate"]
+            + ["-outdir", str(self.qrun_outdir)]
+            + verbosity_opts
+            + waves_opts
+            + (
+                ["-gui", "-visualizer", "-designfile", str(self.design_file)]
+                if self.gui
+                else ["-c"]
+            )
+            + ["-onfinish", "stop" if self.gui else "exit"]
+            + lib_opts
+            + timescale_opts
+            + [_as_tcl_value(v) for v in self.test_args]
+            + [
+                "-top",
+                _as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"),
+            ]
+            + [_as_tcl_value(v) for v in self.plusargs]
+            + pre_cmd
+            + ["-do", do_script]
+            + self._get_sim_cmd_suffix()
+        )
+
+        gpi_extra_list = []
+        for gpi_if in self.gpi_interfaces[1:]:
+            gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
+            if gpi_if_lib_path.is_file():
+                gpi_extra_list.append(
+                    gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
+                )
+            else:
+                raise RuntimeError(f"{gpi_if_lib_path} library not found.")
+        self.env["GPI_EXTRA"] = ",".join(gpi_extra_list)
+
+        return cmds
+
+
 class Ghdl(Runner):
     """Implementation of :class:`Runner` for GHDL.
 
@@ -2170,6 +2384,7 @@ class Dsim(Runner):
 SUPPORTED_RUNNERS: dict[str, type[Runner]] = {
     "icarus": Icarus,
     "questa": Questa,
+    "questa-qisqrun": QuestaQIS,
     "ghdl": Ghdl,
     "riviera": Riviera,
     "activehdl": ActiveHDL,

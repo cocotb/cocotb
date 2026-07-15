@@ -126,6 +126,8 @@ Simulator Runners
 
 .. autoclass:: Questa
 
+.. autoclass:: QuestaQIS
+
 .. autoclass:: Xcelium
 
 .. autoclass:: Ghdl
