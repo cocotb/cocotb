@@ -1,1 +1,1 @@
-Add ability to specify a particular architecture for a toplevel entity when using NVC.
+Added ability to specify a particular architecture for a toplevel entity when using NVC.
