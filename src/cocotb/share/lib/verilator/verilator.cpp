@@ -70,6 +70,7 @@ void wrap_up() {
     // VM_COVERAGE is a define which is set if Verilator is
     // instructed to collect coverage (when compiling the simulation)
 #if VM_COVERAGE
+    Verilated::threadContextp()->coveragep()->forcePerInstance(true);  // --coverage-per-instance; Verilator only sets this in its own main()
     VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
                             // defaults to coverage.dat
 #endif
