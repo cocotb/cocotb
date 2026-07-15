@@ -1,1 +1,1 @@
-Added the :ref:`Pytest Plugin <pytest-plugin>` that enables using pytest as the regression manager for running cocotb tests.
+Added the experimental :ref:`Pytest Plugin <pytest-plugin>` that enables using pytest as the regression manager for running cocotb tests.
