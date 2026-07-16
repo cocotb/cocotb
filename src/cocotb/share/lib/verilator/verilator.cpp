@@ -62,8 +62,8 @@ void wrap_up() {
 
 #if VM_TRACE
     if (tfp) {
-        delete tfp;
-        tfp = nullptr;
+        // We don't delete the trace object to avoid deadlock in verilator sims.
+        tfp->close();
     }
 #endif
 
@@ -210,6 +210,13 @@ int main(int argc, char **argv) {
     top->final();
 
     wrap_up();
+
+#if VM_TRACE
+    if (tfp) {
+        delete tfp;
+        tfp = nullptr;
+    }
+#endif
 
     return 0;
 }
