@@ -1,0 +1,1 @@
+Added ``--coverage-per-instance`` runtime option to the Verilator harness and corresponding ``VERILATOR_COVERAGE_PER_INSTANCE`` Makefile variable to opt in to per-instance HDL coverage recording.
