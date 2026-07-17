@@ -125,15 +125,19 @@ int main(int argc, char **argv) {
         } else if (arg == "--help") {
             fprintf(
                 stderr,
-                "usage: %s [--coverage-per-instance] [--trace] [--trace-flush] [--trace-file TRACEFILE]\n"
+                "usage: %s [--coverage-per-instance] [--trace] [--trace-flush] "
+                "[--trace-file TRACEFILE]\n"
                 "\n"
                 "cocotb + Verilator sim\n"
                 "\n"
                 "options:\n"
-                "  --coverage-per-instance  Force per-instance coverage (requires coverage build)\n"
+                "  --coverage-per-instance  Force per-instance coverage "
+                "(requires coverage build)\n"
                 "  --trace                  Enable tracing (VCD, SAIF or FST)\n"
-                "  --trace-flush            Flush trace at each time step (slow)\n"
-                "  --trace-file             Specify the trace file name (%s by default)\n",
+                "  --trace-flush            Flush trace at each time step "
+                "(slow)\n"
+                "  --trace-file             Specify the trace file name (%s by "
+                "default)\n",
                 basename(argv[0]), traceFile);
             return 0;
         }
