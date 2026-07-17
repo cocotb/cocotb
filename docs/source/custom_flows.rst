@@ -35,13 +35,17 @@ Verilator
 
    .. code-block::
 
-      --vpi --public-flat-rw --prefix Vtop \
+      --vpi --prefix Vtop \
       -LDFLAGS "-Wl,-rpath,$(cocotb-config --lib-dir) \
           -L$(cocotb-config --lib-dir) \
           -lcocotbvpi_verilator" \
       $(cocotb-config --share)/lib/verilator/verilator.cpp
 
 * Run Verilator's makefile as follows: ``CPPFLAGS="-std=c++11" make -f Vtop.mk``
+
+.. note::
+   You may want to add ``--public-flat-rw`` to make all signals in the design accessible over the VPI;
+   however, there is a performance penalty in doing so.
 
 .. _custom-flows-vcs:
 
