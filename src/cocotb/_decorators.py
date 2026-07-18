@@ -105,6 +105,18 @@ class Test:
 TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
 
 
+def split_name_and_value(value: object) -> tuple[object, str | None]:
+    """
+    When using cocotb.parametrize, a single value may be named by passing a tuple of (value, name).
+    This function splits the value and name if a tuple is passed
+    """
+
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        if len(value) == 2 and isinstance(value[1], str):
+            return value[0], value[1]
+    return value, None
+
+
 class TestGenerator:
     def __init__(
         self,
@@ -154,11 +166,12 @@ class TestGenerator:
             test_kwargs: dict[str, object] = {}
             test_name_pieces: list[str] = [self.name]
             for option_idx, select_idx in enumerate(selected_options):
-                option_name, option_values = self.options[option_idx]
-                selected_value = option_values[select_idx]
+                option_name, option_values_and_names = self.options[option_idx]
+                selected_value_and_name = option_values_and_names[select_idx]
 
                 if isinstance(option_name, str):
                     # single params per option
+                    selected_value, _ = split_name_and_value(selected_value_and_name)
                     selected_value = cast("Sequence[object]", selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
@@ -166,8 +179,11 @@ class TestGenerator:
                     )
                 else:
                     # multiple params per option
-                    selected_value = cast("Sequence[object]", selected_value)
-                    for n, v in zip(option_name, selected_value):
+                    selected_value_and_name = cast(
+                        "Sequence[object]", selected_value_and_name
+                    )
+                    for n, vn in zip(option_name, selected_value_and_name):
+                        v, _ = split_name_and_value(vn)
                         test_kwargs[n] = v
                         test_name_pieces.append(f"/{n}={option_reprs[n][select_idx]}")
 
@@ -191,7 +207,8 @@ class TestGenerator:
 def _reprs(values: Sequence[object]) -> list[str]:
     result: list[str] = []
     for value in values:
-        value_repr = _repr(value)
+        _, named_repr = split_name_and_value(value)
+        value_repr = named_repr if named_repr is not None else _repr(value)
         if value_repr is None:
             # non-representable value in option, so default to index strings and give up
             return [str(i) for i in range(len(values))]
@@ -471,7 +488,13 @@ def parametrize(
         options_by_name:
             Mapping of parameter name to sequence of values for that parameter.
 
+            A single value may also be written as ``(value, name)`` to override the text used in the generated test
+            name while still passing ``value`` to the test.
+
     .. versionadded:: 2.0
+
+        Single values in ``options_by_name`` may be written as ``(value, name)`` to customize the generated test
+        name while still passing ``value`` to the test.
     """
 
     # check good inputs

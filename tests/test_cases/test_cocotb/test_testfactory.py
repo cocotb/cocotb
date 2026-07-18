@@ -115,3 +115,45 @@ async def test_testfactory_no_empty_call_verify_args(dut):
         ("a1v1", "a2v2"),
         ("a1v2", "a2v2"),
     }
+
+
+test_factory_named_value_args = set()
+test_factory_named_value_test_names = set()
+
+
+def some_function():
+    return 42
+
+
+@cocotb.test
+@cocotb.parametrize(
+    arg1=["a1v1", ("a1v2", "alpha"), (some_function(), "gamma")],
+    arg2=["a2v1", ("a2v2", "beta")],
+)
+async def test_factory_named_values(dut, arg1, arg2):
+    test_factory_named_value_test_names.add(cocotb.regression._manager_inst._test.name)
+    test_factory_named_value_args.add((arg1, arg2))
+
+
+@cocotb.test()
+async def test_factory_named_values_verify_args(dut):
+    assert test_factory_named_value_args == {
+        ("a1v1", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v1"),
+        ("a1v2", "a2v2"),
+        (42, "a2v1"),
+        (42, "a2v2"),
+    }
+
+
+@cocotb.test
+async def test_factory_named_values_verify_names(dut):
+    assert test_factory_named_value_test_names == {
+        "test_factory_named_values/arg1=a1v1/arg2=a2v1",
+        "test_factory_named_values/arg1=a1v1/arg2=beta",
+        "test_factory_named_values/arg1=alpha/arg2=a2v1",
+        "test_factory_named_values/arg1=alpha/arg2=beta",
+        "test_factory_named_values/arg1=gamma/arg2=a2v1",
+        "test_factory_named_values/arg1=gamma/arg2=beta",
+    }
