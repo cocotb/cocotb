@@ -192,6 +192,13 @@ function(add_cocotb_library TARGET_NAME)
 
     add_library(${TARGET_NAME} SHARED ${ALL_SOURCES})
 
+    if(SKBUILD_STATE STREQUAL "editable")
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb/libs
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb/libs
+        )
+    endif()
+
     if(ARG_OUTPUT_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
     endif()
@@ -234,11 +241,6 @@ function(add_cocotb_library TARGET_NAME)
             endif()
         endif()
     endif()
-
-    set_target_properties(${TARGET_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb/libs
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb/libs
-    )
 endfunction()
 
 set(GPI_LINK_LIBS "")
@@ -267,9 +269,19 @@ add_cocotb_library(simulator
     RC_LIBRARIES ""
 )
 
+if(SKBUILD_STATE STREQUAL "editable")
+    set_target_properties(simulator PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb
+    )
+else()
+    set_target_properties(simulator PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+    )
+endif()
+
 set_target_properties(simulator PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
     PREFIX ""
     SUFFIX ${PYTHON_EXT_SUFFIX}
 )
@@ -467,7 +479,7 @@ if(WIN32)
     add_dependencies(cocotbvhpi_aldec aldec_import_lib)
 endif()
 
-if(SKBUILD)
+if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     install(TARGETS gpi DESTINATION cocotb/libs)
 
     set(SIM_TARGETS
