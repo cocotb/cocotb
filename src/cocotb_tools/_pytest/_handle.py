@@ -35,7 +35,7 @@ class MockSimHandle:
         """Mock ``==``."""
         return False
 
-    def __nq__(self, other: object) -> bool:
+    def __ne__(self, other: object) -> bool:
         """Mock ``!=``."""
         return False
 
