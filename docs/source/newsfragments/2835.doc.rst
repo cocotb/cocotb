@@ -1,0 +1,1 @@
+Added a how-to guide on separating cocotb's log output from the simulator's own output, :ref:`separating-logs`.
