@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import bdb
 import hashlib
-import inspect
 import random
 from collections import deque
 from collections.abc import AsyncGenerator, Awaitable, Generator, Iterable
 from functools import wraps
 from importlib import import_module
+from inspect import isasyncgenfunction, iscoroutinefunction
 from logging import Logger, getLogger
 from multiprocessing.connection import Client
 from pathlib import Path
@@ -21,6 +21,7 @@ from time import sleep, time
 from typing import Any, Callable, Literal, cast
 
 from _pytest.config import default_plugins
+from _pytest.fixtures import FuncFixtureInfo
 from _pytest.logging import LoggingPlugin
 from _pytest.outcomes import Exit, Skipped
 from pytest import (
@@ -46,9 +47,11 @@ import cocotb._shutdown
 import cocotb._test_manager
 import cocotb.simulator
 import cocotb.types._resolve
+from cocotb._decorators import Test, TestGenerator
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
+from cocotb.handle import SimHandleBase
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb_tools._pytest._fixture import (
     AsyncFixtureCachedResult,
@@ -95,7 +98,6 @@ class RegressionManager:
         toplevel: str = "",
         reporter_address: str = "",
         xmlpath: str | None = None,
-        keywords: Iterable[str] | None = None,
         test_modules: Iterable[str] | None = None,
         invocation_dir: Path | str | None = None,
         seed: int | None = None,
@@ -109,7 +111,6 @@ class RegressionManager:
             nodeid: Node identifier of cocotb runner.
             toplevel: Name of HDL top level design.
             xmlpath: Override the ``--junit-xml`` option.
-            keywords: List of cocotb runner keywords.
             test_modules: List of test modules (Python modules with cocotb tests) to be loaded.
             invocation_dir: Path to directory location from where pytest was invoked.
             reporter_address: IPC address (Unix socket, Windows pipe, TCP, ...) to tests reporter.
@@ -119,6 +120,9 @@ class RegressionManager:
         """
         self._toplevel: str = toplevel
         """Name of top level."""
+
+        self._test: Test | TestGenerator
+        """The currently executing cocotb test object."""
 
         self._running_test: TestManager
         """Current running test: "setup", "call" or "teardown"."""
@@ -141,7 +145,6 @@ class RegressionManager:
         self._sim_time_start: float = 0
         self._sim_time_unit: TimeUnit = "step"
         self._nodeid: str = nodeid
-        self._keywords: list[str] = list(keywords) if keywords else []
         self._reporter_address: str = reporter_address
         self._logging_plugin: LoggingPlugin | None = None
         self._logging_root_level: int = getLogger().level
@@ -157,6 +160,9 @@ class RegressionManager:
             Path(relative_to_path).resolve() if relative_to_path else Path.cwd()
         )
         self._attachments: list[Path] = self._normalize_paths(attachments)
+
+        path, _, module = nodeid.rpartition(".py::")
+        self._keywords: list[str] = [*path.split("/"), module]
 
         pluginmanager = PytestPluginManager()
 
@@ -262,7 +268,7 @@ class RegressionManager:
             result if isinstance(result, list) else (result,)
         )
 
-        return list(self._collect(items))
+        return list(filter(None, map(self._collect, items)))
 
     @hookimpl(tryfirst=True)
     def pytest_runtestloop(self, session: Session) -> bool:
@@ -307,19 +313,58 @@ class RegressionManager:
 
         return self._session.items[index] if index < len(self._session.items) else None
 
-    def _collect(
-        self, items: Iterable[Item | Collector]
-    ) -> Generator[Item | Collector, None, None]:
-        for item in items:
-            if not isinstance(item, Function):
-                yield item
+    def _collect(self, item: Item | Collector) -> Item | Collector | None:
+        if (
+            not isinstance(item, Function)
+            or not iscoroutinefunction(item.function)
+            or item.get_closest_marker("cocotb") is None
+        ):
+            return None
 
-            elif "cocotb_test" in item.keywords and inspect.iscoroutinefunction(
-                item.function
+        if hasattr(item, "_fixtureinfo"):
+            info: FuncFixtureInfo = item._fixtureinfo
+
+            # Name of DUT fixture
+            fixture_name: str | None = None
+
+            # Find fixture decorated with the @cocotb_tools.pytest.fixtures.dut decorator
+            for argname in info.argnames:
+                if argname in info.name2fixturedefs:
+                    # Fixtures can be stacked, last fixture is passed as argument to test function
+                    fixturedef: FixtureDef = info.name2fixturedefs[argname][-1]
+
+                    # This is set by the @cocotb_tools.pytest.fixtures.dut decorator
+                    if getattr(fixturedef.func, "__cocotb_dut_fixture__", False):
+                        # Replace value from DUT fixture with the ``cocotb.top`` handler
+                        _make_fixture_as_cocotb_top(info, argname)
+                        fixture_name = argname
+
+            # Fixtures were decorated only with the @pytest.fixture, assume first argument as DUT fixture
+            if (
+                fixture_name is None
+                and info.argnames
+                and info.argnames[0] in info.name2fixturedefs
             ):
-                item.extra_keyword_matches.update(self._keywords)
+                _make_fixture_as_cocotb_top(info, info.argnames[0])
 
-                yield item
+        nodeid: str = self._nodeid
+        module: Module | None = item.getparent(Module)
+
+        item.extra_keyword_matches.update(self._keywords)
+
+        if module:
+            test_module: str = module.getmodpath(includemodule=True)
+            item.extra_keyword_matches.update(
+                (test_module, f"{test_module}.{item.name}")
+            )
+            nodeid += "::" + test_module
+
+        nodeid += f".{item.name}"
+
+        item._nodeid = nodeid
+        item.add_marker("cocotb")
+
+        return item
 
     def _call_and_report(
         self,
@@ -559,8 +604,8 @@ class RegressionManager:
     ) -> object | None:
         """Execution of fixture setup."""
         fixturefunc = fixturedef.func
-        is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
-        is_async_generator: bool = inspect.isasyncgenfunction(fixturefunc)
+        is_coroutine: bool = iscoroutinefunction(fixturefunc)
+        is_async_generator: bool = isasyncgenfunction(fixturefunc)
 
         if not is_coroutine and not is_async_generator:
             return None
@@ -643,8 +688,10 @@ class RegressionManager:
     @hookimpl(tryfirst=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         testfunction = pyfuncitem.obj
+        self._test = cocotb.test(testfunction)
+        self._test.name = pyfuncitem.name
 
-        if not inspect.iscoroutinefunction(testfunction):
+        if not iscoroutinefunction(testfunction):
             return None
 
         timeout: tuple[float, TimeUnit] | None = _get_timeout(pyfuncitem)
@@ -945,3 +992,27 @@ def _wrap_with_timeout(
         return await with_timeout(func(*args, **kwargs), timeout[0], timeout[1])
 
     return wrapped
+
+
+def _cocotb_top() -> SimHandleBase:
+    """Return the handle to the top-level HDL entity/module (``cocotb.top``)."""
+    return cocotb.top
+
+
+def _make_fixture_as_cocotb_top(info: FuncFixtureInfo, name: str) -> None:
+    """Override fixture to return the ``cocotb.top`` handler.
+
+    Args:
+        info: Information about fixtures.
+        name: Name of fixture to override.
+    """
+    # Fixtures can be stacked, last fixture is passed as argument to test function
+    fixturedef: FixtureDef = info.name2fixturedefs[name][-1]
+    fixturedef.func = _cocotb_top  # type: ignore
+    fixturedef.argnames = ()  # type: ignore
+    fixturedef.cached_result = (cocotb.top, None, None)
+    info.name2fixturedefs[name] = (fixturedef,)
+
+
+_manager_inst: RegressionManager
+"""The global regression manager instance."""
