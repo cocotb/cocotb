@@ -147,6 +147,7 @@ Then follow the :doc:`first_steps` tutorial to get a simple test running.
    upgrade-2.0
    update_indexing
    rotating_logger
+   separating_logs
    profiling
    coverage
 
