@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import inspect
 import shlex
 import textwrap
 from argparse import ArgumentParser
@@ -17,15 +16,10 @@ from typing import TYPE_CHECKING, Any
 
 from pluggy import Result
 from pytest import (
-    Class,
-    Collector,
     CollectReport,
     Config,
     ExitCode,
     FixtureRequest,
-    Item,
-    Mark,
-    Module,
     Parser,
     PytestPluginManager,
     TerminalReporter,
@@ -33,17 +27,12 @@ from pytest import (
     TestShortLogReport,
     fixture,
     hookimpl,
-    mark,
 )
 
 import cocotb
 import cocotb.handle
 from cocotb.handle import SimHandleBase
-from cocotb_tools._pytest import hookspecs
-from cocotb_tools._pytest._compat import (
-    cocotb_decorator_as_pytest_marks,
-    is_cocotb_decorator,
-)
+from cocotb_tools._pytest._compat import Compat
 from cocotb_tools._pytest._controller import Controller
 from cocotb_tools._pytest._logging import Logging
 from cocotb_tools._pytest._option import (
@@ -51,18 +40,23 @@ from cocotb_tools._pytest._option import (
     add_options_to_parser,
     populate_ini_to_options,
 )
-from cocotb_tools._pytest.hdl import _SIMULATORS, HDL
 from cocotb_tools._pytest.mark import _register_markers
-from cocotb_tools.runner import Runner, get_runner
+from cocotb_tools._pytest.runner import FixtureRunner
+from cocotb_tools.runner import SUPPORTED_RUNNERS
 
-_ENTRY_POINT: str = ",".join(
-    (
-        "cocotb_tools._coverage:start_cocotb_library_coverage",
-        "cocotb.logging:_configure",
-        "cocotb._init:init_package_from_simulation",
-        "cocotb_tools._pytest._init:run_regression",
-    )
+#: The default list of Python callables that start up the Python cosimulation environment.
+_PYGPI_USERS: tuple[str, ...] = (
+    "cocotb_tools._coverage:start_cocotb_library_coverage",
+    "cocotb.logging:_configure",
+    "cocotb._init:init_package_from_simulation",
 )
+
+#: List of pre-defined entry points with regression managers
+_REGRESSION_MANAGER_ENTRY_POINT: dict[str, str] = {
+    "pytest": "cocotb_tools._pytest._init:run_regression",
+    "cocotb": "cocotb.regression:_run_regression",
+}
+
 if TYPE_CHECKING:
     from typing import TypeAlias
 
@@ -107,6 +101,32 @@ def _to_dict(items: Iterable[str]) -> dict[str, object]:
 
 
 _OPTIONS: tuple[Option, ...] = (
+    Option(
+        "cocotb_regression_manager",
+        choices=("pytest", "cocotb", "none"),
+        default="pytest",
+        description="""
+            Select regression manager used to run cocotb tests. Available values:
+
+            * ``pytest``: Use pytest to collect and run cocotb tests.
+              This option allows to use pytest in fullness within HDL simulator and with cocotb tests.
+              Cocotb runner is not needed. DUT is defined by using the pytest ``dut`` fixture and ``@pytest.mark.cocotb_*`` markers.
+            * ``cocotb``: Use built-in cocotb regression manager.
+              Cannot use pytest within HDL simulator or with cocotb tests.
+              It requires to use cocotb runner in a separate test function defined in a separate test file to run cocotb tests.
+            * ``none``: Don't use any pre-defined regression manager.
+              This option, alongside with the :envvar:`PYGPI_USERS`` environment variable, will allow to use a custom regression manager.
+        """,
+    ),
+    Option(
+        "cocotb_with_user_runners",
+        action="store_true",
+        description="""
+            Disable managing building HDL designs and running HDL simulations with cocotb tests based on fixtures.
+            This option is useful when explicitly using :class:`~cocotb_tools.runner.Runner` or external build systems
+            in separate test functions to build HDL designs and run HDL simulations with cocotb tests.
+        """,
+    ),
     Option(
         "cocotb_summary",
         action="store_true",
@@ -197,11 +217,10 @@ _OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_simulator",
-        choices=("auto", *tuple(_SIMULATORS.values())),
-        default="auto",
+        choices=tuple(SUPPORTED_RUNNERS),
         metavar="NAME",
         description="""
-            Select HDL simulator for cocotb. The ``auto`` option will automatically pick one of available HDL
+            Select HDL simulator for cocotb. Plugin will try to automatically pick one of available HDL
             simulators where precedence order is based on available choices for this argument, from the highest priority
             (most left) to the lowest priority (most right).
         """,
@@ -310,16 +329,12 @@ _OPTIONS: tuple[Option, ...] = (
     ),
     Option(
         "cocotb_toplevel_lang",
-        choices=("auto", "verilog", "vhdl"),
-        default="auto",
+        choices=("verilog", "vhdl"),
         description="""
             Language of the HDL toplevel module.
             Can be set to notify tests about preferred language in multi-language HDL design.
             This is also used by simulators that support more than one interface
             (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
-            When set to ``auto``, value will be automatically evaluated based on selected HDL simulator or
-            list of HDL source files provided during build stage in :py:meth:`cocotb_tools._pytest.hdl.HDL.build` or
-            :py:meth:`cocotb_tools.runner.Runner.build` methods.
         """,
     ),
     Option(
@@ -378,7 +393,7 @@ _OPTIONS: tuple[Option, ...] = (
         "pygpi_users",
         nargs="*",
         metavar="MODULE:FUNCTION",
-        default=(_ENTRY_POINT,),
+        default=_PYGPI_USERS,
         description="""
             The Python module and callable that starts up the Python cosimulation environment. User overloads can be
             used to enter alternative Python frameworks or to hook existing cocotb functionality. It is formatted as
@@ -419,7 +434,7 @@ def _options_for_documentation() -> ArgumentParser:
     return parser
 
 
-@fixture(scope="session")
+@fixture
 def dut() -> SimHandleBase:
     """A cocotb fixture that is providing a simulation handle to DUT.
 
@@ -442,201 +457,14 @@ def dut() -> SimHandleBase:
     return cocotb.top
 
 
-@fixture(scope="session")
-def hdl_session(request: FixtureRequest) -> HDL:
-    """A cocotb fixture that is providing a helper instance to define own HDL design and to build it.
-
-    .. note::
-
-        This fixture is scoped to global ``session`` scope.
-        It can be useful to build the whole HDL project with different HDL modules at once not per test.
-
-    It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
-    from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
-
-    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.build()` method
-    from **non-async** test functions. This method will invoke build step from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
-
-    Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
-    to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
-
-    Please refer to available public members of :py:class:`~cocotb_tools._pytest.hdl.HDL` that can be used to define own HDL design.
-
-    Example usage:
-
-    .. code:: python
-
-        import pytest
-        from cocotb_tools._pytest.hdl import HDL
-
-
-        @pytest.fixture(scope="session")
-        def my_hdl_project(hdl_session: HDL) -> HDL:
-            # Build whole HDL design with all HDL modules at once
-            hdl_session.sources = (
-                # Add more HDL source files here
-                # ...
-                DIR / "my_hdl_module_1.sv",
-                DIR / "my_hdl_module_2.sv",
-            )
-
-            hdl_session.build()
-
-            return hdl_session
-
-
-        @pytest.fixture(name="my_hdl_module_1")
-        def my_hdl_module_1_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
-            # Define HDL module 1
-            hdl.build_dir = my_hdl_project.build_dir
-            hdl.toplevel = "my_hdl_module_1"
-
-            return hdl
-
-
-        @pytest.fixture(name="my_hdl_module_2")
-        def my_hdl_module_2_fixture(hdl: HDL, my_hdl_project: HDL) -> HDL:
-            # Define HDL module 2
-            hdl.build_dir = my_hdl_project.build_dir
-            hdl.toplevel = "my_hdl_module_2"
-
-            return hdl
-
-
-        @pytest.mark.cocotb_runner
-        def test_dut_1(my_hdl_module_1: HDL) -> None:
-            # Run HDL simulator with cocotb tests
-            my_hdl_module_1.test()
-
-
-        @pytest.mark.cocotb_runner
-        def test_dut_2(my_hdl_module_2: HDL) -> None:
-            # Run HDL simulator with cocotb tests
-            my_hdl_module_2.test()
-
-
-    Args:
-        request: The pytest fixture request that is providing plugin :ref:`options <pytest-plugin-options>`
-                 to this fixture. These options will be used to configure own instance of
-                 :py:class:`~cocotb_tools.runner.Runner`.
-
-    Returns:
-        Instance that allows to build and test HDL design.
-    """
-    return request.config.hook.pytest_cocotb_make_hdl(request=request)
-
-
-@fixture
-def hdl(request: FixtureRequest, hdl_session: HDL) -> HDL:
-    """A cocotb fixture that is providing a helper instance to define own HDL design, to build it and
-    run set of cocotb tests from test modules (testbenches) against selected top level design.
-
-    .. note::
-
-        This fixture is scoped to default ``function`` scope.
-        It can help to build HDL module per test and run tests for defined HDL top level.
-
-    It contains own instance of :py:class:`~cocotb_tools.runner.Runner` that can be accessed directly
-    from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
-
-    Defined HDL design can be build by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.build()` method and
-    test by invoking the :py:meth:`~cocotb_tools._pytest.hdl.HDL.test()` method from **non-async** test functions.
-    These methods will invoke build and test steps from :py:attr:`~cocotb_tools._pytest.hdl.HDL.runner` member.
-
-    Requested fixture will pass various plugin :ref:`options <pytest-plugin-options>`
-    to own instance of :py:class:`~cocotb_tools.runner.Runner`. Like setting a desired verbosity level for cocotb runner.
-
-    Please refer to available public members of :py:class:`~cocotb_tools._pytest.hdl.HDL` that can be used to define own HDL design.
-
-    Example usage:
-
-    .. code:: python
-
-        import pytest
-        from cocotb_tools._pytest.hdl import HDL
-
-
-        @pytest.fixture(name="my_hdl_module")
-        def my_hdl_module_fixture(hdl: HDL) -> HDL:
-            # Build HDL module per test
-            hdl.toplevel = "my_hdl_module"
-
-            hdl.sources = (
-                # Add more HDL source files here
-                # ...
-                DIR / "my_hdl_module.sv",
-            )
-
-            hdl.build()
-
-            return hdl
-
-
-        @pytest.mark.cocotb_runner
-        def test_dut(my_hdl_module: HDL) -> None:
-            # Run HDL simulator with cocotb tests
-            my_hdl_module.test()
-
-
-    Args:
-        request: The pytest fixture request that is providing plugin :ref:`options <pytest-plugin-options>`
-                 to this fixture. These options will be used to configure own instance of
-                 :py:class:`~cocotb_tools.runner.Runner`.
-        hdl_session: HDL design defined at global ``session`` scope level.
-
-    Returns:
-        Instance that allows to build and test HDL design.
-    """
-    instance: HDL = request.config.hook.pytest_cocotb_make_hdl(request=request)
-
-    # Runner in test() method is checking for hdl_toplevel_lang,
-    # if missing then it will retrieve this information from list of HDL source files
-    # Unfortunately, they are not set in Runner created during function scope when build() was not called
-    if not hdl_session.toplevel_lang and hasattr(hdl_session.runner, "_sources"):
-        instance.toplevel_lang = hdl_session.runner._check_hdl_toplevel_lang(
-            hdl_session.toplevel_lang
-        )
-
-    return instance
+@fixture(scope="module")
+def runner(request: FixtureRequest) -> FixtureRunner:
+    """A cocotb fixture to get an instance of the `cocotb_tools.runner.Runner` binded with plugin command line arguments."""
+    return FixtureRunner(request)
 
 
 def pytest_addoption(parser: Parser, pluginmanager: PytestPluginManager) -> None:
     add_options_to_parser(parser, "cocotb", _OPTIONS)
-
-
-def pytest_addhooks(pluginmanager: PytestPluginManager) -> None:
-    """Called at plugin registration time to add specification of cocotb hooks.
-
-    Args:
-        pluginmanager: The pytest plugin manager.
-    """
-    pluginmanager.add_hookspecs(hookspecs)
-
-
-@hookimpl(trylast=True)
-def pytest_cocotb_make_hdl(request: FixtureRequest) -> HDL:
-    """Create new instance of :py:class:`cocotb_tools._pytest.hdl.HDL`.
-
-    Args:
-        request: The pytest fixture request object.
-
-    Returns:
-        New instance of HDL.
-    """
-    return HDL(request)
-
-
-@hookimpl(trylast=True)
-def pytest_cocotb_make_runner(simulator_name: str) -> Runner:
-    """Create new instance of :py:class:`cocotb_tools.runner.Runner`.
-
-    Args:
-        simulator_name: Name of HDL simulator.
-
-    Returns:
-        New instance of runner.
-    """
-    return get_runner(simulator_name)
 
 
 @hookimpl(tryfirst=True)
@@ -645,6 +473,13 @@ def pytest_configure(config: Config) -> None:
 
     _register_markers(config)
     populate_ini_to_options(config, _OPTIONS)
+
+    entry_point: str | None = _REGRESSION_MANAGER_ENTRY_POINT.get(
+        option.cocotb_regression_manager
+    )
+
+    if entry_point and entry_point not in option.pygpi_users:
+        option.pygpi_users.append(entry_point)
 
     if not option.cocotb_timescale:
         option.cocotb_timescale = None
@@ -662,42 +497,10 @@ def pytest_configure(config: Config) -> None:
         option.cocotb_parameters = _to_dict(option.cocotb_parameters)
 
     config.pluginmanager.register(Logging(config), "cocotb_logging")
+    config.pluginmanager.register(Compat(config), "cocotb_compat")
 
     if not getattr(cocotb, "is_simulation", False):
         config.pluginmanager.register(Controller(config), "cocotb_controller")
-
-
-@hookimpl(tryfirst=True)
-def pytest_pycollect_makeitem(
-    collector: Module | Class, name: str, obj: object
-) -> Item | Collector | list[Item | Collector] | None:
-    if is_cocotb_decorator(obj):
-        obj = cocotb_decorator_as_pytest_marks(collector, name, obj)
-
-        return collector.config.hook.pytest_pycollect_makeitem(
-            collector=collector, name=name, obj=obj
-        )
-
-    if inspect.isfunction(obj):
-        markers: list[Mark] | None = getattr(obj, "pytestmark", None)
-
-        if any(
-            marker.name in ("cocotb_runner", "cocotb_test") for marker in markers or ()
-        ):
-            setattr(obj, "__test__", True)
-
-        elif (
-            inspect.iscoroutinefunction(obj)
-            and "dut" in inspect.signature(obj).parameters
-        ):
-            marker: Mark = mark.cocotb_test().mark
-
-            if markers is None:
-                setattr(obj, "pytestmark", [marker])
-            else:
-                markers.append(marker)
-
-    return None
 
 
 def _is_cocotb_test_report(item: Any) -> bool:
@@ -725,11 +528,11 @@ def pytest_report_teststatus(
         and (report.when == "call")
     ):
         category, letter, word = status
-        category = f"{category} cocotb runner"
+        category = f"cocotb runner {category}"
         if isinstance(word, str):
-            word = f"{word} COCOTB RUNNER"
+            word = f"COCOTB RUNNER {word}"
         else:
-            word = (f"{word[0]} COCOTB RUNNER", word[1])
+            word = (f"COCOTB RUNNER {word[0]}", word[1])
         result.force_result(
             TestShortLogReport(category=category, letter=letter, word=word)
         )
@@ -743,7 +546,7 @@ def pytest_terminal_summary(
 ) -> Generator[None]:
     # Print cocotb runner failures before test failures
     terminalreporter.summary_failures_combined(
-        which_reports="failed cocotb runner",
+        which_reports="cocotb runner failed",
         sep_title="COCOTB RUNNER FAILURES",
         style=config.option.tbstyle,
     )

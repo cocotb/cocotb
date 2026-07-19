@@ -6,10 +6,14 @@
 
 from __future__ import annotations
 
+from inspect import isasyncgenfunction, iscoroutinefunction
 from types import TracebackType
-from typing import Any, Union, cast
+from typing import Any, Union, cast, get_args, get_origin, get_type_hints
+
+from pytest import FixtureDef, Function
 
 from cocotb._test_manager import TestManager
+from cocotb.handle import SimHandleBase
 
 
 class AsyncFixtureCachedResult(
@@ -55,3 +59,43 @@ class AsyncFixtureCachedResult(
 def resolve_fixture_arg(arg: Any) -> Any:
     """Resolve fixture argument."""
     return arg._main_task.result() if isinstance(arg, TestManager) else arg
+
+
+def is_sim_handle_base(obj: object) -> bool:
+    """Check if the provided object is a subclass of the :class:`cocotb.handle.SimHandleBase` class."""
+    if get_origin(obj):
+        # Check return annotation:
+        # -> SimHandleBase | ...:
+        # -> Union[SimHandleBase, ...]:
+        # -> Optional[SimHandleBase]:
+        return any(map(is_sim_handle_base, get_args(obj)))
+
+    return isinstance(obj, type) and issubclass(obj, SimHandleBase)
+
+
+def is_sim_handle_fixture(fixturedef: FixtureDef) -> bool:
+    """Check if the return type annotation of the fixture is a subclass of the :class:`cocotb.handle.SimHandleBase` class.
+
+    This function inspects the fixture's return type hints, handling single type hints as well as Union or UnionType annotations.
+    """
+    func = fixturedef.func
+    return_annotation = get_type_hints(func).get("return")
+
+    return (
+        return_annotation is not None
+        and not iscoroutinefunction(func)
+        and not isasyncgenfunction(func)
+        and is_sim_handle_base(return_annotation)
+    )
+
+
+def get_sim_handle_fixture_name(item: Function) -> str | None:
+    """Get name of fixture to the :class:`cocotb.handle.SimHandleBase` instance."""
+    for argname in item._fixtureinfo.argnames:
+        fixturedefs = item._fixtureinfo.name2fixturedefs.get(argname)
+
+        # Fixtures can be stacked, last stacked fixture is passed to the test function as an argument
+        if fixturedefs and is_sim_handle_fixture(fixturedefs[-1]):
+            return argname
+
+    return None

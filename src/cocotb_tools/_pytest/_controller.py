@@ -17,15 +17,19 @@ Main responsibilities for this internal plugin are:
 
 from __future__ import annotations
 
-import inspect
 import os
 import shlex
 from collections.abc import Generator, Iterable
+from inspect import isasyncgenfunction, iscoroutinefunction
 from multiprocessing.connection import Client, Listener
 from pathlib import Path
+from subprocess import run
 from threading import RLock, Thread
 from typing import Any
 
+from _pytest.fixtures import FuncFixtureInfo
+from _pytest.python import CallSpec2
+from _pytest.scope import Scope
 from pytest import (
     Class,
     Collector,
@@ -37,6 +41,7 @@ from pytest import (
     Function,
     Item,
     Module,
+    Package,
     Session,
     TestReport,
     hookimpl,
@@ -44,10 +49,28 @@ from pytest import (
 
 import cocotb
 from cocotb_tools import _env
+from cocotb_tools._pytest._fixture import get_sim_handle_fixture_name
 from cocotb_tools._pytest._handle import MockSimHandle
 from cocotb_tools._pytest._junitxml import JUnitXML
-from cocotb_tools._pytest._runner import Runner
-from cocotb_tools._pytest.hdl import _get_simulator
+
+#: Map scopes to scope classes
+SCOPES: dict[str, type] = {
+    "session": Session,
+    "package": Package,
+    "module": Module,
+    "class": Class,
+}
+
+#: List of cocotb options to set as environment variable.
+_OPTION_ENVS: tuple[str, ...] = (
+    "cocotb_trust_inertial_writes",
+    "cocotb_waveform_viewer",
+    "cocotb_scheduler_debug",
+    "cocotb_log_level",
+    "cocotb_resolve_x",
+    "cocotb_attach",
+    "gpi_log_level",
+)
 
 
 class Controller:
@@ -61,6 +84,15 @@ class Controller:
         """
         # Pytest configuration object
         self._config: Config = config
+
+        # If enabled, disable creating test functions by plugin to run simulations
+        self._with_user_runners: bool = config.option.cocotb_with_user_runners
+
+        # Collect-only
+        self._collectonly: bool = config.option.collectonly
+
+        # Detect if fixture was already seen
+        self._seen: set[tuple[Path, str]] = set()
 
         # Pytest is printing test results in real-time when test finished execution
         # With default capturing mode (fd), it will print '.', 's', 'x', 'F', 'E' per test
@@ -111,20 +143,15 @@ class Controller:
         os.environ["COCOTB_PYTEST_DIR"] = str(Path(invocation_dir).resolve())
         os.environ["COCOTB_PYTEST_ARGS"] = shlex.join(invocation_args)
 
-        if option.cocotb_waveform_viewer:
-            os.environ["COCOTB_WAVEFORM_VIEWER"] = option.cocotb_waveform_viewer
+        # All cocotb environment variables are captured as options by pytest plugin
+        for name in _OPTION_ENVS:
+            value: object = getattr(option, name, None)
+            environment: str = name.upper()
 
-        if option.cocotb_attach:
-            os.environ["COCOTB_ATTACH"] = str(option.cocotb_attach)
-
-        if option.cocotb_resolve_x:
-            os.environ["COCOTB_RESOLVE_X"] = option.cocotb_resolve_x
-
-        if option.cocotb_scheduler_debug:
-            os.environ["COCOTB_SCHEDULER_DEBUG"] = "1"
-
-        if option.cocotb_trust_inertial_writes:
-            os.environ["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+            if value:
+                os.environ[environment] = "1" if value is True else str(value)
+            elif environment in os.environ:
+                del os.environ[environment]
 
         # Mock cocotb module for the main pytest parent process
         # Otherwise pytest can raise an exception when loading Python module
@@ -136,7 +163,7 @@ class Controller:
         # There is no need for the main pytest process to collect tests from HDL simulators.
         # Cocotb tests will be properly collected and executed with valid cocotb.top simulation handle by
         # pytest instance that is running from HDL simulator and report back to the main pytest process.
-        setattr(cocotb, "SIM_NAME", _get_simulator(config))
+        setattr(cocotb, "SIM_NAME", option.cocotb_simulator)
         setattr(cocotb, "SIM_VERSION", "")
         setattr(cocotb, "top", MockSimHandle())
 
@@ -146,7 +173,7 @@ class Controller:
     ) -> Generator[
         None,
         Item | Collector | list[Item | Collector] | None,
-        list[Item | Collector] | None,
+        Item | Collector | list[Item | Collector] | None,
     ]:
         """Collect cocotb runners and cocotb tests from Python modules.
 
@@ -160,6 +187,9 @@ class Controller:
         """
         result: Item | Collector | list[Item | Collector] | None = yield
 
+        if self._collectonly:
+            return result
+
         if result is None:
             return None
 
@@ -167,59 +197,7 @@ class Controller:
             result if isinstance(result, list) else (result,)
         )
 
-        return list(self._collect(collector, items))
-
-    @hookimpl(tryfirst=True)
-    def pytest_runtest_setup(self, item: Item) -> None:
-        """Setup environment for pytest sub-process (simulator)
-        that will be started as test function from the main pytest parent process.
-
-        Args:
-            item: Test function.
-        """
-        # Expose cocotb runner nodeid and keywords from the main pytest parent process
-        # to pytest sub-process (simulator) via environment variables
-        os.environ["COCOTB_PYTEST_NODEID"] = item.nodeid
-        os.environ["COCOTB_PYTEST_KEYWORDS"] = ",".join(item.keywords)
-
-    def _get_mangled_nodeid(self, report: TestReport) -> str:
-        """Get mangled address of test node identifier as combination of node identifiers from cocotb runner and test.
-
-        Pytest is always using ``/`` as path separator (compatible with POSIX).
-        Node identifier is mostly represented as: ``<path_to_file>::[<class_name>::]<function_name>``
-
-        To get unique test identifier for cocotb test from various different cocotb runners,
-        we need to combine node identifier from cocotb runner and cocotb test.
-
-        Args:
-            report: Test report from simulator (pytest sub-process).
-
-        Returns:
-            Mangled node identifier.
-        """
-        runner_nodeid: str = getattr(report, "runner_nodeid", "")
-        runner_path, _, runner_function = runner_nodeid.partition("::")
-        item_path, _, item_function = report.nodeid.partition("::")
-
-        if runner_path == item_path:
-            # We don't need to include path from item because it is already present in runner
-            return f"{runner_nodeid}::{item_function}"
-
-        # Pytest is always using / as separator regadless of OS environment
-        runner_dir: str = runner_path.rpartition("/")[0]
-        item_dir: str = item_path.rpartition("/")[0]
-
-        if item_dir.startswith(runner_dir):
-            test_module: str = (
-                item_path.removeprefix(runner_dir)
-                .removesuffix(".py")
-                .strip("/")
-                .replace("/", ".")
-            )
-
-            return f"{runner_nodeid}::{test_module}::{item_function}"
-
-        return f"{runner_nodeid}::{report.nodeid}"
+        return list(filter(None, map(self._collect, items)))
 
     @hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
@@ -241,29 +219,8 @@ class Controller:
             self._thread.join()
             self._listener.close()
 
-    def _collect(
-        self, collector: Collector, items: Iterable[Item | Collector]
-    ) -> Generator[Item | Collector, None, None]:
+    def _collect(self, item: Item | Collector) -> Item | Collector | None:
         """Collect test items including cocotb runners and cocotb tests.
-
-        It will help to build hierarchy tree of cocotb runners and cocotb tests.
-
-        When invoking ``pytest`` with ``--collect-only`` option::
-
-            <Dir tests>
-                <Module test_sample_module.py>
-                    <Runner test_sample_module>
-                        <Testbench test_sample_module>
-                            <Function test_feature>
-
-        When invoking ``pytest`` without ``--collect-only`` option::
-
-            <Dir tests>
-                <Module test_sample_module.py>
-                    <Function test_sample_module>
-
-        Tree created with ``--collect-only`` option is to help users to visualize
-        hierarchy tree of cocotb runners and cocotb tests.
 
         Args:
             collector: Collector used to collect test items, mostly Python module.
@@ -272,61 +229,62 @@ class Controller:
         Yields:
             Test items, including cocotb runners and cocotb tests.
         """
-        collectonly: bool = collector.config.option.collectonly
-        runner: Runner | None = collector.getparent(Runner)
+        if not isinstance(item, Function) or not iscoroutinefunction(item.function):
+            return item
 
-        for item in items:
-            if not isinstance(item, Function):
-                yield item
+        if self._with_user_runners:
+            return None
 
-            elif inspect.iscoroutinefunction(item.function):
-                if item.get_closest_marker("cocotb_runner"):
-                    item.warn(
-                        UserWarning(
-                            "You have applied @pytest.mark.cocotb_runner marker on coroutine function. "
-                            f"This is an usage mistake. Please remove it from {item.nodeid!r}"
-                        )
-                    )
-                elif item.get_closest_marker("cocotb_test"):
-                    if runner:
-                        # Collected cocotb test must be always under cocotb runner
-                        if collectonly:
-                            # Show collected cocotb test under cocotb runner when invoking pytest --collect-only
-                            # It will help user to visualize hierarchy tree of cocotb tests and cocotb runners
-                            yield item
-                        else:
-                            # Add cocotb test keywords to cocotb runner
-                            # This will allow to run cocotb runner by using keywords associated with cocotb test
-                            runner.item.extra_keyword_matches.update(item.keywords)
-                            # Skip cocotb test here, it will be collected by pytest that is running from HDL simulator
-                else:
-                    yield item  # some coroutine test function that is not part of cocotb
+        fixture_name: str | None = get_sim_handle_fixture_name(item)
 
-            elif item.get_closest_marker("cocotb_test"):
-                item.warn(
-                    UserWarning(
-                        "You have applied @pytest.mark.cocotb_test marker on non-async test function. "
-                        f"This is an usage mistake. Please remove it from {item.nodeid!r}"
-                    )
-                )
-            elif item.get_closest_marker("cocotb_runner"):
-                # Avoid recursion of cocotb runners
-                if not runner:
-                    # <Module file>
-                    #   <Function name>       <--- cocotb runner as test function
-                    #   <Runner name>         <--- cocotb runner as collector of cocotb tests
-                    #     <Testbench name>    <--- test module aka testbench (Python module with cocotb tests)
-                    #       <Function name>   <--- cocotb test
-                    yield item
+        if not fixture_name:
+            return None
 
-                    if item.parent:
-                        yield Runner.from_parent(
-                            item.parent,
-                            name=item.name,
-                            item=item,
-                        )
-            else:
-                yield item  # some test function that is not part of cocotb
+        info: FuncFixtureInfo = item._fixtureinfo
+        argnames: tuple[str, ...] = (fixture_name,)
+        fixturedef: FixtureDef = info.name2fixturedefs[fixture_name][-1]
+        scope: str = fixturedef.scope
+        name: str = fixture_name
+        callspec: CallSpec2 | None = getattr(item, "callspec", None)
+        params: list[str] = []
+
+        if callspec:
+            for arg, callscope in callspec._arg2scope.items():
+                if callscope >= Scope(scope):
+                    params.append(str(callspec.params[arg]))
+
+        if params:
+            name += "[" + "-".join(params) + "]"
+
+        parent: Any = (
+            item.parent if scope == "function" else item.getparent(SCOPES[scope])
+        )
+
+        seen: tuple[Path, str] = (parent.path, name)
+
+        if seen in self._seen:
+            return None
+
+        self._seen.add(seen)
+
+        item = Function.from_parent(
+            parent=parent,
+            name=name,
+            originalname=fixture_name,
+            callobj=run_simulation,
+            callspec=callspec,
+            fixtureinfo=FuncFixtureInfo(
+                argnames=argnames,
+                initialnames=argnames,
+                names_closure=info.names_closure,
+                name2fixturedefs=info.name2fixturedefs,
+            ),
+        )
+
+        item.add_marker("cocotb")
+        item.keywords["cocotb_runner"] = True
+
+        return item
 
     def pytest_fixture_setup(
         self, fixturedef: FixtureDef, request: Any
@@ -341,8 +299,8 @@ class Controller:
             True when async fixture will be skipped. Otherwise None and continue with next plugin.
         """
         fixturefunc = fixturedef.func
-        is_coroutine: bool = inspect.iscoroutinefunction(fixturefunc)
-        is_async_generator: bool = inspect.isasyncgenfunction(fixturefunc)
+        is_coroutine: bool = iscoroutinefunction(fixturefunc)
+        is_async_generator: bool = isasyncgenfunction(fixturefunc)
         autouse: bool = getattr(fixturedef, "_autouse", False)
 
         if autouse and (is_coroutine or is_async_generator):
@@ -377,7 +335,6 @@ class Controller:
                     )
 
                     if isinstance(report, TestReport):
-                        report.nodeid = self._get_mangled_nodeid(report)
                         hook.pytest_runtest_logreport(report=report)
 
             except BaseException:
@@ -385,3 +342,19 @@ class Controller:
 
     def _notify_exception(self, excinfo: ExceptionInfo) -> None:
         self._config.notify_exception(excinfo, self._config.option)
+
+
+def run_simulation(**kwargs: Any) -> None:
+    """Run simulation."""
+    __tracebackhide__ = True
+
+    # Pytest is passing values from fixtures as named arguments
+    # Plugin ensures that created test function will have only one fixture
+    sim: Any = list(kwargs.values())[0]
+
+    if callable(sim):
+        sim()
+    elif isinstance(sim, Iterable) and not isinstance(sim, str):
+        run([str(arg) for arg in sim], check=True)
+    else:
+        run(str(sim), check=True, shell=True)
