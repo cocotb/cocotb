@@ -8,7 +8,7 @@ from __future__ import annotations
 from logging import Logger
 from types import SimpleNamespace
 
-from cocotb._decorators import parametrize, skipif, test, xfail
+from cocotb._decorators import Param, parametrize, skipif, test, xfail
 from cocotb._test_manager import create_task, end_test, pass_test, start, start_soon
 from cocotb.handle import SimHandleBase
 
@@ -18,6 +18,7 @@ __all__ = (
     "RANDOM_SEED",
     "SIM_NAME",
     "SIM_VERSION",
+    "Param",
     "__version__",
     "argv",
     "create_task",
@@ -40,6 +41,7 @@ __all__ = (
 for thing in [
     test,
     parametrize,
+    Param,
     skipif,
     xfail,
     start_soon,

@@ -11,6 +11,7 @@ from collections.abc import Coroutine
 
 import cocotb
 import cocotb.regression
+from cocotb import Param
 
 testfactory_test_names = set()
 testfactory_test_args = set()
@@ -117,8 +118,12 @@ async def test_testfactory_no_empty_call_verify_args(dut):
     }
 
 
-test_factory_named_value_args = set()
-test_factory_named_value_test_names = set()
+# -----------------------------------------------------------------------------
+# options_by_name
+# -----------------------------------------------------------------------------
+
+options_by_name_args = set()
+options_by_name_test_names = set()
 
 
 def some_function():
@@ -127,17 +132,24 @@ def some_function():
 
 @cocotb.test
 @cocotb.parametrize(
-    arg1=["a1v1", ("a1v2", "alpha"), (some_function(), "gamma")],
-    arg2=["a2v1", ("a2v2", "beta")],
+    arg1=[
+        "a1v1",
+        Param(name="alpha", value="a1v2"),
+        Param(name="gamma", value=some_function()),
+    ],
+    arg2=[
+        "a2v1",
+        Param(name="beta", value="a2v2"),
+    ],
 )
-async def test_factory_named_values(dut, arg1, arg2):
-    test_factory_named_value_test_names.add(cocotb.regression._manager_inst._test.name)
-    test_factory_named_value_args.add((arg1, arg2))
+async def test_parametrize_options_by_name(dut, arg1, arg2):
+    options_by_name_test_names.add(cocotb.regression._manager_inst._test.name)
+    options_by_name_args.add((arg1, arg2))
 
 
-@cocotb.test()
-async def test_factory_named_values_verify_args(dut):
-    assert test_factory_named_value_args == {
+@cocotb.test
+async def test_parametrize_options_by_name_verify_args(dut):
+    assert options_by_name_args == {
         ("a1v1", "a2v1"),
         ("a1v1", "a2v2"),
         ("a1v2", "a2v1"),
@@ -148,12 +160,67 @@ async def test_factory_named_values_verify_args(dut):
 
 
 @cocotb.test
-async def test_factory_named_values_verify_names(dut):
-    assert test_factory_named_value_test_names == {
-        "test_factory_named_values/arg1=a1v1/arg2=a2v1",
-        "test_factory_named_values/arg1=a1v1/arg2=beta",
-        "test_factory_named_values/arg1=alpha/arg2=a2v1",
-        "test_factory_named_values/arg1=alpha/arg2=beta",
-        "test_factory_named_values/arg1=gamma/arg2=a2v1",
-        "test_factory_named_values/arg1=gamma/arg2=beta",
+async def test_parametrize_options_by_name_verify_names(dut):
+    assert options_by_name_test_names == {
+        "test_parametrize_options_by_name/arg1=a1v1/arg2=a2v1",
+        "test_parametrize_options_by_name/arg1=a1v1/arg2=beta",
+        "test_parametrize_options_by_name/arg1=alpha/arg2=a2v1",
+        "test_parametrize_options_by_name/arg1=alpha/arg2=beta",
+        "test_parametrize_options_by_name/arg1=gamma/arg2=a2v1",
+        "test_parametrize_options_by_name/arg1=gamma/arg2=beta",
+    }
+
+
+# -----------------------------------------------------------------------------
+# options_by_tuple
+# -----------------------------------------------------------------------------
+
+options_by_tuple_args = set()
+options_by_tuple_test_names = set()
+
+
+@cocotb.test
+@cocotb.parametrize(
+    (
+        "arg1",
+        [
+            Param("a1v1"),
+            Param("a1v2", "alpha"),
+            Param(some_function(), "gamma"),
+        ],
+    ),
+    (
+        "arg2",
+        [
+            "a2v1",
+            Param("a2v2", "beta"),
+        ],
+    ),
+)
+async def test_parametrize_options_by_tuple(dut, arg1, arg2):
+    options_by_tuple_test_names.add(cocotb.regression._manager_inst._test.name)
+    options_by_tuple_args.add((arg1, arg2))
+
+
+@cocotb.test
+async def test_parametrize_options_by_tuple_verify_args(dut):
+    assert options_by_tuple_args == {
+        ("a1v1", "a2v1"),
+        ("a1v1", "a2v2"),
+        ("a1v2", "a2v1"),
+        ("a1v2", "a2v2"),
+        (42, "a2v1"),
+        (42, "a2v2"),
+    }
+
+
+@cocotb.test
+async def test_parametrize_options_by_tuple_verify_names(dut):
+    assert options_by_tuple_test_names == {
+        "test_parametrize_options_by_tuple/arg1=a1v1/arg2=a2v1",
+        "test_parametrize_options_by_tuple/arg1=a1v1/arg2=beta",
+        "test_parametrize_options_by_tuple/arg1=alpha/arg2=a2v1",
+        "test_parametrize_options_by_tuple/arg1=alpha/arg2=beta",
+        "test_parametrize_options_by_tuple/arg1=gamma/arg2=a2v1",
+        "test_parametrize_options_by_tuple/arg1=gamma/arg2=beta",
     }

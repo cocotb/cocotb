@@ -8,6 +8,7 @@ from __future__ import annotations
 import inspect
 import sys
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from enum import Enum
 from itertools import product
 from typing import Any, Callable, cast, overload
@@ -105,16 +106,18 @@ class Test:
 TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
 
 
-def split_name_and_value(value: object) -> tuple[object, str | None]:
-    """
-    When using cocotb.parametrize, a single value may be named by passing a tuple of (value, name).
-    This function splits the value and name if a tuple is passed
+@dataclass(frozen=True)
+class Param:
+    """A parameter value with an optional custom name.
+
+    When used with :func:`cocotb.parametrize`, ``value`` is passed to the
+    test function while ``name`` is used when generating the test name.
+
+    If ``name`` is ``None``, the name is generated from ``value`` as usual.
     """
 
-    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
-        if len(value) == 2 and isinstance(value[1], str):
-            return value[0], value[1]
-    return value, None
+    value: Any
+    name: str | None = None
 
 
 class TestGenerator:
@@ -166,12 +169,16 @@ class TestGenerator:
             test_kwargs: dict[str, object] = {}
             test_name_pieces: list[str] = [self.name]
             for option_idx, select_idx in enumerate(selected_options):
-                option_name, option_values_and_names = self.options[option_idx]
-                selected_value_and_name = option_values_and_names[select_idx]
+                option_name, option_values = self.options[option_idx]
+                selected_value = option_values[select_idx]
 
                 if isinstance(option_name, str):
                     # single params per option
-                    selected_value, _ = split_name_and_value(selected_value_and_name)
+                    selected_value = (
+                        selected_value.value
+                        if isinstance(selected_value, Param)
+                        else selected_value
+                    )
                     selected_value = cast("Sequence[object]", selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
@@ -179,11 +186,9 @@ class TestGenerator:
                     )
                 else:
                     # multiple params per option
-                    selected_value_and_name = cast(
-                        "Sequence[object]", selected_value_and_name
-                    )
-                    for n, vn in zip(option_name, selected_value_and_name):
-                        v, _ = split_name_and_value(vn)
+                    selected_value = cast("Sequence[object]", selected_value)
+                    for n, vn in zip(option_name, selected_value):
+                        v = vn.value if isinstance(vn, Param) else vn
                         test_kwargs[n] = v
                         test_name_pieces.append(f"/{n}={option_reprs[n][select_idx]}")
 
@@ -207,8 +212,7 @@ class TestGenerator:
 def _reprs(values: Sequence[object]) -> list[str]:
     result: list[str] = []
     for value in values:
-        _, named_repr = split_name_and_value(value)
-        value_repr = named_repr if named_repr is not None else _repr(value)
+        value_repr = _repr(value)
         if value_repr is None:
             # non-representable value in option, so default to index strings and give up
             return [str(i) for i in range(len(values))]
@@ -227,6 +231,8 @@ def _repr(v: object) -> str | None:
             return None
     elif isinstance(v, (int, float, bool, type(None))):
         return repr(v)
+    elif isinstance(v, Param):
+        return v.name if v.name is not None else _repr(v.value)
     elif isinstance(v, type):
         return v.__qualname__
     elif hasattr(v, "__qualname__"):
@@ -480,6 +486,25 @@ def parametrize(
         )
         async def my_test_2(arg1: int, arg2: int, arg3: int) -> None: ...
 
+    Named parameter values can be created using :class:`Param` to customize the
+    generated test name while still passing the original value to the test.
+
+    .. autolink-skip::
+    .. code-block:: python
+
+        @cocotb.parametrize(
+            arg=[
+                Param(value=0, name="zero"),
+                Param(value=1, name="one"),
+            ],
+        )
+        async def my_test(arg: int) -> None: ...
+
+    This generates tests named ``my_test/arg=zero`` and
+    ``my_test/arg=one``, while the test receives the integer values
+    ``0`` and ``1``.
+
+
     Args:
         options_by_tuple:
             Tuple of parameter name to sequence of values for that parameter,
@@ -492,9 +517,6 @@ def parametrize(
             name while still passing ``value`` to the test.
 
     .. versionadded:: 2.0
-
-        Single values in ``options_by_name`` may be written as ``(value, name)`` to customize the generated test
-        name while still passing ``value`` to the test.
     """
 
     # check good inputs

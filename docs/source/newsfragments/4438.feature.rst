@@ -1,1 +1,1 @@
-Allow `cocotb.parametrize` to accept named single values in ``options_by_name`` so generated test names can use a custom label while the original value is still passed to the test.
+Allow :class:`cocotb.parametrize` to accept :class:`Param` values in both options_by_name and options_by_tuple. Param allows a custom name to be used in generated test names while passing the underlying value unchanged to the test function.
