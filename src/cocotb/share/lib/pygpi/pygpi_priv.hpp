@@ -16,7 +16,6 @@
 
 void pygpi_logging_initialize();
 void pygpi_logging_configure(PyObject *handler, PyObject *get_logger);
-void pygpi_logging_finalize();
 void pygpi_logging_set_level(enum gpi_log_level level);
 
 extern PyObject *pEventFn;

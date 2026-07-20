@@ -212,13 +212,9 @@ static void finalize(void *) {
     // Before the initial callback returns and in the final callback.
     // So we check if Python is still initialized before doing cleanup.
     if (Py_IsInitialized()) {
-        c_to_python();
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
-        Py_XDECREF(pEventFn);
         pEventFn = NULL;
-        pygpi_logging_finalize();
         Py_Finalize();
-        python_to_c();
     }
 }
 
