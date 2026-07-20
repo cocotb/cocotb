@@ -204,14 +204,17 @@ void pygpi_logging_initialize() {
     gpi_set_log_handler(pygpi_log_handler, nullptr);
 }
 
+static void pygpi_logging_finalize(void *);
+
 void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
     Py_INCREF(log_func);
     Py_INCREF(get_logger);
     m_log_func = log_func;
     m_get_logger = get_logger;
+    gpi_register_finalize_callback(pygpi_logging_finalize, nullptr);
 }
 
-void pygpi_logging_finalize() {
+static void pygpi_logging_finalize(void *) {
     gpi_set_log_handler(fallback_log_handler, fallback_log_userdata);
     Py_XDECREF(m_log_func);
     Py_XDECREF(m_get_logger);
