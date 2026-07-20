@@ -15,13 +15,22 @@
 static std::deque<VpiCbHdl *> cb_queue;
 #endif
 
-static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
+static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl, bool &is_shutdown_cb) {
     int error = (!cb_hdl);
     // LCOV_EXCL_START
     if (error) {
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
     }
     // LCOV_EXCL_STOP
+
+    if (gpi_is_finalizing()) {
+        LOG_DEBUG("VPI: Callback fired while finalizing, ignoring");
+        return 0;
+    }
+
+    // Must come before run() because run() may delete the callback handle if it
+    // is a one-shot callback.
+    is_shutdown_cb = cb_hdl->cb_data.reason == cbEndOfSimulation;
 
     if (!error) {
         GPI_TO_USER_CB(VPI);
@@ -30,7 +39,18 @@ static int32_t handle_vpi_callback_(VpiCbHdl *cb_hdl) {
     }
 
     if (error) {
+        gpi_finish();
+    }
+
+    // Ensure shutdown callbacks are called if the simulation is finalizing
+    // before the shutdown callback is called. Also call into the simulator to
+    // finish it.
+    if (gpi_is_finalizing() && !is_shutdown_cb) {
         gpi_end_of_sim_time();
+        gpi_finalize();
+        gpi_end_sim();
+    } else if (gpi_is_finalizing()) {
+        gpi_finalize();
     }
 
     return error ? -1 : 0;
@@ -44,7 +64,8 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
     int ret = 0;
 #ifdef VPI_NO_QUEUE_SETIMMEDIATE_CALLBACKS
     VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
-    ret = handle_vpi_callback_(cb_hdl);
+    bool is_shutdown_cb;
+    ret = handle_vpi_callback_(cb_hdl, is_shutdown_cb);
 #else
     // must push things into a queue because Icarus (gh-4067), Xcelium
     // (gh-4013), and Questa (gh-4105) react to value changes on signals that
@@ -52,18 +73,25 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
     // has ended, causing re-entrancy.
     static bool reacting = false;
     VpiCbHdl *cb_hdl = (VpiCbHdl *)cb_data->user_data;
+    bool is_shutdown_cb = false;
     if (reacting) {
         cb_queue.push_back(cb_hdl);
     } else {
         reacting = true;
-        ret = handle_vpi_callback_(cb_hdl);
+        ret = handle_vpi_callback_(cb_hdl, is_shutdown_cb);
         while (!cb_queue.empty()) {
-            handle_vpi_callback_(cb_queue.front());
+            handle_vpi_callback_(cb_queue.front(), is_shutdown_cb);
+            if (is_shutdown_cb) {
+                // If the callback was a shutdown callback, we need to stop
+                // processing the queue because the simulator is shutting down.
+                break;
+            }
             cb_queue.pop_front();
         }
         reacting = false;
     }
 #endif
+
     GPI_TO_SIM(VPI, cb_data->user_data);
     return ret;
 }

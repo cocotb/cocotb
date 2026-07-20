@@ -9,6 +9,7 @@
 #include "./VhpiImpl.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 #include "gpi.h"
+#include "share/lib/gpi/gpi_priv.hpp"
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
@@ -24,6 +25,15 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
     }
     // LCOV_EXCL_STOP
 
+    if (gpi_is_finalizing()) {
+        LOG_DEBUG("VPI: Callback fired while finalizing, ignoring");
+        return;
+    }
+
+    // Must come before run() because run() may delete the callback handle if it
+    // is a one-shot callback.
+    const bool is_shutdown_cb = cb_hdl->cb_data.reason == vhpiCbEndOfSimulation;
+
     if (!error) {
         GPI_TO_USER_CB(VHPI);
         error = cb_hdl->run();
@@ -31,7 +41,18 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
     }
 
     if (error) {
+        gpi_finish();
+    }
+
+    // Ensure shutdown callbacks are called if the simulation is finalizing
+    // before the shutdown callback is called. Also call into the simulator to
+    // finish it.
+    if (gpi_is_finalizing() && !is_shutdown_cb) {
         gpi_end_of_sim_time();
+        gpi_finalize();
+        gpi_end_sim();
+    } else if (gpi_is_finalizing()) {
+        gpi_finalize();
     }
 
     GPI_TO_SIM(VHPI, cb_data->user_data);

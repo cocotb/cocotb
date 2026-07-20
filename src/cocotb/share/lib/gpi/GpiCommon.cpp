@@ -111,33 +111,26 @@ void gpi_end_of_sim_time() {
         cb_info.first(cb_info.second);
         LOG_TRACE("User End callback => [ GPI End Sim ]");
     }
-    // always request simulation termination at end_of_sim_time
-    gpi_finish();
 }
 
-void gpi_finish() {
-    if (!gpi_finalizing) {
-        registered_impls[0]->sim_end();
-        gpi_finalizing = true;
-    }
-}
+void gpi_finish() { gpi_finalizing = true; }
 
 void gpi_finalize(void) {
-    CLEAR_STORE();
     for (auto it = finalize_cbs.rbegin(); it != finalize_cbs.rend(); it++) {
         LOG_TRACE("[ GPI Finalize ] => User Finalize callback");
         it->first(it->second);
         LOG_TRACE("User Finalize callback => [ GPI Finalize ]");
     }
-}
-
-void gpi_check_cleanup(void) {
-    if (gpi_finalizing) {
-        gpi_finalize();
-    }
+    CLEAR_STORE();
 }
 
 bool gpi_is_finalizing(void) { return gpi_finalizing; }
+
+void gpi_end_sim() {
+    // Only called if a user called gpi_finish() before the end of sim time
+    // callback fired.
+    registered_impls[0]->sim_end();
+}
 
 static void gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
