@@ -89,9 +89,11 @@ class VhpiCbHdl : public GpiCbHdl {
     int run() override;
 
   protected:
-    vhpiCbDataT cb_data;
     vhpiTimeT vhpi_time;
     bool m_removed = false;
+
+  public:
+    vhpiCbDataT cb_data;
 };
 
 class VhpiSignalObjHdl;
