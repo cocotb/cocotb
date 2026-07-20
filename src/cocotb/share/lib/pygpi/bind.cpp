@@ -186,6 +186,8 @@ int handle_gpi_callback(void *user_data) {
         }
         // Clear error so re-entering Python doesn't fail.
         PyErr_Clear();
+        // Mark the simulator for finalization.
+        gpi_finish();
         return -1;
     }
 
