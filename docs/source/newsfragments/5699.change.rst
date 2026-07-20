@@ -1,0 +1,1 @@
+Verilator now exits with a non-zero status code if any ``$error`` or assertion fired during the simulation.

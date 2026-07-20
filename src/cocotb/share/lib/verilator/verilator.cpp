@@ -218,5 +218,10 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    // Fail the sim if any assertion/error fired during the run.
+    if (Verilated::threadContextp()->errorCount() > 0) {
+        return 1;
+    }
+
     return 0;
 }
