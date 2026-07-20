@@ -27,6 +27,7 @@ class FliSignalObjHdl;
 class FliCbHdl : public GpiCbHdl {
   public:
     using GpiCbHdl::GpiCbHdl;
+    virtual bool is_shutdown_cb() const noexcept { return false; }
 };
 
 // In FLI some callbacks require us to register a process
@@ -148,6 +149,7 @@ class FliShutdownCbHdl : public FliCbHdl {
     int arm() override;
     int run() override;
     int remove() override;
+    bool is_shutdown_cb() const noexcept final { return true; }
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {
