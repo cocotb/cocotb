@@ -396,6 +396,21 @@ async def access_internal_register_array(dut):
     assert dut.register_array[1].value == 4
 
 
+# Icarus reports vpiVector=0 for single-element vectors (e.g. `logic [0:0]`), so cocotb
+# discovers them as scalar LogicObject instances rather than LogicArrayObject instances.
+# The root cause is upstream in Icarus (https://github.com/steveicarus/iverilog/issues/1441);
+# this test pins the expected behavior and is marked xfail for Icarus until that is fixed.
+# See cocotb/cocotb#5686.
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    reason="Icarus reports single-element vectors as scalars (gh-5686, steveicarus/iverilog#1441)",
+)
+@cocotb.test
+async def single_element_vector_is_logic_array(dut):
+    """A single-element vector should be discovered as a LogicArrayObject, not a scalar."""
+    assert isinstance(dut.one_bit_vector, LogicArrayObject)
+
+
 @cocotb.test(
     skip=LANGUAGE in ["vhdl"],
     expect_error=AttributeError if SIM_NAME.startswith(("icarus", "verilator")) else (),
