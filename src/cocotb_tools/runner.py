@@ -1053,7 +1053,7 @@ class Questa(Runner):
             raise SystemExit("ERROR: vsim executable not found!")
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
-        return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
+        return [f"+incdir+{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [f"+define+{name}={value}" for name, value in defines.items()]
@@ -1064,23 +1064,17 @@ class Questa(Runner):
     def _build_command(self) -> list[_Command]:
         cmds = []
 
-        cmds.append(["vlib", _as_tcl_value(self.hdl_library)])
+        cmds.append(["vlib", self.hdl_library])
 
         verbosity_opts = []
         if not self.verbose:
             verbosity_opts += ["-quiet"]
 
-        vhdl_args = [
-            _as_tcl_value(arg.value)
-            for arg in self._build_args
-            if arg.tag in (VHDL, None)
-        ]
+        vhdl_args = [arg.value for arg in self._build_args if arg.tag in (VHDL, None)]
         verilog_args = [
-            _as_tcl_value(arg.value)
-            for arg in self._build_args
-            if arg.tag in (Verilog, None)
+            arg.value for arg in self._build_args if arg.tag in (Verilog, None)
         ]
-        hdl_library = _as_tcl_value(self.hdl_library)
+        hdl_library = self.hdl_library
         defines = self._get_define_options(self.defines)
         includes = self._get_include_options(self.includes)
 
@@ -1093,7 +1087,7 @@ class Questa(Runner):
                         "-work",
                         hdl_library,
                         *vhdl_args,
-                        _as_tcl_value(str(source.value)),
+                        str(source.value),
                     ]
                 )
             elif source.tag is Verilog:
@@ -1108,7 +1102,7 @@ class Questa(Runner):
                         *defines,
                         *includes,
                         *verilog_args,
-                        _as_tcl_value(str(source.value)),
+                        str(source.value),
                     ]
                 )
             else:
@@ -1140,41 +1134,39 @@ class Questa(Runner):
             lib_opts = [
                 "-foreign",
                 "cocotb_init "
-                + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
-                ),
+                + cocotb_tools.config.lib_name_path("fli", "questa").as_posix(),
             ]
         elif gpi_if_entry == "vhpi":
             lib_opts = ["-voptargs=-access=rw+/."]
             lib_opts += [
                 "-foreign",
                 "vhpi_startup_routines_bootstrap "
-                + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
-                ),
+                + cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix(),
             ]
         else:
             lib_opts = [
                 "-pli",
-                _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
-                ),
+                cocotb_tools.config.lib_name_path("vpi", "questa").as_posix(),
             ]
 
         cmds.append(
-            self._get_sim_cmd_prefix()
-            + ["vsim"]
-            + verbosity_opts
-            + ["-gui" if self.gui else "-c"]
-            + ["-onfinish", "stop" if self.gui else "exit"]
-            + lib_opts
-            + [_as_tcl_value(v) for v in self.test_args]
-            + [_as_tcl_value(v) for v in self._get_parameter_options(self.parameters)]
-            + [_as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}")]
-            + [_as_tcl_value(v) for v in self.plusargs]
-            + pre_cmd
-            + ["-do", do_script]
-            + self._get_sim_cmd_suffix(),
+            [
+                *self._get_sim_cmd_prefix(),
+                "vsim",
+                *verbosity_opts,
+                "-gui" if self.gui else "-c",
+                "-onfinish",
+                "stop" if self.gui else "exit",
+                *lib_opts,
+                *self.test_args,
+                *self._get_parameter_options(self.parameters),
+                f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}",
+                *self.plusargs,
+                *pre_cmd,
+                "-do",
+                do_script,
+                *self._get_sim_cmd_suffix(),
+            ]
         )
 
         gpi_extra_list = []
@@ -1231,7 +1223,7 @@ class QuestaQIS(Runner):
         return super().test(*args, parameters=parameters, **kwargs)
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
-        return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
+        return [f"+incdir+{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
         return [f"+define+{name}={value}" for name, value in defines.items()]
@@ -1263,8 +1255,8 @@ class QuestaQIS(Runner):
         # not routed to separate compilers here: qrun routes each option to the
         # appropriate compiler (vcom/vlog) by the option itself within the single
         # makelib, so all build args are forwarded together.
-        build_args = [_as_tcl_value(arg.value) for arg in self._build_args]
-        hdl_library = _as_tcl_value(self.hdl_library)
+        build_args = [arg.value for arg in self._build_args]
+        hdl_library = self.hdl_library
         defines = self._get_define_options(self.defines)
         includes = self._get_include_options(self.includes)
 
@@ -1287,23 +1279,20 @@ class QuestaQIS(Runner):
                 str(self.qrun_outdir),
                 *verbosity_opts,
                 "-top",
-                _as_tcl_value(f"{self.hdl_library}.{self.hdl_toplevel}"),
+                f"{self.hdl_library}.{self.hdl_toplevel}",
                 "-voptargs=-access=rw+/.",
                 "-designfile",
                 str(self.design_file),
                 "-sv",
                 "-makelib",
                 hdl_library,
-                *[_as_tcl_value(str(source.value)) for source in sources],
+                *[str(source.value) for source in sources],
                 *defines,
                 *includes,
                 *timescale_opts,
                 *build_args,
                 "-end",
-                *[
-                    _as_tcl_value(v)
-                    for v in self._get_parameter_options(self.parameters)
-                ],
+                *self._get_parameter_options(self.parameters),
             ]
         )
         return cmds
@@ -1346,49 +1335,47 @@ class QuestaQIS(Runner):
             lib_opts = [
                 "-foreign",
                 "cocotb_init "
-                + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("fli", "questa").as_posix()
-                ),
+                + cocotb_tools.config.lib_name_path("fli", "questa").as_posix(),
             ]
         elif gpi_if_entry == "vhpi":
             lib_opts = [
                 "-foreign",
                 "vhpi_startup_routines_bootstrap "
-                + _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix()
-                ),
+                + cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix(),
             ]
         else:
             lib_opts = [
                 "-pli",
-                _as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "questa").as_posix()
-                ),
+                cocotb_tools.config.lib_name_path("vpi", "questa").as_posix(),
             ]
 
         cmds.append(
-            self._get_sim_cmd_prefix()
-            + ["qrun", "-simulate"]
-            + ["-outdir", str(self.qrun_outdir)]
-            + verbosity_opts
-            + waves_opts
-            + (
-                ["-gui", "-visualizer", "-designfile", str(self.design_file)]
-                if self.gui
-                else ["-c"]
-            )
-            + ["-onfinish", "stop" if self.gui else "exit"]
-            + lib_opts
-            + timescale_opts
-            + [_as_tcl_value(v) for v in self.test_args]
-            + [
+            [
+                *self._get_sim_cmd_prefix(),
+                "qrun",
+                "-simulate",
+                "-outdir",
+                str(self.qrun_outdir),
+                *verbosity_opts,
+                *waves_opts,
+                *(
+                    ["-gui", "-visualizer", "-designfile", str(self.design_file)]
+                    if self.gui
+                    else ["-c"]
+                ),
+                "-onfinish",
+                "stop" if self.gui else "exit",
+                *lib_opts,
+                *timescale_opts,
+                *self.test_args,
                 "-top",
-                _as_tcl_value(f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"),
+                f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}",
+                *self.plusargs,
+                *pre_cmd,
+                "-do",
+                do_script,
+                *self._get_sim_cmd_suffix(),
             ]
-            + [_as_tcl_value(v) for v in self.plusargs]
-            + pre_cmd
-            + ["-do", do_script]
-            + self._get_sim_cmd_suffix()
         )
 
         gpi_extra_list = []
