@@ -1,0 +1,1 @@
+Added support for the RyuSim simulator. See :ref:`sim-ryusim` and :class:`cocotb_tools.runner.RyuSim`.

@@ -1,0 +1,86 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+TOPLEVEL_LANG ?= verilog
+
+ifneq ($(or $(filter-out $(TOPLEVEL_LANG),verilog),$(VHDL_SOURCES)),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as only Verilog is supported on simulator=$(SIM)"
+debug: $(COCOTB_RESULTS_FILE)
+
+else
+
+CMD_BIN := ryusim
+
+ifdef RYUSIM_BIN_DIR
+    CMD := $(shell :; command -v $(RYUSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error Unable to locate command >$(CMD_BIN)<)
+endif
+
+# RyuSim root (for locating libryusim_vpi.so)
+RYUSIM_ROOT ?= $(shell dirname $(shell dirname $(CMD)))
+RYUSIM_VPI_LIB ?= $(RYUSIM_ROOT)/lib/libryusim_vpi.so
+
+# cocotb library paths
+COCOTB_LIB_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir)
+COCOTB_VPI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi ryusim)
+
+# Python interpreter for cocotb's GPI embed layer
+PYGPI_PYTHON_BIN ?= $(shell $(PYTHON_BIN) -m cocotb_tools.config --python-bin 2>/dev/null || command -v $(PYTHON_BIN))
+
+# Build output
+SIM_MODEL := $(SIM_BUILD)/lib$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL).so
+
+ifdef COCOTB_TOPLEVEL
+    TOPMODULE_ARG := --top $(COCOTB_TOPLEVEL)
+else
+    TOPMODULE_ARG :=
+endif
+
+ifeq ($(WAVES), 1)
+    COMPILE_ARGS += --trace-vcd
+endif
+
+# Compilation phase
+$(SIM_MODEL): $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
+	$(CMD) compile $(TOPMODULE_ARG) -o $(SIM_BUILD) $(COMPILE_ARGS) $(EXTRA_ARGS) $(addprefix -I ,$(VERILOG_INCLUDE_DIRS)) $(VERILOG_SOURCES)
+
+# Execution phase
+$(COCOTB_RESULTS_FILE): $(SIM_MODEL) $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	LD_LIBRARY_PATH=$(COCOTB_LIB_DIR):$(LD_LIBRARY_PATH) \
+	PYGPI_PYTHON_BIN=$(PYGPI_PYTHON_BIN) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
+	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) \
+	COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
+	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+	GPI_EXTRA=$(GPI_EXTRA) \
+	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(SIM_CMD_PREFIX) $(SIM_MODEL) --vpi-load $(COCOTB_VPI_LIB) $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_results)
+
+debug: $(SIM_MODEL) $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	LD_LIBRARY_PATH=$(COCOTB_LIB_DIR):$(LD_LIBRARY_PATH) \
+	PYGPI_PYTHON_BIN=$(PYGPI_PYTHON_BIN) \
+	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
+	COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) \
+	COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
+	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+	GPI_EXTRA=$(GPI_EXTRA) \
+	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(SIM_CMD_PREFIX) gdb --args $(SIM_MODEL) --vpi-load $(COCOTB_VPI_LIB) $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_results)
+
+endif

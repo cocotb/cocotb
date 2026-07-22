@@ -11,10 +11,15 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim, _rm_results
+# NOTE: `sim` must be declared BEFORE any helper target — the first target
+# parsed becomes make's default goal for every user Makefile that includes
+# this file, and user Makefiles rely on bare `make` meaning `make sim`.
+# (The _rm_results-first ordering made bare `make` a silent rm-and-exit-0
+# no-op across entire test suites.)
+.PHONY: sim _rm_results
+sim: _rm_results regression
 _rm_results:
 	$(RM) $(COCOTB_RESULTS_FILE)
-sim: _rm_results regression
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
@@ -215,6 +220,10 @@ clean::
 	@$(RM) -rf dsim.*
 	@$(RM) -rf metrics.db
 	@$(RM) -rf file.vcd
+
+# RyuSim
+clean::
+	@$(RM) -f trace.vcd
 
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)

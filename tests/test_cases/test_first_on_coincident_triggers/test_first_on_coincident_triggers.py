@@ -16,6 +16,13 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 VHDL_INTF = os.environ.get("VHDL_GPI_INTERFACE", "fli").strip()
 
 
+# RyuSim is synthesizable-only and cannot schedule the procedural #delays in this
+# test's clockless `always` DUT (test.sv), so the coincident a/b edges are never
+# generated. Skip rather than xfail, since the DUT cannot run meaningfully at all.
+@cocotb.skipif(
+    SIM_NAME.startswith("ryusim"),
+    reason="RyuSim is synthesizable-only; DUT drives its edges via procedural #delays.",
+)
 @cocotb.test()
 async def test_first_on_coincident_trigger(dut) -> None:
     try:
@@ -65,6 +72,12 @@ async def test_first_on_coincident_trigger(dut) -> None:
     reason="GHDL doesn't fire second RisingEdge trigger for dut.b when it is registered the same time step that a change occurred (gh-5112)",
 )
 # Setting timeout because even though GHDL fails the test correctly, it gets stuck and doesn't finish simulation (gh-4997)
+# RyuSim is synthesizable-only and cannot schedule this DUT's procedural #delays, so
+# the recurring coincident edges are never generated; skip rather than xfail.
+@cocotb.skipif(
+    SIM_NAME.startswith("ryusim"),
+    reason="RyuSim is synthesizable-only; DUT drives its edges via procedural #delays.",
+)
 @cocotb.test(timeout_time=100, timeout_unit="ns")
 async def test_repeated_first_no_missed_edges(dut) -> None:
     """Test that waiting on First() twice will catch both triggers that happen at the same simulation time."""
