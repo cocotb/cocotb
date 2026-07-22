@@ -40,16 +40,11 @@ Environment Variables
 
 .. envvar:: GPI_EXTRA
 
-    A comma-separated list of extra libraries that are dynamically loaded at runtime.
-    A function from each of these libraries will be called as an entry point prior to elaboration,
-    allowing these libraries to register system functions and callbacks.
-    Note that :term:`HDL` objects cannot be accessed at this time.
-    An entry point function must be named following a ``:`` separator,
-    which follows an existing simulator convention.
+    A comma-separated list of additional GPI implementation libraries to load.
 
-    For example:
+    .. code-block:: make
 
-    * ``GPI_EXTRA=libnameA.so:entryA,libnameB.so:entryB`` will first load ``libnameA.so`` with entry point ``entryA`` , then load ``libnameB.so`` with entry point ``entryB``.
+        GPI_EXTRA := $(shell cocotb-config --gpi-extra vpi questa)
 
     .. versionchanged:: 1.4
         Support for the custom entry point via ``:`` was added.
@@ -60,6 +55,11 @@ Environment Variables
         This allows using relative or absolute paths in library names,
         and loading from libraries that `aren't` prefixed with "lib".
         Paths `should not` contain commas.
+
+    .. versionchanged:: 2.1
+        The custom entry point syntax was removed.
+        This environment variable is now only for specifying additional GPI implementation libraries to load.
+        See :envvar:`GPI_USERS` for the custom entry point functionality.
 
 C API
 =====
