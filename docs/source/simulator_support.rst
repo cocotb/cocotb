@@ -113,6 +113,14 @@ To enable :term:`HDL` code coverage, add Verilator's coverage option(s) to the :
 
 This will result in coverage data being written to :file:`coverage.dat`.
 
+To enable per-instance coverage (equivalent to Verilator's ``--coverage-per-instance`` option in its own main), set :make:var:`VERILATOR_COVERAGE_PER_INSTANCE` to ``1``:
+
+ .. code-block:: make
+
+    VERILATOR_COVERAGE_PER_INSTANCE = 1
+
+This passes ``--coverage-per-instance`` to the simulation executable at runtime and causes coverage data to be recorded separately for each instance of a module, rather than being merged across all instances.
+
 .. _sim-verilator-waveforms:
 
 Waveforms

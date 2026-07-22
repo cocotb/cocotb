@@ -33,6 +33,9 @@ static verilated_trace_t *tfp;
 #endif
 
 static vluint64_t main_time = 0;  // Current simulation time
+#if VM_COVERAGE
+static bool coverage_per_instance = false;
+#endif
 
 double sc_time_stamp() {  // Called by $time in Verilog
     return main_time;     // converts to double, to match
@@ -70,6 +73,9 @@ void wrap_up() {
     // VM_COVERAGE is a define which is set if Verilator is
     // instructed to collect coverage (when compiling the simulation)
 #if VM_COVERAGE
+    if (coverage_per_instance) {
+        Verilated::threadContextp()->coveragep()->forcePerInstance(true);
+    }
     VerilatedCov::write();  // Uses +verilator+coverage+file+<filename>,
                             // defaults to coverage.dat
 #endif
@@ -85,10 +91,20 @@ int main(int argc, char **argv) {
 #endif
     bool traceOn = false;
     bool traceFlush = false;
+    bool coveragePerInstance = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = std::string(argv[i]);
-        if (arg == "--trace") {
+        if (arg == "--coverage-per-instance") {
+#if VM_COVERAGE
+            coveragePerInstance = true;
+#else
+            fprintf(stderr,
+                    "Error: --coverage-per-instance requires the design to be "
+                    "built with coverage support\n");
+            return -1;
+#endif
+        } else if (arg == "--trace") {
 #if VM_TRACE
             traceOn = true;
 #else
@@ -109,14 +125,18 @@ int main(int argc, char **argv) {
         } else if (arg == "--help") {
             fprintf(
                 stderr,
-                "usage: %s [--trace] [--trace-flush] [--trace-file TRACEFILE]\n"
+                "usage: %s [--coverage-per-instance] [--trace] [--trace-flush] "
+                "[--trace-file TRACEFILE]\n"
                 "\n"
                 "cocotb + Verilator sim\n"
                 "\n"
                 "options:\n"
-                "  --trace       Enable tracing (VCD, SAIF or FST)\n"
-                "  --trace-flush Flush trace at each time step (slow)\n"
-                "  --trace-file  Specify the trace file name (%s by "
+                "  --coverage-per-instance  Force per-instance coverage "
+                "(requires coverage build)\n"
+                "  --trace                  Enable tracing (VCD, SAIF or FST)\n"
+                "  --trace-flush            Flush trace at each time step "
+                "(slow)\n"
+                "  --trace-file             Specify the trace file name (%s by "
                 "default)\n",
                 basename(argv[0]), traceFile);
             return 0;
@@ -124,6 +144,9 @@ int main(int argc, char **argv) {
     }
 
     Verilated::commandArgs(argc, argv);
+#if VM_COVERAGE
+    coverage_per_instance = coveragePerInstance;
+#endif
 #ifdef VERILATOR_SIM_DEBUG
     Verilated::debug(99);
 #endif
