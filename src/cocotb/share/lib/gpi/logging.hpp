@@ -32,6 +32,10 @@ extern GPI_EXPORT int gpi_debug_enabled;
 /** @return The string representation of the GPI log level. */
 GPI_EXPORT const char *gpi_log_level_to_str(enum gpi_log_level level);
 
+/** @return True if the given log level is enabled for the specified logger. */
+GPI_EXPORT bool gpi_log_level_enabled(const char *logger,
+                                      enum gpi_log_level level);
+
 /** Logs a message at a given log level using the current log handler.
  * The caller provides explicit location information.
  */

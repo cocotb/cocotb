@@ -104,18 +104,22 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
     }
 
     if (NULL == iterator) {
-        LOG_DEBUG(
-            "VHPI: vhpi_iterate return NULL for all relationships on %s (%d) "
-            "kind:%s",
-            vhpi_get_str(vhpiCaseNameP, vhpi_hdl), type,
-            vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+        if (gpi_log_level_enabled("gpi", GPI_DEBUG)) {
+            LOG_DEBUG(
+                "VHPI: vhpi_iterate return NULL for all relationships on %s "
+                "(%d) kind:%s",
+                vhpi_get_str(vhpiCaseNameP, vhpi_hdl), type,
+                vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+        }
         selected = NULL;
         return;
     }
 
-    LOG_DEBUG("VHPI: Created iterator working from scope %d (%s)",
-              vhpi_get(vhpiKindP, vhpi_hdl),
-              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+    if (gpi_log_level_enabled("gpi", GPI_DEBUG)) {
+        LOG_DEBUG("VHPI: Created iterator working from scope %d (%s)",
+                  vhpi_get(vhpiKindP, vhpi_hdl),
+                  vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+    }
 
     /* On some simulators (Aldec) vhpiRootInstK is a null level of hierarchy.
      * We check that something is going to come back, if not, we try the level
@@ -173,16 +177,20 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                  vhpiCondSigAssignStmtK == vhpi_get(vhpiKindP, obj) ||
                  vhpiSimpleSigAssignStmtK == vhpi_get(vhpiKindP, obj) ||
                  vhpiSelectSigAssignStmtK == vhpi_get(vhpiKindP, obj))) {
-                LOG_DEBUG("VHPI: Skipping %s (%s)",
-                          vhpi_get_str(vhpiFullNameP, obj),
-                          vhpi_get_str(vhpiKindStrP, obj));
+                if (gpi_log_level_enabled("gpi", GPI_DEBUG)) {
+                    LOG_DEBUG("VHPI: Skipping %s (%s)",
+                              vhpi_get_str(vhpiFullNameP, obj),
+                              vhpi_get_str(vhpiKindStrP, obj));
+                }
                 obj = NULL;
                 continue;
             }
 
             if (obj != NULL) {
-                LOG_DEBUG("VHPI: Found an item %s",
-                          vhpi_get_str(vhpiFullNameP, obj));
+                if (gpi_log_level_enabled("gpi", GPI_DEBUG)) {
+                    LOG_DEBUG("VHPI: Found an item %s",
+                              vhpi_get_str(vhpiFullNameP, obj));
+                }
                 break;
             } else {
                 LOG_DEBUG("VHPI: vhpi_scan on vhpiOneToManyT=%d returned NULL",
@@ -258,9 +266,11 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         name = c_name;
     }
 
-    LOG_DEBUG("VHPI: vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
-              vhpi_get(vhpiKindP, obj), vhpi_get_str(vhpiKindStrP, obj),
-              vhpi_get_str(vhpiCaseNameP, obj));
+    if (gpi_log_level_enabled("gpi", GPI_DEBUG)) {
+        LOG_DEBUG("VHPI: vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
+                  vhpi_get(vhpiKindP, obj), vhpi_get_str(vhpiKindStrP, obj),
+                  vhpi_get_str(vhpiCaseNameP, obj));
+    }
 
     /* We try and create a handle internally, if this is not possible we
        return and GPI will try other implementations with the name
