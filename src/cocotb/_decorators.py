@@ -63,6 +63,9 @@ class Test:
         stage:
             Order tests logically into stages.
             Tests from earlier stages are run before tests from later stages.
+
+        reason:
+            Reason why the test function is marked as xfail or skipped.
     """
 
     # TODO Replace with dataclass in Python 3.7+
@@ -84,6 +87,7 @@ class Test:
         ],
         skip: bool,
         stage: int,
+        reason: str | None = None,
     ) -> None:
         self.func = func
         self.args = args
@@ -96,6 +100,7 @@ class Test:
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
+        self.reason = reason
 
     @property
     def fullname(self) -> str:
@@ -128,6 +133,7 @@ class TestGenerator:
             tuple[str, Sequence[object]]
             | tuple[Sequence[str], Sequence[Sequence[object]]]
         ] = []
+        self.reason: str | None = None
 
     def generate_tests(self) -> Iterable[Test]:
         option_reprs: dict[str, list[str]] = {}
@@ -185,6 +191,7 @@ class TestGenerator:
                 expect_error=tuple(self.expect_error),
                 skip=self.skip,
                 stage=self.stage,
+                reason=self.reason,
             )
 
 
@@ -539,6 +546,7 @@ def skipif(
         if not isinstance(obj, TestGenerator):
             obj = TestGenerator(obj)
         obj.skip |= condition
+        obj.reason = reason
         return obj
 
     return decorator
@@ -600,6 +608,7 @@ def xfail(
         if not isinstance(obj, TestGenerator):
             obj = TestGenerator(obj)
         if condition:
+            obj.reason = reason
             if raises is not None:
                 if isinstance(raises, _single_exception_types):
                     obj.expect_error.add(raises)
