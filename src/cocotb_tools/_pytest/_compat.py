@@ -2,85 +2,77 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Compatibility layer between cocotb and pytest. Convert cocotb decorators to pytest markers."""
+"""Compatibility layer between cocotb and pytest. Converts cocotb decorators to pytest markers."""
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
 from typing import Any
 
-import pytest
-from pytest import Class, Mark, Module, mark
+from pytest import Class, Collector, Config, Item, Mark, Module, hookimpl, mark
 
 from cocotb._decorators import Test, TestGenerator
-from cocotb.simtime import TimeUnit
 
 
-def is_cocotb_decorator(obj: object) -> bool:
-    """Check if provided object was decorated with cocotb decorator."""
-    return isinstance(obj, (Test, TestGenerator))
+class Compat:
+    """A compatibility layer between cocotb and pytest.
+
+    This class is used as an internal sub-plugin for the main cocotb pytest plugin.
+    """
+
+    def __init__(self, config: Config) -> None:
+        """Create a new instance of the compatibility layer between cocotb and pytest.
+
+        Args:
+            config: The pytest configuration object.
+        """
+        self.python: Any = config.pluginmanager.getplugin("python")
+
+    @hookimpl(tryfirst=True)
+    def pytest_pycollect_makeitem(
+        self, collector: Module | Class, name: str, obj: object
+    ) -> None | Item | Collector | list[Item | Collector]:
+        """Identify cocotb tests during pytest collection and apply markers.
+
+        Args:
+            collector: The Python module or class collector.
+            name: The name of the Python object in the collector.
+            obj: The Python object (e.g., a test function).
+
+        Returns:
+            :data:`None` to delegate the creation of the test function from the collected ``obj`` to other plugins.
+            A non-:data:`None` value if the collected ``obj`` is a pytest item (test function) or another pytest collector.
+        """
+        if isinstance(obj, (Test, TestGenerator)):
+            # Convert @cocotb.test decorator to @pytest.mark.cocotb_* markers and @cocotb.parametrize decorator to @pytest.mark.parametrize markers
+            obj = cocotb_decorators_to_pytest_marks(obj)
+
+            # This is needed by the pytest code inspection mechanism. Otherwise pytest will raise an error when generating parametrized tests
+            setattr(collector.obj, name, obj)
+
+            # Delegate creation of test functions to the pytest built-in 'python' plugin
+            return self.python.pytest_pycollect_makeitem(
+                collector=collector, name=name, obj=obj
+            )
+
+        return None
 
 
-def cocotb_decorator_as_pytest_marks(
-    collector: Module | Class, name: str, obj: object
-) -> object:
-    """Convert object decorated with cocotb decorator to ``@pytest.mark.*``.
+def cocotb_decorators_to_pytest_marks(test: Test | TestGenerator) -> object:
+    """Convert a cocotb-decorated test function/generator to equivalent pytest markers.
+
+    This function extracts parameters, timeouts, skip conditions, and expected failures
+    from cocotb test decorators and applies them as pytest marks on the underlying function.
+
+    Example:
+        Given a test function decorated with ``@cocotb.test(skip=True)``, this function
+        will attach the ``pytest.mark.skip`` marker to the test function.
 
     Args:
-        collector: Pytest collector like Python Class or Module.
-        name: Name of object.
-        obj: Object decorated with cocotb decorator like ``@cocotb.test``.
+        test: The cocotb test or test generator object.
 
     Returns:
-        Unwrapped decorated object with added pytest marks.
+        The unwrapped test function with the applied pytest markers.
     """
-    if isinstance(obj, Test):
-        return _as_pytest_marks(
-            collector,
-            name,
-            obj.func,
-            timeout=obj.timeout,
-            expect_fail=obj.expect_fail,
-            expect_error=obj.expect_error,
-            skip=obj.skip,
-            stage=obj.stage,
-        )
-
-    if isinstance(obj, TestGenerator):
-        return _as_pytest_marks(
-            collector,
-            name,
-            obj.func,
-            timeout=obj.timeout,
-            expect_fail=obj.expect_fail,
-            expect_error=obj.expect_error,
-            skip=obj.skip,
-            stage=obj.stage,
-            options=obj.options,
-        )
-
-    return obj
-
-
-def _as_pytest_marks(
-    collector: Module | Class,
-    name: str,
-    obj: object,
-    timeout: tuple[float, TimeUnit] | None,
-    expect_fail: bool,
-    expect_error: Iterable[
-        type[BaseException] | pytest.RaisesExc[BaseException] | pytest.RaisesGroup[Any]
-    ],
-    skip: bool,
-    stage: int,
-    options: list[
-        tuple[str, Sequence[object]] | tuple[Sequence[str], Sequence[Sequence[object]]]
-    ]
-    | None = None,
-) -> object:
-    if getattr(obj, "__test__", False):
-        return obj  # object already unwrapped for pytest, skip it
-
     markers: list[Mark] = []
 
     # Replace @cocotb.parametrize(...) decorator with equivalent @pytest.mark.parametrize(...) markers
@@ -88,40 +80,49 @@ def _as_pytest_marks(
     # vvv
     # @pytest.parametrize("x", [1, 2])
     # @pytest.parametrize("y", [3, 4])
-    for names, values in options or ():
-        if isinstance(names, str):
-            markers.append(mark.parametrize(names, values).mark)
-        else:
-            markers.append(mark.parametrize(",".join(names), values).mark)
+    if isinstance(test, TestGenerator):
+        for names, values in test.options:
+            if isinstance(names, str):
+                markers.append(mark.parametrize(names, values).mark)
+            else:
+                markers.append(mark.parametrize(",".join(names), values).mark)
 
-    if stage:
-        # Supported by external plugin: pytest-order
-        markers.append(mark.order(stage).mark)
+    if test.stage:
+        # Supported by an external plugin that must be installed independently: pytest-order
+        markers.append(mark.order(test.stage).mark)
 
-    if skip:
-        markers.append(mark.skip().mark)
+    if test.skip:
+        markers.append(mark.skip(reason="skipping cocotb test").mark)
 
-    if expect_fail or expect_error:
+    if test.expect_fail or test.expect_error:
         markers.append(
             mark.xfail(
-                raises=tuple(expect_error) if expect_error else None,  # type: ignore[arg-type]
+                raises=tuple(test.expect_error) if test.expect_error else None,  # type: ignore[arg-type]
                 strict=True,
             ).mark
         )
 
-    if timeout:
-        markers.append(mark.cocotb_timeout(duration=timeout[0], unit=timeout[1]).mark)
+    if test.timeout:
+        markers.append(
+            mark.cocotb_timeout(duration=test.timeout[0], unit=test.timeout[1]).mark
+        )
 
-    markers.append(mark.cocotb_test().mark)
+    obj: object = test.func
+
+    # Add existing pytest markers extracted from used cocotb decorator
+    # @pytest.mark.*
+    # @cocotb.test
+    markers.extend(getattr(test, "pytestmark", ()))
+
+    # Add existing pytest markers extracted from defined test function
+    # @pytest.mark.*
+    # async def test_dut_feature_1(dut) -> None:
     markers.extend(getattr(obj, "pytestmark", ()))
 
-    # Add pytest marks to object
+    # Add all combined pytest markers to object (test function)
     setattr(obj, "pytestmark", markers)
 
-    # __test__ will tell pytest to treat this object as test item
+    # __test__ will tell pytest to treat this object as a test item
     setattr(obj, "__test__", True)
-
-    # This is needed by pytest code inspection mechanism
-    setattr(collector.obj, name, obj)
 
     return obj
