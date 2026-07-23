@@ -150,6 +150,12 @@ def test_logic_array_bytes_conversion():
         "0011000100110010"
     )
 
+    assert LogicArray.from_bytes(b"12", 16, byteorder="big") == LogicArray(
+        "0011000100110010"
+    )
+
+    with pytest.raises(ValueError):
+        LogicArray.from_bytes(b"12", 17, byteorder="big")
     with pytest.raises(ValueError):
         LogicArray.from_bytes(b"123", Range(6, "downto", 0), byteorder="big")
     with pytest.raises(ValueError):
