@@ -8,6 +8,7 @@ from __future__ import annotations
 import inspect
 import sys
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from enum import Enum
 from itertools import product
 from typing import Any, Callable, cast, overload
@@ -105,6 +106,20 @@ class Test:
 TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
 
 
+@dataclass(frozen=True)
+class Param:
+    """A parameter value with an optional custom name.
+
+    When used with :func:`cocotb.parametrize`, ``value`` is passed to the
+    test function while ``name`` is used when generating the test name.
+
+    If ``name`` is ``None``, the name is generated from ``value`` as usual.
+    """
+
+    value: Any
+    name: str | None = None
+
+
 class TestGenerator:
     def __init__(
         self,
@@ -159,6 +174,11 @@ class TestGenerator:
 
                 if isinstance(option_name, str):
                     # single params per option
+                    selected_value = (
+                        selected_value.value
+                        if isinstance(selected_value, Param)
+                        else selected_value
+                    )
                     selected_value = cast("Sequence[object]", selected_value)
                     test_kwargs[option_name] = selected_value
                     test_name_pieces.append(
@@ -167,7 +187,8 @@ class TestGenerator:
                 else:
                     # multiple params per option
                     selected_value = cast("Sequence[object]", selected_value)
-                    for n, v in zip(option_name, selected_value):
+                    for n, vn in zip(option_name, selected_value):
+                        v = vn.value if isinstance(vn, Param) else vn
                         test_kwargs[n] = v
                         test_name_pieces.append(f"/{n}={option_reprs[n][select_idx]}")
 
@@ -210,6 +231,8 @@ def _repr(v: object) -> str | None:
             return None
     elif isinstance(v, (int, float, bool, type(None))):
         return repr(v)
+    elif isinstance(v, Param):
+        return v.name if v.name is not None else _repr(v.value)
     elif isinstance(v, type):
         return v.__qualname__
     elif hasattr(v, "__qualname__"):
@@ -463,6 +486,25 @@ def parametrize(
         )
         async def my_test_2(arg1: int, arg2: int, arg3: int) -> None: ...
 
+    Named parameter values can be created using :class:`Param` to customize the
+    generated test name while still passing the original value to the test.
+
+    .. autolink-skip::
+    .. code-block:: python
+
+        @cocotb.parametrize(
+            arg=[
+                Param(value=0, name="zero"),
+                Param(value=1, name="one"),
+            ],
+        )
+        async def my_test(arg: int) -> None: ...
+
+    This generates tests named ``my_test/arg=zero`` and
+    ``my_test/arg=one``, while the test receives the integer values
+    ``0`` and ``1``.
+
+
     Args:
         options_by_tuple:
             Tuple of parameter name to sequence of values for that parameter,
@@ -470,6 +512,9 @@ def parametrize(
 
         options_by_name:
             Mapping of parameter name to sequence of values for that parameter.
+
+            A single value may also be written as ``(value, name)`` to override the text used in the generated test
+            name while still passing ``value`` to the test.
 
     .. versionadded:: 2.0
     """

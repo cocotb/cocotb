@@ -1,0 +1,1 @@
+Allow :class:`cocotb.parametrize` to accept :class:`Param` values in both options_by_name and options_by_tuple. Param allows a custom name to be used in generated test names while passing the underlying value unchanged to the test function.
