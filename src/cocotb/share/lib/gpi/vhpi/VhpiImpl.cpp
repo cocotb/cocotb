@@ -351,7 +351,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                         } else if (is_enum_char(elem_base_type_hdl)) {
                             LOG_DEBUG("VHPI: Detected a STRING type %s",
                                       fq_name.c_str());
-                            gpi_type = GPI_STRING;
+                            gpi_type = GPI_FIXED_STRING;
                         } else {
                             LOG_DEBUG(
                                 "VHPI: Detected a NON-LOGIC ENUM VECTOR type "
@@ -650,7 +650,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vhpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+               obj_type == GPI_ARRAY || obj_type == GPI_FIXED_STRING) {
         LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,
                   parent->get_fullname_str(),
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));
@@ -859,7 +859,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "VHPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC, GPI_ARRAY, or GPI_STRING to have an index.",
+            "GPI_LOGIC, GPI_ARRAY, or GPI_FIXED_STRING to have an index.",
             parent->get_type_str());
         return NULL;
     }

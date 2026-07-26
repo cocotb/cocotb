@@ -1772,6 +1772,30 @@ class StringObject(
         return self.value.decode("ascii")
 
 
+class FixedStringObject(StringObject):
+    """A fixed-length string simulation object.
+
+    This type is used when a VHDL `string` simulation object is seen.
+    This is because in VHDL string are fixed-length unlike Verilog string
+    """
+
+    def _set_value(
+        self,
+        value: bytes,
+        action: _GPISetAction,
+    ) -> None:
+
+        max_len = len(self)
+
+        if len(value) > max_len:
+            raise ValueError(
+                f"String {value!r} (length {len(value)}) is too long "
+                f"for fixed string of size {max_len}."
+            )
+
+        super()._set_value(value, action)
+
+
 _ConcreteHandleTypes = Union[
     HierarchyObject,
     HierarchyArrayObject[SimHandleBase],
@@ -1801,6 +1825,7 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.INTEGER: IntegerObject,
     cocotb.simulator.ENUM: EnumObject,
     cocotb.simulator.STRING: StringObject,
+    cocotb.simulator.FIXED_STRING: FixedStringObject,
     cocotb.simulator.GENARRAY: HierarchyArrayObject[SimHandleBase],
     cocotb.simulator.PACKAGE: HierarchyObject,
 }

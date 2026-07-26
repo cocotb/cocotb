@@ -12,6 +12,7 @@ import pytest
 import cocotb
 from cocotb.handle import (
     ArrayObject,
+    FixedStringObject,
     GPIDiscovery,
     HierarchyArrayObject,
     HierarchyObject,
@@ -295,8 +296,9 @@ async def access_constant_integer(dut):
 async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     constant_string = dut.isample_module1.EXAMPLE_STRING
-    assert isinstance(constant_string, StringObject)
+    assert isinstance(constant_string, FixedStringObject)
     assert constant_string.value == b"TESTING"
+    assert constant_string._type == "GPI_FIXED_STRING"
 
 
 # GHDL discovers strings as vpiNetArray (gh-2584)
@@ -305,7 +307,7 @@ async def access_constant_string_vhdl(dut):
     expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_writing_string_undersized(dut):
-    assert isinstance(dut.stream_in_string, StringObject)
+    assert isinstance(dut.stream_in_string, FixedStringObject)
     test_string = b"cocotb"
     dut.stream_in_string.value = Immediate(test_string)
     assert dut.stream_out_string.value == b""
@@ -319,11 +321,13 @@ async def test_writing_string_undersized(dut):
     expect_fail=SIM_NAME.startswith("ghdl"),
 )
 async def test_writing_string_oversized(dut):
-    assert isinstance(dut.stream_in_string, StringObject)
-    test_string = b"longer_than_the_array"
-    dut.stream_in_string.value = Immediate(test_string)
-    await Timer(1, "ns")
-    assert dut.stream_out_string.value == test_string[: len(dut.stream_out_string)]
+    assert isinstance(dut.stream_in_string, FixedStringObject)
+    test_string = b"longer_than_the_array" * 5
+
+    # This should raise a ValueError because the string is
+    # longer than the fixed size of the string object
+    with pytest.raises(ValueError):
+        dut.stream_in_string.value = Immediate(test_string)
 
 
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
@@ -500,7 +504,7 @@ async def discover_all_in_component_vhdl(dut):
     )
 
     def _discover(obj):
-        if questa_vhpi and isinstance(obj, StringObject):
+        if questa_vhpi and isinstance(obj, FixedStringObject):
             # Iterating over the elements of a string with Questa's VHPI causes a stacktrace
             return 0
         if not isinstance(obj, (HierarchyObject, HierarchyArrayObject, ArrayObject)):

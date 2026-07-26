@@ -31,6 +31,7 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_REAL);
         CASE_OPTION(GPI_INTEGER);
         CASE_OPTION(GPI_STRING);
+        CASE_OPTION(GPI_FIXED_STRING);
         CASE_OPTION(GPI_GENARRAY);
         CASE_OPTION(GPI_PACKAGE);
         CASE_OPTION(GPI_LOGIC);
