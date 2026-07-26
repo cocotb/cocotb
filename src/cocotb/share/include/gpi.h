@@ -206,11 +206,12 @@ typedef enum gpi_objtype_e {
     GPI_REAL = 9,
     GPI_INTEGER = 10,
     GPI_STRING = 11,
-    GPI_GENARRAY = 12,
-    GPI_PACKAGE = 13,
-    GPI_PACKED_STRUCTURE = 14,
-    GPI_LOGIC = 15,
-    GPI_LOGIC_ARRAY = 16,
+    GPI_FIXED_STRING = 12,
+    GPI_GENARRAY = 13,
+    GPI_PACKAGE = 14,
+    GPI_PACKED_STRUCTURE = 15,
+    GPI_LOGIC = 16,
+    GPI_LOGIC_ARRAY = 17,
 } gpi_objtype;
 
 /** Direction of range constraint of an object. */
