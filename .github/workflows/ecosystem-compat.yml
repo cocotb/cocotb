@@ -38,7 +38,7 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends iverilog
 
       - name: Checkout cocotb-coverage repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: mciepluc/cocotb-coverage
           path: cocotb-coverage
@@ -85,7 +85,7 @@ jobs:
           version: r1.19.3
 
       - name: Checkout pyuvm repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: pyuvm/pyuvm
           path: pyuvm
@@ -126,7 +126,7 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends iverilog
 
       - name: Checkout Forastero repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: intuity/forastero
           path: forastero
