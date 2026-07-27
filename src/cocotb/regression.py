@@ -371,7 +371,7 @@ class RegressionManager:
             )
 
         # start test loop
-        self._regression_start_time = time.time()
+        self._regression_start_time = time.monotonic()
         self._first_test = True
         self._execute()
 
@@ -448,7 +448,7 @@ class RegressionManager:
         cocotb.RANDOM_SEED = test_seed
 
         self._start_sim_time = get_sim_time("ns")
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
 
         self._running_test.start()
 
@@ -481,7 +481,7 @@ class RegressionManager:
         """Callback given to the test to be called when the test finished."""
 
         # compute wall time
-        wall_time = time.time() - self._start_time
+        wall_time = time.monotonic() - self._start_time
         sim_time_start = self._start_sim_time
         sim_time_stop = get_sim_time("ns")
 
@@ -978,7 +978,7 @@ class RegressionManager:
 
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
-        real_time = time.time() - self._regression_start_time
+        real_time = time.monotonic() - self._regression_start_time
         sim_time_ns = get_sim_time("ns")
         ratio_time = safe_divide(sim_time_ns, real_time)
 
