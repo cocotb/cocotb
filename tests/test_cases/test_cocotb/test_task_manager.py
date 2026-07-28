@@ -755,7 +755,7 @@ async def test_external_cancel_in_block_ignored_new_raise(
             try:
                 await Timer(2)
             except CancelledError:
-                raise MyException()
+                raise MyException() from None
 
     task = cocotb.start_soon(run_task_manager())
 
@@ -833,7 +833,7 @@ async def test_child_fails_ignore_cancel_new_raise(_: object) -> None:
         try:
             await Timer(2)
         except CancelledError:
-            raise MyException()
+            raise MyException() from None
 
 
 @cocotb.test
@@ -1300,7 +1300,7 @@ async def test_external_cancel_in_nested_block_ignored_new_raise(
                 try:
                     await Timer(2)
                 except CancelledError:
-                    raise MyException()
+                    raise MyException() from None
 
     task = cocotb.start_soon(run_task_manager())
 
@@ -1376,7 +1376,7 @@ async def test_second_child_fails_after_group_cancelled(_: object) -> None:
                 try:
                     await Timer(5)
                 except CancelledError:
-                    raise MyException()
+                    raise MyException() from None
 
     except BaseExceptionGroup as e:
         my_exc, rest = e.split(MyException)

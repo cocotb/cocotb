@@ -135,9 +135,6 @@ def extract_coro_stack(
     return traceback.StackSummary.extract(walk_coro_stack(coro), limit=limit)
 
 
-EnumT = TypeVar("EnumT", bound=Enum)
-
-
 class DocEnum(Enum):
     """Like :class:`enum.Enum`, but allows documenting enum values.
 
@@ -157,7 +154,7 @@ class DocEnum(Enum):
     as recommended by the ``enum_tools`` documentation.
     """
 
-    def __new__(cls: type[EnumT], value: object, doc: str | None = None) -> EnumT:
+    def __new__(cls, value: object, doc: str | None = None) -> Self:
         # super().__new__() assumes the value is already an enum value
         # so we side step that and create a raw object and fill in _value_
         self = object.__new__(cls)

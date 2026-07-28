@@ -408,7 +408,7 @@ class RegressionManager:
             # initialize the test, if it fails, record and continue
             try:
                 self._running_test = self._init_test()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 self._record_test_init_failed()
                 continue
 

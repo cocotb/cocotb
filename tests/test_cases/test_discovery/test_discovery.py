@@ -197,7 +197,7 @@ async def discover_module_values(dut):
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     with pytest.raises(AttributeError):
-        dut.fake_signal
+        dut.fake_signal  # noqa: B018
 
 
 @cocotb.test()
@@ -271,7 +271,7 @@ async def access_integer(dut):
 @cocotb.test(skip=LANGUAGE in ["verilog"])
 async def access_ulogic(dut):
     """Access a std_ulogic as enum"""
-    dut.stream_in_valid
+    dut.stream_in_valid  # noqa: B018
 
 
 # GHDL discovers generics as vpiParameter (gh-2722)
@@ -486,8 +486,8 @@ async def type_check_verilog(dut):
 async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
 
-    dut.isample_module1.SAMPLE_BLOCK
-    dut.isample_module1.SAMPLE_BLOCK.clk_inv
+    dut.isample_module1.SAMPLE_BLOCK  # noqa: B018
+    dut.isample_module1.SAMPLE_BLOCK.clk_inv  # noqa: B018
 
 
 @cocotb.test(skip=LANGUAGE in ["verilog"])

@@ -380,7 +380,7 @@ class Controller:
                         report.nodeid = self._get_mangled_nodeid(report)
                         hook.pytest_runtest_logreport(report=report)
 
-            except BaseException:
+            except BaseException:  # noqa: BLE001
                 self._notify_exception(ExceptionInfo.from_current())
 
     def _notify_exception(self, excinfo: ExceptionInfo) -> None:

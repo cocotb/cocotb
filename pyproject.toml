@@ -112,7 +112,7 @@ target-version = "py39"
 docstring-code-format = true
 
 [tool.ruff.lint]
-extend-select = [
+select = [
     "I",        # isort
     "UP",       # pyupgrade
     "PL",       # pylint
@@ -125,6 +125,14 @@ extend-select = [
     "ISC",      # implicit string concat
     "TC",       # flake8-typechecking
     "PTH",      # flake8-use-pathlib
+    "B",        # flake8-bugbear
+    "BLE",      # flake8-blind-except
+    "T10",      # flake8-debugger
+    "EXE",      # flake8-executable
+    "DTZ",      # flake8-datetimez
+    "YTT",      # flake8-2020
+    "SLOT",     # flake8-slots
+    "PERF",     # perflint
     "SIM103",   # return the condition directly
     "SIM300",   # yoda conditions
     "RUF100",   # unused noqa
@@ -132,10 +140,15 @@ extend-select = [
     "RUF010",   # explicit type conversion in f-string
     "RUF005",   # collection literal concatenation
     "RUF022",   # unsorted __all__
-    "PERF101",  # unnecessary list cast
-    "PERF102",  # unnecessary dict.items()
-    "B007",     # unused loop variable
+    "RUF023",   # unsorted __slots__
     "PYI030",   # unnecessary literal union
+    "PT010",    # pytest.raises without an Exception type argument
+    "PT031",    # pytest.warns should be single statement
+    "TRY201",   # `raise exc` instead of plain `raise`
+    "TRY401",   # logging with exception instead of `log.exception`
+    "S102",     # use of `exec`
+    "S110",     # try-except-pass
+    "S112",     # try-except-continue
 ]
 ignore = [
     "E741",    # ambiguous variable name (preference)
@@ -143,6 +156,7 @@ ignore = [
     "PLR0912", # Too many branches (>12) (preference)
     "PLR0913", # Too many arguments to function call (>5) (preference)
     "PLR0915", # Too many statements (>50) (preference)
+    "PLR0917", # Too many positional args (>5) (preference)
     "PLR2004", # Magic value used in comparison (preference)
     "PLW0603", # Using the global statement (preference)
     "PLR0911", # Too many return statements (preference)
@@ -154,6 +168,10 @@ ignore = [
     "TC003",   # typing-only standard library import
     "PTH123",  # Path.open() over open() (preference)
     "PTH207",  # Path.glob() over glob.glob() (preference)
+    "LOG004",  # Use of log.exception outside exception handler (bad assumption)
+    "B010",    # Do not call `setattr` with constant value (mypy compatibility)
+    "B011",    # Do not `assert False` (pytest/cocotb test compatibility)
+    "PERF203", # try-except in loop (not an issue Python > 3.11)
 ]
 
 [tool.ruff.lint.per-file-ignores]

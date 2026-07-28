@@ -390,7 +390,7 @@ class Task(Generic[ResultType]):
             self._set_outcome(
                 remove_traceback_frames(e, ["_resume"]), _TaskState.CANCELLED
             )
-        except BaseException as e:
+        except BaseException as e:  # noqa: BLE001
             if self._must_cancel:
                 if debug.debug:
                     self._log.debug(
@@ -444,7 +444,7 @@ class Task(Generic[ResultType]):
                 # TODO Don't allow `_prime()` to call `_react()`?
                 try:
                     self._trigger_callback = trigger._register(self._schedule_resume)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     self._schedule_resume(remove_traceback_frames(e, ["_resume"]))
                 else:
                     if debug.debug:
@@ -711,6 +711,7 @@ class Task(Generic[ResultType]):
                 f"Task {self._name!r} was never started. Did you forget to call start_soon()?",
                 ResourceWarning,
                 source=self,
+                stacklevel=1,
             )
             # But close the coroutine so we don't get another ResourceWarning about an un-awaited coroutine.
             self._coro.close()

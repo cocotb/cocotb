@@ -34,7 +34,7 @@ class SimTimePrompt(Prompts):
         return tokens
 
 
-async def embed(user_ns: dict[str, Any] = {}) -> None:
+async def embed(user_ns: dict[str, Any] | None = None) -> None:
     """
     Start an IPython shell in the current coroutine.
 
@@ -58,7 +58,8 @@ async def embed(user_ns: dict[str, Any] = {}) -> None:
     """
     # ensure cocotb is in the namespace, for convenience
     default_ns = {"cocotb": cocotb}
-    default_ns.update(user_ns)
+    if user_ns is not None:
+        default_ns.update(user_ns)
 
     def _runner(x):
         """Handler for async functions"""
@@ -75,7 +76,7 @@ async def embed(user_ns: dict[str, Any] = {}) -> None:
     # because we launch IPython in a different process, this will cause unnecessary warnings, so disable the PID check
     c.HistoryAccessor.connection_options = {"check_same_thread": False}
     # create a shell with access to the dut, and cocotb pre-imported
-    shell = IPython.terminal.embed.InteractiveShellEmbed(
+    shell = IPython.terminal.embed.InteractiveShellEmbed(  # noqa: T100
         user_ns=default_ns,
         config=c,
     )

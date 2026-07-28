@@ -807,8 +807,7 @@ else:
             write_func(action.value, value)
         elif action is _GPISetAction.DEPOSIT:
             # Queue write for the beginning of the next ReadWrite phase because we can't trust the simulator. =(
-            if handle in _write_calls:
-                del _write_calls[handle]
+            _write_calls.pop(handle, None)
             _write_calls[handle] = (write_func, action, value)
 
             # Register ReadWrite to occur but do nothing. ReadWrite._do_callbacks() is
@@ -1086,7 +1085,7 @@ class ArrayObject(
         )
         return self._sub_handles[index]
 
-    def __iter__(self) -> Iterable[ChildObjectT]:
+    def __iter__(self) -> Iterator[ChildObjectT]:
         for i in self.range:
             yield self[i]
 

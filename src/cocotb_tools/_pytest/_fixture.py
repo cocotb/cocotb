@@ -34,6 +34,8 @@ class AsyncFixtureCachedResult(
         (None, cache_key, (e, e.__traceback__)) - asynchronous task completed with exception
     """
 
+    __slots__ = ()
+
     def __getitem__(self, index: Any) -> Any:
         """Dynamically get result from asynchronous task."""
         task = cast("TestManager", super().__getitem__(0))._main_task
