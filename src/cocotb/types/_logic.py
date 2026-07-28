@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 from functools import cache
-from typing import Union
+from typing import ClassVar, Union
 
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
@@ -109,7 +109,7 @@ class Logic:
         TypeError: If the value is of a type that can't be constructed into a :class:`!Logic`.
     """
 
-    _values = {_U, _X, _0, _1, _Z, _W, _L, _H, _D}
+    _values: ClassVar[set[int]] = {_U, _X, _0, _1, _Z, _W, _L, _H, _D}
 
     _repr: int
 
@@ -335,4 +335,4 @@ class Bit(Logic):
         TypeError: If the value is of a type that can't be constructed into a :class:`!Bit`.
     """
 
-    _values = {_0, _1}
+    _values: ClassVar[set[int]] = {_0, _1}

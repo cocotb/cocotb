@@ -231,10 +231,10 @@ class LogicArray(AbstractMutableArray[Logic]):
     _warn_indexing: bool
 
     __slots__ = (
+        "_range",
         "_value_as_array",
         "_value_as_int",
         "_value_as_str",
-        "_range",
         "_warn_indexing",
     )
 

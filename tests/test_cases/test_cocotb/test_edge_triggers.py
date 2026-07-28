@@ -436,7 +436,7 @@ async def test_edge_trigger_on_const(dut) -> None:
     with pytest.raises(TypeError):
         ValueChange(dut.INT_PARAM)
     with pytest.raises(TypeError):
-        dut.INT_PARAM.value_change
+        dut.INT_PARAM.value_change  # noqa: B018
 
 
 async def wait_for_edge(signal):
@@ -484,10 +484,12 @@ async def test_callback_registration_failure_raises_runtime_error(dut):
     # the corrupted state from the mock doesn't affect subsequent tests.
     trigger = RisingEdge._make(dut.clk)
 
-    with unittest.mock.patch.object(
-        simulator,
-        "register_value_change_callback",
-        return_value=None,
+    with (
+        unittest.mock.patch.object(
+            simulator,
+            "register_value_change_callback",
+            return_value=None,
+        ),
+        pytest.raises(RuntimeError, match="Unable set up .* Trigger"),
     ):
-        with pytest.raises(RuntimeError, match="Unable set up .* Trigger"):
-            await trigger
+        await trigger

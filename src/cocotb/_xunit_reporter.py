@@ -19,7 +19,6 @@ import os
 import re
 from collections.abc import Iterable, Mapping
 from datetime import datetime, timezone
-from functools import cache
 from pathlib import Path
 from platform import node
 from traceback import format_exception
@@ -97,6 +96,8 @@ class XUnitReporter:
         # If present, all reported absolute paths will be converted to relative paths
         self._relative_to = Path(relative_to).resolve() if relative_to else None
         self._relative_to_str = f"{self._relative_to}{os.path.sep}"
+
+        self._normalized_paths: dict[Any, str] = {}
 
         # Common file attachments that will be added to all created test cases
         self._default_attachments: list[str] = [
@@ -231,9 +232,16 @@ class XUnitReporter:
 
         return self._testsuite
 
-    @cache
     def normalize_path(self, path: Any) -> str:
         """Convert provided path to relative path."""
+        try:
+            return self._normalized_paths[path]
+        except KeyError:
+            p = self._normalize_path(path)
+            self._normalized_paths[path] = p
+            return p
+
+    def _normalize_path(self, path: Any) -> str:
         if self._relative_to:
             try:
                 return str(Path(path).resolve().relative_to(self._relative_to))

@@ -213,7 +213,7 @@ def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
             raise
-        except BaseException as e:
+        except BaseException as e:  # noqa: BLE001
             outcome = Error(e)
         # Notify the current (scheduler) thread that we are about to wake
         # up the background (`@external`) thread, making sure to do so

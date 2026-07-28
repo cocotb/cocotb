@@ -22,7 +22,8 @@ sys.path.append(str(Path(__file__).parent))
 
 from cocotb_build_libs import build_ext, get_ext
 
-version = open("VERSION").read().strip()
+with open("VERSION") as f:
+    version = f.read().strip()
 
 max_python3_minor_version = 14
 if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
@@ -39,8 +40,7 @@ if "COCOTB_IGNORE_PYTHON_REQUIRES" not in os.environ and sys.version_info >= (
 def package_files(directory):
     paths = []
     for fpath, _, filenames in walk(directory):
-        for filename in filenames:
-            paths.append(str(Path("..", "..", fpath, filename)))
+        paths.extend(str(Path("..", "..", fpath, filename)) for filename in filenames)
     return paths
 
 

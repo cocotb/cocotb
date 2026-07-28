@@ -87,8 +87,9 @@ async def test_queue_contention(dut):
     getter_list = []
 
     # test put contention
-    for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
+    coro_list.extend(
+        cocotb.start_soon(putter(putter_list, k)) for k in range(NUM_PUTTERS)
+    )
     await NullTrigger()
 
     assert q.qsize() == QUEUE_SIZE
@@ -98,8 +99,9 @@ async def test_queue_contention(dut):
     coro.cancel()
     coro_list.append(cocotb.start_soon(putter(putter_list, 101)))
 
-    for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
+    coro_list.extend(
+        cocotb.start_soon(getter(getter_list, k)) for k in range(NUM_PUTTERS)
+    )
 
     coro_list.append(cocotb.start_soon(getter(getter_list, 101)))
 
@@ -193,14 +195,16 @@ async def run_queue_blocking_test(dut, queue_type):
     getter_list = []
 
     # test put contention
-    for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
+    coro_list.extend(
+        cocotb.start_soon(putter(putter_list, k)) for k in range(NUM_PUTTERS)
+    )
     await NullTrigger()
 
     assert q.qsize() == QUEUE_SIZE
 
-    for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
+    coro_list.extend(
+        cocotb.start_soon(getter(getter_list, k)) for k in range(NUM_PUTTERS)
+    )
     await NullTrigger()
 
     await gather(*coro_list)

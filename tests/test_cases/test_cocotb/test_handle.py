@@ -35,7 +35,7 @@ riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
 @cocotb.test()
 async def test_bad_attr(dut):
     with pytest.raises(AttributeError):
-        dut.fake_signal
+        dut.fake_signal  # noqa: B018
 
     try:
         _ = dut.stream_in_data.whoops
@@ -184,7 +184,7 @@ async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
     with pytest.raises(AttributeError):
-        dut._underscore_name
+        dut._underscore_name  # noqa: B018
 
     # indirect access works
     dut["_underscore_name"].value = 0
