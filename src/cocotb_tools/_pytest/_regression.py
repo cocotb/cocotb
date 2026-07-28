@@ -75,7 +75,7 @@ def finish_on_exception(method: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         try:
             return method(self, *args, **kwargs)
-        except BaseException:
+        except BaseException:  # noqa: BLE001
             # Notify pytest and plugins about exception. Finish pytest and simulation
             self._notify_exception(ExceptionInfo.from_current())
             self._finish()
@@ -760,7 +760,7 @@ class RegressionManager:
                     with Client(self._reporter_address) as client:
                         client.send(data)
                     return
-                except Exception:
+                except Exception:  # noqa: BLE001
                     if retry:
                         sleep(INTERVAL)
                     else:
@@ -858,7 +858,7 @@ class RegressionManager:
                 "This could be due to an assertion failure or a call to an exit routine in the HDL, "
                 "or due to the simulator running out of events to process (is your clock running?)."
             )
-        except BaseException:
+        except BaseException:  # noqa: BLE001
             self._notify_exception(ExceptionInfo.from_current())
         finally:
             self._finish()

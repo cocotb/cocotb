@@ -100,7 +100,7 @@ def test_report(tmp_path: Path) -> None:
 
     try:
         assert False, "Invalid value"
-    except BaseException as e:
+    except BaseException as e:  # noqa: BLE001
         xunit.add_testcase(
             classname="package.module",
             name="test",
@@ -122,7 +122,7 @@ def test_report(tmp_path: Path) -> None:
 
     try:
         raise RuntimeError("Internal error")
-    except BaseException as e:
+    except BaseException as e:  # noqa: BLE001
         xunit.add_testcase(
             classname="package.module",
             name="test",

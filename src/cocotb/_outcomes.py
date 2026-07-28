@@ -25,7 +25,7 @@ def capture(fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Outcome[T]
     """Obtain an `Outcome` representing the result of a function call."""
     try:
         return Value(fn(*args, **kwargs))
-    except BaseException as e:
+    except BaseException as e:  # noqa: BLE001
         e = remove_traceback_frames(e, ["capture"])
         return Error(e)
 

@@ -27,6 +27,7 @@ from itertools import chain
 from pathlib import Path
 from typing import (
     Any,
+    ClassVar,
     Generic,
     TextIO,
     TypeVar,
@@ -97,7 +98,8 @@ _sv_escape_translate_table = str.maketrans(_sv_escapes)
 def _sv_escape_string(value: str) -> str:
     if any(ord(c) >= 128 for c in value):
         warnings.warn(
-            f"String {value!r} contains non-ASCII characters which may not be supported in SystemVerilog"
+            f"String {value!r} contains non-ASCII characters which may not be supported in SystemVerilog",
+            stacklevel=1,
         )
     return '"' + value.translate(_sv_escape_translate_table) + '"'
 
@@ -108,7 +110,8 @@ _vhdl_escape_translate_table = str.maketrans({'"': '""'})
 def _vhdl_escape_string(value: str) -> str:
     if any(ord(c) < 32 or ord(c) >= 127 for c in value):
         warnings.warn(
-            f"String {value!r} contains control characters which may not be supported in VHDL"
+            f"String {value!r} contains control characters which may not be supported in VHDL",
+            stacklevel=1,
         )
     return '"' + value.translate(_vhdl_escape_translate_table) + '"'
 
@@ -193,7 +196,7 @@ _vhdl_extensions = (".vhd", ".vhdl")
 
 def _determine_file_type(
     filename: PathLike,
-) -> type[Verilog] | type[VHDL] | type[VerilatorControlFile]:
+) -> type[Verilog | VHDL | VerilatorControlFile]:
     ext = Path(filename).suffix
     if ext in _verilog_extensions:
         return Verilog
@@ -208,7 +211,7 @@ def _determine_file_type(
 
 
 class Runner(ABC):
-    supported_gpi_interfaces: dict[str, list[str]] = {}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {}
 
     def __init__(self) -> None:
         self._simulator_in_path()
@@ -898,7 +901,7 @@ class Icarus(Runner):
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
         if shutil.which("iverilog") is None:
@@ -1046,7 +1049,10 @@ class Questa(Runner):
        * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "verilog": ["vpi"],
+        "vhdl": ["fli", "vhpi"],
+    }
 
     def _simulator_in_path(self) -> None:
         if shutil.which("vsim") is None:
@@ -1201,7 +1207,10 @@ class QuestaQIS(Runner):
          :meth:`~Runner.build` to change them.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["fli", "vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "verilog": ["vpi"],
+        "vhdl": ["fli", "vhpi"],
+    }
 
     def _simulator_in_path(self) -> None:
         if shutil.which("qrun") is None:
@@ -1400,7 +1409,7 @@ class Ghdl(Runner):
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"vhdl": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"vhdl": ["vpi"]}
 
     def _set_env_test(self) -> None:
         super()._set_env_test()
@@ -1531,7 +1540,7 @@ class Nvc(Runner):
        * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"vhdl": ["vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"vhdl": ["vhpi"]}
 
     def __init__(self) -> None:
         super().__init__()
@@ -1635,7 +1644,10 @@ class AldecBase(Runner):
        * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "verilog": ["vpi"],
+        "vhdl": ["vhpi"],
+    }
 
     def _simulator_in_path(self) -> None:
         if shutil.which("vsimsa") is None:
@@ -1867,7 +1879,7 @@ class Verilator(Runner):
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"verilog": ["vpi"]}
 
     def _set_env_test(self) -> None:
         super()._set_env_test()
@@ -2001,7 +2013,10 @@ class Xcelium(Runner):
        * Does not support the ``timescale`` argument to :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"], "vhdl": ["vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "verilog": ["vpi"],
+        "vhdl": ["vhpi"],
+    }
 
     def _simulator_in_path(self) -> None:
         if shutil.which("xrun") is None:
@@ -2114,10 +2129,10 @@ class Xcelium(Runner):
 
         if self.waves:
             input_tcl = [
-                f'-input "@database -open cocotb_waves -default" '
-                f'-input "@probe -database cocotb_waves -create {xrun_top} -all -depth all" '
-                f'-input "@run" '
-                f'-input "@exit" '
+                '-input "@database -open cocotb_waves -default" ',
+                f'-input "@probe -database cocotb_waves -create {xrun_top} -all -depth all" ',
+                '-input "@run" ',
+                '-input "@exit" ',
             ]
         else:
             input_tcl = ["-input", "@run; exit;"]
@@ -2174,7 +2189,7 @@ class Vcs(Runner):
        * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
         if shutil.which("vcs") is None:
@@ -2274,7 +2289,7 @@ class Dsim(Runner):
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
     """
 
-    supported_gpi_interfaces = {"verilog": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"verilog": ["vpi"]}
 
     def _simulator_in_path(self) -> None:
         if shutil.which("dsim") is None:

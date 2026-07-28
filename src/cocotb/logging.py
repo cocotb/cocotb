@@ -17,11 +17,11 @@ import sys
 import time
 import warnings
 from functools import wraps
-from typing import Callable
+from typing import Any, Callable, ClassVar
 
 import cocotb.simtime
 import cocotb.simulator
-from cocotb._ANSI import ANSI
+from cocotb._ansi import ANSI
 from cocotb._deprecation import deprecated
 from cocotb.simtime import TimeUnit, get_sim_time
 from cocotb.utils import get_time_from_sim_steps
@@ -274,7 +274,7 @@ class SimLogFormatter(logging.Formatter):
     See :func:`.default_config` for a description of the arguments.
     """
 
-    loglevel2colour = {
+    loglevel2colour: ClassVar[dict[int, str]] = {
         logging.TRACE: "",  # type: ignore[attr-defined]  # type checkers don't like adding module attributes after the fact
         logging.DEBUG: "",
         logging.INFO: "",
@@ -283,7 +283,7 @@ class SimLogFormatter(logging.Formatter):
         logging.CRITICAL: ANSI.RED_BG + ANSI.BLACK_FG,
     }
 
-    prefix_func_globals = {
+    prefix_func_globals: ClassVar[dict[str, Any]] = {
         "time": time,
         "simtime": cocotb.simtime,
         "ANSI": ANSI,
@@ -365,11 +365,10 @@ class SimLogFormatter(logging.Formatter):
         msg = ""
 
         # these lines are copied and updated from the built-in logger
-        if record.exc_info:
+        if record.exc_info and not record.exc_text:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
-            if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
+            record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
             msg += record.exc_text
         if record.stack_info:

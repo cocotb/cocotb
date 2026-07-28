@@ -120,7 +120,7 @@ async def test_clocks_with_other_number_types(dut):
     # Update the simulator invocation if this assert hits!
     assert get_precision() <= -10
 
-    clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal("1"), unit="ns").start())
+    clk1 = cocotb.start_soon(Clock(dut.clk, decimal.Decimal(1), unit="ns").start())
     await Timer(10, "ns")
     clk1.cancel()
     clk2 = cocotb.start_soon(Clock(dut.clk, fractions.Fraction(1), unit="ns").start())

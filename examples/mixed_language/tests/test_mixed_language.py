@@ -51,8 +51,8 @@ async def mixed_language_accessing_test(dut):
     assert verilog.reset_n.value == vhdl.reset_n.value, "reset_n signals were different"
 
     # Try accessing an object other than a port...
-    verilog.flush_pipe.value
-    vhdl.flush_pipe.value
+    verilog.flush_pipe.value  # noqa: B018
+    vhdl.flush_pipe.value  # noqa: B018
 
 
 # Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)

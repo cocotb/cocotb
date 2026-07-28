@@ -229,10 +229,7 @@ class ClockCycles(Waitable["ClockCycles"]):
         self,
         signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: type[RisingEdge]
-        | type[FallingEdge]
-        | type[ValueChange]
-        | None = None,
+        edge_type: type[RisingEdge | FallingEdge | ValueChange] | None = None,
     ) -> None: ...
 
     @overload
@@ -244,17 +241,13 @@ class ClockCycles(Waitable["ClockCycles"]):
         self,
         signal: cocotb.handle.LogicObject,
         num_cycles: int,
-        edge_type: bool
-        | type[RisingEdge]
-        | type[FallingEdge]
-        | type[ValueChange]
-        | None = None,
+        edge_type: type[RisingEdge | FallingEdge | ValueChange] | bool | None = None,
         *,
         rising: bool | None = None,
     ) -> None:
         self._signal = signal
         self._num_cycles = num_cycles
-        self._edge_type: type[RisingEdge] | type[FallingEdge] | type[ValueChange]
+        self._edge_type: type[RisingEdge | FallingEdge | ValueChange]
         if edge_type is not None and rising is not None:
             raise TypeError("Passed more than one edge selection argument.")
         elif edge_type is True:
@@ -282,7 +275,7 @@ class ClockCycles(Waitable["ClockCycles"]):
     @property
     def edge_type(
         self,
-    ) -> type[RisingEdge] | type[FallingEdge] | type[ValueChange]:
+    ) -> type[RisingEdge | FallingEdge | ValueChange]:
         """The type of edge trigger used."""
         return self._edge_type
 

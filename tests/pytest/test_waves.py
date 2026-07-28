@@ -51,7 +51,7 @@ def run_simulation(sim, extra_build_args=None, test_args=None):
         hdl_toplevel=hdl_toplevel,
         build_dir=sim_build,
         build_args=build_args,
-        waves=False if sim in ("xcelium",) else True,
+        waves=sim not in ("xcelium",),
     )
 
     _test_args = sim_args

@@ -250,8 +250,7 @@ class TestFactory:
                     # previously checked in add_option; ensure nothing has changed
                     optvalue = cast("Sequence[Sequence[object]]", optvalue)
                     assert len(optname) == len(optvalue)
-                    for n, v in zip(optname, optvalue):
-                        testoptions_split[n] = v
+                    testoptions_split.update(zip(optname, optvalue))
 
             for optname, optvalue in testoptions_split.items():
                 if callable(optvalue):

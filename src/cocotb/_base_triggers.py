@@ -28,7 +28,7 @@ if sys.version_info >= (3, 11):
 class TriggerCallback:
     """A cancellable handle to a callback registered with a Trigger."""
 
-    __slots__ = ("_trigger", "_func")
+    __slots__ = ("_func", "_trigger")
 
     def __init__(
         self,

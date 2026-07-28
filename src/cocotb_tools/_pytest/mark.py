@@ -51,7 +51,7 @@ def cocotb_runner(test_module: str = "", *extra_test_module: str) -> MarkDecorat
     Returns:
         Decorated test function as cocotb runner.
     """
-    return mark.cocotb_runner(test_module=test_module, *extra_test_module)
+    return mark.cocotb_runner(*extra_test_module, test_module=test_module)
 
 
 def cocotb_test() -> MarkDecorator:

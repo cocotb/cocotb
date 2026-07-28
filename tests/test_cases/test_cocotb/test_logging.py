@@ -103,7 +103,7 @@ async def test_ansi_stripping(_: object) -> None:
 async def test_warning_capture(_: object) -> None:
     with warnings.catch_warnings(), capture_logs() as logs:
         warnings.simplefilter("always")
-        warnings.warn("This is a test warning", UserWarning)
+        warnings.warn("This is a test warning", UserWarning, stacklevel=1)
     assert len(logs.msgs) == 1
     assert "This is a test warning" in logs.msgs[0]
 

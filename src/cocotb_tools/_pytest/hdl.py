@@ -182,7 +182,7 @@ class HDL:
 
         if not self.toplevel_lang or self.toplevel_lang == "auto":
             if len(self.runner.supported_gpi_interfaces) == 1:
-                self.toplevel_lang = list(self.runner.supported_gpi_interfaces)[0]
+                self.toplevel_lang = next(iter(self.runner.supported_gpi_interfaces))
             else:
                 # HDL simulator supports multiple languages
                 self.toplevel_lang = None
