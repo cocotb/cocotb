@@ -1,1 +1,1 @@
-Created a new datatype called `FixedStringObject` to represent fixed-length strings in VHDL
+Added :class:`~cocotb.handles.FixedStringObject` to represent fixed-length strings in VHDL.
