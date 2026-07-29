@@ -794,6 +794,12 @@ Simulator Objects
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 
+.. autoclass:: FixedStringObject
+    :members:
+    :member-order: bysource
+    :special-members: __len__
+    :inherited-members: SimHandleBase, ValueObjectBase
+
 .. autoclass:: IntegerObject
     :members:
     :member-order: bysource
