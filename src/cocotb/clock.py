@@ -149,9 +149,7 @@ class Clock:
 
     _impl: Impl
 
-    default_set_action: ClassVar[type[Immediate] | type[Deposit] | type[Force]] = (
-        Deposit
-    )
+    default_set_action: ClassVar[type[Immediate | Deposit | Force]] = Deposit
     """The default action used to set the clock signal value.
     One of :class:`.Immediate`, :class:`.Deposit`, or :class:`.Force`.
 
@@ -166,7 +164,7 @@ class Clock:
         impl: Impl | None = None,
         *,
         units: None = None,
-        set_action: type[Immediate] | type[Deposit] | type[Force] | None = None,
+        set_action: type[Immediate | Deposit | Force] | None = None,
         period_high: float | Fraction | Decimal | None = None,
     ) -> None:
         self._signal = signal
@@ -266,7 +264,7 @@ class Clock:
         return self._impl
 
     @property
-    def set_action(self) -> type[Immediate] | type[Deposit] | type[Force]:
+    def set_action(self) -> type[Immediate | Deposit | Force]:
         """The value setting action used to set the clock signal value.
 
         .. versionadded:: 2.0
@@ -361,9 +359,7 @@ class Clock:
     async def cycles(
         self,
         num_cycles: int,
-        edge_type: type[RisingEdge]
-        | type[FallingEdge]
-        | type[ValueChange] = RisingEdge,
+        edge_type: type[RisingEdge | FallingEdge | ValueChange] = RisingEdge,
     ) -> None:
         """Wait for a number of clock cycles.
 

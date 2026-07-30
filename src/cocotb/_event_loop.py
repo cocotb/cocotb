@@ -13,7 +13,7 @@ from cocotb._bridge import run_bridge_threads
 
 
 class ScheduledCallback:
-    __slots__ = ("_func", "_cancelled")
+    __slots__ = ("_cancelled", "_func")
 
     def __init__(
         self,

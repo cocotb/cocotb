@@ -283,8 +283,8 @@ async def test_discover_all(dut):
     if LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(
         ("modelsim", "ncsim", "xmsim")
     ):
-        dut.sig_rec
-        dut.port_rec_out
+        dut.sig_rec  # noqa: B018
+        dut.port_rec_out  # noqa: B018
 
     if cocotb.SIM_NAME.lower().startswith("ghdl"):
         pass_total = 56

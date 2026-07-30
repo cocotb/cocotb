@@ -265,12 +265,11 @@ async def test_recursive_combine(_):
         await Timer(N, "ns")
         done.add(N)
 
-    with assert_takes(30, "ns"):
-        with pytest.warns(DeprecationWarning):
-            await Combine(
-                Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
-                cocotb.start_soon(waiter(30)),
-            )
+    with assert_takes(30, "ns"), pytest.warns(DeprecationWarning):
+        await Combine(
+            Combine(cocotb.start_soon(waiter(10)), cocotb.start_soon(waiter(20))),
+            cocotb.start_soon(waiter(30)),
+        )
     assert done == {10, 20, 30}
 
 
