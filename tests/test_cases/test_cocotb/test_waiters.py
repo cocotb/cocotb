@@ -31,6 +31,19 @@ class AwaitableThing:
 class MyException(Exception): ...
 
 
+class MyTrigger(Trigger):
+    def __init__(self) -> None:
+        super().__init__()
+        self.primed = 0
+        self.unprimed = 0
+
+    def _prime(self) -> None:
+        self.primed += 1
+
+    def _unprime(self) -> None:
+        self.unprimed += 1
+
+
 async def raises_after(delay: int) -> None:
     await Timer(delay)
     raise MyException()
@@ -368,6 +381,114 @@ async def test_select_does_not_cancel_passed_tasks(_: object) -> None:
     await NullTrigger()
     assert not task.cancelled()
     assert await task == 7
+
+
+@cocotb.test
+async def test_select_unfired_triggers_killed(_: object) -> None:
+    """Test that un-fired trigger(s) in select don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    timer = Timer(1, "ns")
+    _, res = await select(timer, *triggers)
+    assert res is timer
+
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_select_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) in select after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    with pytest.raises(MyException):
+        await select(raises_after(delay=1), *triggers)
+
+    # test all triggers that were primed were unprimed
+    for t in triggers:
+        assert t.primed == t.unprimed
+
+
+@cocotb.test
+async def test_gather_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) in gather after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    with pytest.raises(MyException):
+        await gather(raises_after(delay=1), *triggers)
+
+    # test all triggers were unprimed
+    for t in triggers:
+        assert t.primed == t.unprimed
+
+
+@cocotb.test
+async def test_nested_unfired_triggers_killed_on_exception(_: object) -> None:
+    """Test that un-fired trigger(s) nested in a select after exception don't later cause a spurious wakeup."""
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    with pytest.raises(MyException):
+        await select(raises_after(delay=1), gather(*triggers))
+
+    # test all triggers were unprimed
+    for t in triggers:
+        assert t.primed == t.unprimed
+
+    triggers = [MyTrigger() for _ in range(3)]
+
+    with pytest.raises(MyException):
+        await select(raises_after(delay=1), select(gather(*triggers)))
+
+    # test all triggers were unprimed
+    for t in triggers:
+        assert t.primed == t.unprimed
+
+
+@cocotb.test
+async def test_gather_outer_cancel_unprimes(_: object) -> None:
+    """Cancelling the task awaiting gather unprimes the child triggers."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await gather(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1)
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
+
+
+@cocotb.test
+async def test_select_outer_cancel_unprimes(_: object) -> None:
+    """Cancelling the task awaiting select unprimes the child triggers."""
+
+    triggers = [MyTrigger() for _ in range(5)]
+
+    async def waiter() -> None:
+        await select(*triggers)
+
+    task = cocotb.start_soon(waiter())
+    await Timer(1)
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 0
+    task.cancel()
+    await Timer(1)
+    for t in triggers:
+        assert t.primed == 1
+        assert t.unprimed == 1
 
 
 @cocotb.test
