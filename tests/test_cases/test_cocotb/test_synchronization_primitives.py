@@ -240,6 +240,22 @@ async def test_Event_multiple_task_share_trigger(_) -> None:
     await Timer(1, "ns")
 
 
+class MyEvent(Event):
+    pass
+
+
+@cocotb.test
+async def test_Event_repr(_: Any) -> None:
+    """Test that an Event and its wait() Trigger repr their own type."""
+    e = Event()
+    assert re.match(r"<Event at \w+>", repr(e))
+
+    e = MyEvent()
+    assert re.match(r"<MyEvent at \w+>", repr(e))
+    w = e.wait()
+    assert re.match(r"<<MyEvent at \w+>\.wait\(\) at \w+>", repr(w))
+
+
 @cocotb.test
 async def test_Event_wait_after_set(_: Any) -> None:
     """Test that getting the _Event Trigger, setting it, then awaiting the Trigger doesn't hang."""
