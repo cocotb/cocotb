@@ -692,10 +692,10 @@ class Runner(ABC):
                 )
 
             subprocess.run(
-                [f"{viewer_path} {self._waves_file()}"],
+                [str(viewer_path), str(self._waves_file())],
                 cwd=self.test_dir,
                 check=True,
-                shell=True,
+                shell=False,
             )
 
         self.log.info("Results file: %s", results_xml_file)
