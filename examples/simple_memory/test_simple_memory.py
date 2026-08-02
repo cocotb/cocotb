@@ -14,13 +14,9 @@ how to cancel the task waiting for the event that did not occur.
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge, First, RisingEdge, with_timeout
-from cocotb_tools.runner import get_runner
 
 # Command encoding — must match simple_memory.sv
 CMD_NOP, CMD_ACT, CMD_PRE, CMD_RD, CMD_WR, CMD_REFAB = range(6)
@@ -122,20 +118,3 @@ async def read_response_or_reset(dut):
     response_or_reset = cocotb.start_soon(_wait_for_response_or_reset(dut))
     dut.rst_n.value = 0
     assert await response_or_reset == "reset"
-
-
-def test_simple_memory_runner():
-    sim = os.getenv("SIM", "icarus")
-    proj_path = Path(__file__).resolve().parent
-
-    runner = get_runner(sim)
-    runner.build(
-        sources=[proj_path / "simple_memory.sv"],
-        hdl_toplevel="simple_memory",
-        always=True,
-    )
-    runner.test(hdl_toplevel="simple_memory", test_module="test_simple_memory")
-
-
-if __name__ == "__main__":
-    test_simple_memory_runner()
