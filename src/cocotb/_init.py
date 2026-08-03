@@ -201,7 +201,7 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    root_name = os.getenv("COCOTB_TOPLEVEL")
+    root_name: str | None = os.getenv("COCOTB_TOPLEVEL")
     if root_name is not None:
         root_name = root_name.strip()
         if root_name == "":
@@ -210,10 +210,28 @@ def _setup_root_handle() -> None:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
 
-    import cocotb.simulator  # noqa: PLC0415
+    from cocotb import simulator  # noqa: PLC0415
 
-    handle = cocotb.simulator.get_root_handle(root_name)
-    if not handle:
+    handles = simulator.root_iterate()
+    if handles:
+        for handle in handles:
+            cocotb.tops[handle.get_name_string().casefold()] = (
+                cocotb.handle._make_sim_object(handle)
+            )
+
+    if root_name is not None:
+        target_name = root_name.casefold()
+        if target_name in cocotb.tops:
+            cocotb.top = cocotb.tops[target_name]
+            return
+
+    root_handle = simulator.get_root_handle(root_name)
+    if not root_handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
 
-    cocotb.top = cocotb.handle._make_sim_object(handle)
+    cocotb.top = cocotb.handle._make_sim_object(root_handle)
+
+    if root_name is not None:
+        cocotb.tops[target_name] = cocotb.top
+    else:
+        cocotb.tops[cocotb.top._name.casefold()] = cocotb.top

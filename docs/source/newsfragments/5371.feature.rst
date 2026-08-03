@@ -1,0 +1,1 @@
+Added :data:`cocotb.tops` to expose a dictionary containing all top-level design units.

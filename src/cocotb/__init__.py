@@ -110,5 +110,11 @@ It is particularly useful for extracting information about the :term:`DUT` in mo
 and in parameters to :class:`.TestFactory`\ s.
 """
 
+tops: dict = {}
+"""A dictionary of top-level module name to :class:`module handle <cocotb.handles.HierarchyObject>` including :data:`cocotb.top`.
+
+.. versionadded: 2.1
+"""
+
 is_simulation: bool = False
 """``True`` if cocotb was loaded in a simulation."""

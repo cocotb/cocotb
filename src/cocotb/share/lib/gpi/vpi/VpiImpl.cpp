@@ -78,8 +78,7 @@ int VpiImpl::get_simulator_args(int *argc, char const *const **argv) {
     return 0;
 }
 
-static gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
-                                  bool is_vector = false) {
+gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
@@ -673,6 +672,9 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl,
             break;
         case GPI_PACKAGE_SCOPES:
             new_iter = new VpiPackageIterator(this);
+            break;
+        case GPI_ROOTS:
+            new_iter = new VpiRootIterator(this);
             break;
         default:
             LOG_WARN("Other iterator types not implemented yet");
