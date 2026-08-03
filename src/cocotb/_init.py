@@ -201,39 +201,37 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
-    COCOTB_TOPLEVEL: str = _env.as_str("COCOTB_TOPLEVEL")
-    DUT: str = _env.as_str("DUT")
-
-    if COCOTB_TOPLEVEL and DUT:
-        raise Exception(
-            """
-            DUT and COCOTB_TOPLEVEL both cannot be used at same time.
-            DUT exposed in Makefile means multiple tops are expected(Only supported by VPI).If that's
-            not the case just use COCOTB_TOPLEVEL in your Makefile.
-            """
-        )
-    root_name: str = COCOTB_TOPLEVEL or DUT
+    root_name: str | None = os.getenv("COCOTB_TOPLEVEL")
+    if root_name is not None:
+        root_name = root_name.strip()
+        if root_name == "":
+            root_name = None
+        elif "." in root_name:
+            # Skip any library component of the toplevel
+            root_name = root_name.split(".", 1)[1]
 
     from cocotb import simulator  # noqa: PLC0415
 
     handles = simulator.root_iterate()
-    if not handles:
-        if root_name is not None:
-                root_name = root_name.strip()
-                if root_name == "":
-                    root_name = None
-                elif "." in root_name:
-                    # Skip any library component of the toplevel
-                    root_name = root_name.split(".", 1)[1]
-        root_handle = simulator.get_root_handle(root_name)
-        if not root_handle:
-            raise RuntimeError(f"Can not find root handle {root_name!r}")
-        cocotb.top = cocotb.handle._make_sim_object(root_handle)
-
-    else:
+    if handles:
         for handle in handles:
-            cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
-                handle
+            cocotb.tops[handle.get_name_string().casefold()] = (
+                cocotb.handle._make_sim_object(handle)
             )
 
-        cocotb.top = cocotb.tops[root_name]
+    if root_name is not None:
+        target_name = root_name.casefold()
+        if target_name in cocotb.tops:
+            cocotb.top = cocotb.tops[target_name]
+            return
+
+    root_handle = simulator.get_root_handle(root_name)
+    if not root_handle:
+        raise RuntimeError(f"Can not find root handle {root_name!r}")
+
+    cocotb.top = cocotb.handle._make_sim_object(root_handle)
+
+    if root_name is not None:
+        cocotb.tops[target_name] = cocotb.top
+    else:
+        cocotb.tops[cocotb.top._name.casefold()] = cocotb.top

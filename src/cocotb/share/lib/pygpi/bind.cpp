@@ -1128,8 +1128,8 @@ static PyMethodDef SimulatorMethods[] = {
      PyDoc_STR("root_iterate(/)\n"
                "--\n\n"
                "root_iterate() -> cocotb.simulator.sim_obj_iterator\n"
-               "Get an iterator handle to loop over all root handles for VPI "
-               "Implication.\n"
+               "Get an iterator to loop over all root handles"
+               "only when there are multiple tops.\n"
                "\n"
                ".. versionadded:: 2.1")},
     {"register_timed_callback", register_timed_callback, METH_VARARGS,

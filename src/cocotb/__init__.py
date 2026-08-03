@@ -111,10 +111,9 @@ and in parameters to :class:`.TestFactory`\ s.
 """
 
 tops: dict = {}
-"""This contains all the top level modules including top i.e :envvar:`COCOTB_TOPLEVEL`
+"""A dictionary of top-level module name to :class:`module handle <cocotb.handles.HierarchyObject>` including :data:`cocotb.top`.
 
-If there are multiple hdl top level modules added to VERILOG_SOURCES
-or VHDL_SOURCES. This gets populated with all of them
+.. versionadded: 2.1
 """
 
 is_simulation: bool = False

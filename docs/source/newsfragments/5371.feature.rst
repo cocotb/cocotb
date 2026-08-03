@@ -1,0 +1,1 @@
+Added ``cocotb.tops`` to expose a dictionary of all top-level design units for the Icarus simulator.

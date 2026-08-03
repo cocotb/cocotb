@@ -186,33 +186,33 @@ GpiIterator::Status VpiRootIterator::next_handle(std::string &, GpiObjHdl **hdl,
                                                  void **) {
     if (m_iterator == NULL) return GpiIterator::END;
 
-    vpiHandle root = vpi_scan(m_iterator);
-    check_vpi_error();
+    vpiHandle root;
+    while ((root = vpi_scan(m_iterator)) != NULL) {
+        check_vpi_error();
 
-    if (root == NULL) return GpiIterator::END;
+        auto gpi_module = to_gpi_objtype(vpi_get(vpiType, root));
+        if (gpi_module != GPI_MODULE) {
+            continue;
+        }
 
-    auto gpi_module = to_gpi_objtype(vpi_get(vpiType, root));
-    if (gpi_module != GPI_MODULE)
-        return next_handle(*(new std::string), hdl, NULL);
+        const char *obj_name = vpi_get_str(vpiFullName, root);
+        check_vpi_error();
+        if (!obj_name) {
+            continue;
+        }
 
-    const char *obj_name = vpi_get_str(vpiFullName, root);
-    check_vpi_error();
+        std::string root_name = obj_name;
+        VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
+        LOG_DEBUG("vpi_root_iterator: root found '%s'", root_name.c_str());
 
-    if (!obj_name) return next_handle(*(new std::string), hdl, NULL);
+        GpiObjHdl *new_obj = new VpiObjHdl(vpi_impl, root, gpi_module);
+        new_obj->initialise(root_name, root_name);
+        *hdl = new_obj;
 
-    std::string root_name = obj_name;
+        return GpiIterator::NATIVE;
+    }
 
-    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
-
-    LOG_CRITICAL("vpi_root_iterator: root found '%s'", root_name.c_str());
-
-    GpiObjHdl *new_obj = new VpiObjHdl(vpi_impl, root, gpi_module);
-
-    new_obj->initialise(root_name, root_name);
-
-    *hdl = new_obj;
-
-    return GpiIterator::NATIVE;
+    return GpiIterator::END;
 }
 
 GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
