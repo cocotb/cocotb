@@ -46,6 +46,10 @@ ifeq ($(VERILATOR_TRACE),1)
   SIM_ARGS += --trace
 endif
 
+ifeq ($(VERILATOR_COVERAGE_PER_INSTANCE),1)
+  SIM_ARGS += --coverage-per-instance
+endif
+
 COMPILE_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
 _COCOTB_LIB_DIR = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir)
