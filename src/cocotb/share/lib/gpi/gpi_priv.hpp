@@ -293,10 +293,6 @@ void *utils_dyn_sym(void *handle, const char *sym_name);
 
 typedef void (*layer_entry_func)();
 
-/* Use this macro in an implementation layer to define an entry point */
-#define GPI_ENTRY_POINT(NAME, func)                     \
-    extern "C" {                                        \
-    COCOTB_EXPORT void NAME##_entry_point() { func(); } \
-    }
+#define GPI_REGISTER_IMPL register_impl
 
 #endif /* COCOTB_GPI_PRIV_H_ */
