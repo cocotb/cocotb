@@ -698,7 +698,7 @@ class RegressionManager:
             name=self._test.name,
             classname=self._test.module,
             status="skipped",
-            reason="Test was skipped",
+            reason=self._test.reason or msg or "Test was skipped",
             extra_properties={
                 # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
                 # especially after merging multiple XML reports from different sources (e. g. CI jobs)
@@ -823,6 +823,7 @@ class RegressionManager:
             classname=self._test.module,
             time=wall_time_s,
             status=status,
+            reason=self._test.reason or result or msg or "errored as expected",
             extra_properties={
                 # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
                 # especially after merging multiple XML reports from different sources (e. g. CI jobs)

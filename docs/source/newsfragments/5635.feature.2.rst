@@ -1,0 +1,1 @@
+Introduced a new experimental feature ``xfail_in_results`` that can be enabled via :venvar:`COCOTB_FUTURE`. If enabled, test decorated with the :deco:`cocotb.xfail` will be reported as ``skipped`` in the generated JUnit XML (``results.xml``) files and as ``xfailed`` in the terminal results summary when an expected exception will be raised.
