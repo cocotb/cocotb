@@ -399,6 +399,40 @@ async def test_select_unfired_triggers_killed(_: object) -> None:
 
 
 @cocotb.test
+@cocotb.parametrize(kind=["gather", "select", "wait"])
+async def test_double_external_cancel_in_waiters(_: object, kind: str) -> None:
+    """Cancelling the task awaiting wait/gather/select twice should leave it cancelled.
+
+    This mirrors the TaskManager regression: the outer waiter must accept a second
+    external cancel while it is blocked waiting for internal waiter cleanup.
+    """
+
+    async def run_waiter() -> None:
+        async def child() -> None:
+            await Timer(20)
+
+        if kind == "gather":
+            await gather(child(), Timer(20))
+        elif kind == "select":
+            await select(child(), Timer(20))
+        else:
+            await wait(child(), Timer(20), return_when="ALL_COMPLETED")
+
+    task = cocotb.start_soon(run_waiter())
+
+    # wait until the waiter is blocking inside gather/select/wait
+    await Timer(1)
+
+    # cancel twice with a scheduler tick between cancels
+    assert task.cancel()
+    await NullTrigger()
+    assert task.cancel()
+    await task.complete
+
+    assert task.cancelled()
+
+
+@cocotb.test
 async def test_select_unfired_triggers_killed_on_exception(_: object) -> None:
     """Test that un-fired trigger(s) in select after exception don't later cause a spurious wakeup."""
 

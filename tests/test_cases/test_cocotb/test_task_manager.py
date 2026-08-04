@@ -632,6 +632,33 @@ async def test_external_cancel_in_aexit(_: object, continue_on_error: bool) -> N
 
 
 @cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
+async def test_double_external_cancel_in_aexit(
+    _: object, continue_on_error: bool
+) -> None:
+    async def run_task_manager() -> None:
+        async with TaskManager(default_continue_on_error=continue_on_error) as tm:
+
+            async def child() -> None:
+                await Timer(20)
+
+            tm.start_soon(child())
+
+    task = cocotb.start_soon(run_task_manager())
+
+    # wait until run_task_manager's TaskManager is in __aexit__
+    await Timer(1)
+    # cancel run_task_manager twice so __aexit__ has to clear multiple pending
+    # cancellations while it waits for child cleanup to finish.
+    assert task.cancel()
+    await NullTrigger()
+    assert task.cancel()
+    await task.complete
+
+    assert task.cancelled()
+
+
+@cocotb.test
 @cocotb.parametrize(outer_continue_on_error=[True, False])
 @cocotb.parametrize(inner_continue_on_error=[True, False])
 async def test_external_cancel_in_nested_aexit(
@@ -668,6 +695,62 @@ async def test_external_cancel_in_nested_aexit(
     assert inner_task.cancelled()
     assert outer_task is not None
     assert outer_task.cancelled()
+
+
+@cocotb.parametrize(outer_continue_on_error=[True, False])
+@cocotb.parametrize(inner_continue_on_error=[True, False])
+async def test_external_double_cancel_in_nested_aexit(
+    _: object, outer_continue_on_error: bool, inner_continue_on_error: bool
+) -> None:
+    cleanup_started = Event()
+    cleanup_finished = Event()
+
+    async def child_w_cleanup(wait: int, ret: int = 0) -> int:
+        try:
+            await Timer(wait)
+            return ret
+        except CancelledError:
+            cleanup_started.set()
+            await cleanup_finished.wait()
+            return ret
+
+    async def run_task_manager() -> None:
+        async with TaskManager(
+            default_continue_on_error=outer_continue_on_error
+        ) as tm_outer:
+            tm_outer.start_soon(child_w_cleanup(100, ret=9))
+
+            async with TaskManager(
+                default_continue_on_error=inner_continue_on_error
+            ) as tm_inner:
+                tm_inner.start_soon(child_w_cleanup(100, ret=9))
+
+    task = cocotb.start_soon(run_task_manager())
+
+    async def second_cancel() -> None:
+        # Wait until the first cancellation has reached the child.
+        await cleanup_started.wait()
+
+        # Give the parent task a scheduling opportunity to get into
+        # TaskManager.__aexit__'s _none_remaining.wait().
+        await NullTrigger()
+
+        print("TEST: issuing second cancellation")
+        task.cancel()
+
+    cocotb.start_soon(second_cancel())
+
+    await Timer(1)
+
+    print("TEST: issuing first cancellation")
+    task.cancel()
+
+    # Don't let the child hold the whole simulation open forever.
+    await Timer(1)
+    cleanup_finished.set()
+
+    await task.complete
+    assert task.cancelled()
 
 
 @cocotb.test
@@ -794,6 +877,25 @@ async def test_external_cancel_in_block_ignored_and_await(
     await task.complete
     assert not task.cancelled()
     assert task.exception() is not None
+
+
+@cocotb.test
+@cocotb.xfail(raises=RuntimeError, reason="Ignored CancelledError")
+async def test_child_fails_sibling_dies(_: object) -> None:
+    try:
+        async with TaskManager() as tm:
+            tm.start_soon(raises_after(1))
+            tsk2 = tm.start_soon(raises_after(10))
+
+            try:
+                await Timer(2)
+            except CancelledError:
+                pass
+
+        await Timer(1)
+    except RuntimeError as exec:
+        assert tsk2.cancelled()
+        raise exec
 
 
 @cocotb.test
