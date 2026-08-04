@@ -7,8 +7,10 @@
 from __future__ import annotations
 
 import sys
+from typing import cast
 
 import cocotb
+import cocotb.regression
 from cocotb_tools import _env
 from cocotb_tools._pytest._regression import RegressionManager
 
@@ -23,10 +25,8 @@ def run_regression() -> None:
     manager: RegressionManager = RegressionManager(
         # Use the same command line arguments as from the main pytest parent process
         *_env.as_args("COCOTB_PYTEST_ARGS"),
-        # Node identifier of cocotb runner
-        nodeid=_env.as_str("COCOTB_PYTEST_NODEID"),
-        # List of cocotb runner keywords
-        keywords=_env.as_list("COCOTB_PYTEST_KEYWORDS"),
+        # Node identifier of simulation process
+        nodeid=_env.as_str("PYTEST_CURRENT_TEST").removesuffix(" (call)"),
         # Provide list of test modules (Python modules with cocotb tests) to be loaded
         test_modules=_env.as_list("COCOTB_TEST_MODULES"),
         # Cocotb runner is using generated JUnit XML results file to determine
@@ -45,6 +45,10 @@ def run_regression() -> None:
         relative_to=_env.as_str("COCOTB_RESULTS_RELATIVE_TO"),
         # List of file attachments to be included in created test reports
         attachments=_env.as_list("COCOTB_RESULTS_ATTACHMENTS"),
+    )
+
+    cocotb.regression._manager_inst = cast(
+        "cocotb.regression.RegressionManager", manager
     )
 
     manager.start_regression()
