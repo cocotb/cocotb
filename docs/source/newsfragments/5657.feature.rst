@@ -1,0 +1,1 @@
+In TaskManager, gather, select, and wait, use :func:`Task._uncancel` to ensure that all children are cancelled before the parent is cancelled
