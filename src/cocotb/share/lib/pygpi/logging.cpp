@@ -23,8 +23,6 @@ static PyObject *m_get_logger = nullptr;
 static gpi_log_handler_ftype fallback_log_handler = nullptr;
 static void *fallback_log_userdata = nullptr;
 
-static bool exception_passthrough = false;
-
 static void fallback_handler(const char *name, enum gpi_log_level level,
                              const char *pathname, const char *funcname,
                              long lineno, const char *msg, ...) {
@@ -106,12 +104,20 @@ static void pygpi_log_handler(void *, const char *name,
         }
     }
 
+    // If anything fails before we can log, we want to print out the exception
+    // if not in python context, and then invoke the fallback handler, to ensure
+    // nothing goes silently ignored.
+#define FALLBACK                                                     \
+    if (!is_python_context) {                                        \
+        PyErr_Print();                                               \
+    }                                                                \
+    return fallback_handler(name, level, pathname, funcname, lineno, \
+                            log_buff.data());
+
     PyObject *level_arg = PyLong_FromLong(level);  // New reference
     if (level_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        FALLBACK
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(level_arg));
@@ -122,9 +128,7 @@ static void pygpi_log_handler(void *, const char *name,
         logger = PyObject_CallFunction(m_get_logger, "s", name);  // incs a ref
         // LCOV_EXCL_START
         if (!logger) {
-            PyErr_Print();
-            return fallback_handler(name, level, pathname, funcname, lineno,
-                                    log_buff.data());
+            FALLBACK
         }
         // LCOV_EXCL_STOP
         m_logger_map[name] = logger;  // steal that ref
@@ -135,9 +139,7 @@ static void pygpi_log_handler(void *, const char *name,
     PyObject *filename_arg = PyUnicode_FromString(pathname);  // New reference
     if (filename_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        FALLBACK
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(filename_arg));
@@ -145,9 +147,7 @@ static void pygpi_log_handler(void *, const char *name,
     PyObject *lineno_arg = PyLong_FromLong(lineno);  // New reference
     if (lineno_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        FALLBACK
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(lineno_arg));
@@ -155,9 +155,7 @@ static void pygpi_log_handler(void *, const char *name,
     PyObject *msg_arg = PyUnicode_FromString(log_buff.data());  // New reference
     if (msg_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        FALLBACK
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(msg_arg));
@@ -165,9 +163,7 @@ static void pygpi_log_handler(void *, const char *name,
     PyObject *function_arg = PyUnicode_FromString(funcname);  // New reference
     if (function_arg == NULL) {
         // LCOV_EXCL_START
-        PyErr_Print();
-        return fallback_handler(name, level, pathname, funcname, lineno,
-                                log_buff.data());
+        FALLBACK
         // LCOV_EXCL_STOP
     }
     DEFER(Py_DECREF(function_arg))
@@ -178,15 +174,12 @@ static void pygpi_log_handler(void *, const char *name,
         function_arg, NULL);
     if (handler_ret == NULL) {
         // LCOV_EXCL_START
-        if (!exception_passthrough) {
-            PyErr_Print();
-            fallback_handler(name, level, pathname, funcname, lineno,
-                             log_buff.data());
-        }
-        return;
+        FALLBACK;
         // LCOV_EXCL_STOP
     }
     Py_DECREF(handler_ret);
+
+#undef FALLBACK
 }
 
 void pygpi_log(enum gpi_log_level level, const char *pathname,
@@ -207,9 +200,6 @@ void pygpi_logging_initialize() {
     // Default to using the fallback handler until configured
     gpi_get_log_handler(&fallback_log_handler, &fallback_log_userdata);
     gpi_set_log_handler(pygpi_log_handler, nullptr);
-
-    const char *val = getenv("GPI_LOG_EXCEPTION_PASSTHROUGH");
-    exception_passthrough = val && !(strcmp(val, "0") == 0);
 }
 
 void pygpi_logging_configure(PyObject *log_func, PyObject *get_logger) {
