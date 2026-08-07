@@ -860,8 +860,10 @@ async def test_start_soon_after_cancel_no_continue(_: object) -> None:
             finally:
                 c = coro(2)
                 with pytest.raises(RuntimeError):
-                    tm.start_soon(c)
-                c.close()  # avoid ResourceWarning since we didn't await it.
+                    try:
+                        tm.start_soon(c)
+                    finally:
+                        c.close()
 
     except BaseExceptionGroup as e:
         my_exc, rest = e.split(MyException)
@@ -908,8 +910,10 @@ async def test_start_soon_outside_context(_: object, continue_on_error: bool) ->
 
     c = coro(1)
     with pytest.raises(RuntimeError):
-        tm.start_soon(c)
-    c.close()  # avoid ResourceWarning since we didn't await it.
+        try:
+            tm.start_soon(c)
+        finally:
+            c.close()
 
 
 @cocotb.test
@@ -939,8 +943,10 @@ async def test_add_tasks_from_another_task(_: object, continue_on_error: bool) -
 
     c = coro(1)
     with pytest.raises(RuntimeError):
-        tm.start_soon(c)
-    c.close()  # avoid ResourceWarning since we didn't await it.
+        try:
+            tm.start_soon(c)
+        finally:
+            c.close()
 
     ev.set()
 
@@ -956,8 +962,10 @@ async def test_start_soon_after_finished(_: object, continue_on_error: bool) -> 
 
     c = coro(1)
     with pytest.raises(RuntimeError):
-        tm.start_soon(c)
-    c.close()  # avoid ResourceWarning since we didn't await it.
+        try:
+            tm.start_soon(c)
+        finally:
+            c.close()
 
 
 @cocotb.test
