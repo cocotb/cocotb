@@ -521,7 +521,6 @@ static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self,
     }
 
     gpi_set_signal_value_binstr(self->hdl, binstr, action);
-
     Py_RETURN_NONE;
 }
 
@@ -1104,9 +1103,11 @@ static int add_module_types(PyObject *simulator) {
 }
 
 // Wrapper that calls a function and propagates potential python exceptions
-// that are not handled explicitly. This really only does anything for
-// functions which can call back into Python and don't handle exceptions
-// explicitly, but this is the case for most as logging does that.
+// that are not handled explicitly, instead of encapsulating them in a
+// SystemError when an exception occurs with a non-null return value.
+// This really only does anything for functions which can call back into
+// Python and don't handle exceptions explicitly, but this is the case for
+// most as logging does that.
 #define WRAP(method)                                    \
     [](PyObject *obj, PyObject *args) -> PyObject * {   \
         PyObject *ret = PyCFunction(method)(obj, args); \
