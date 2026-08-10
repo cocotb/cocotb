@@ -1,0 +1,1 @@
+The ``reason`` argument from the :deco:`cocotb.xfail` decorator will be now reported. If not set, the message from the raised exception will be used.

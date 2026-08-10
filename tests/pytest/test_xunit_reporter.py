@@ -219,7 +219,7 @@ def test_report(tmp_path: Path) -> None:
 
     skipped: Element = testcases[1].findall("skipped")[0]
 
-    assert not skipped.attrib
+    assert skipped.get("type") == "cocotb.skip"
     assert not skipped.text
 
     # Testcase 2
@@ -234,7 +234,8 @@ def test_report(tmp_path: Path) -> None:
 
     skipped = testcases[2].findall("skipped")[0]
 
-    assert len(skipped.attrib) == 1
+    assert len(skipped.attrib) == 2
+    assert skipped.get("type") == "cocotb.skip"
     assert skipped.get("message") == "Test skipped"
     assert not skipped.text
 
