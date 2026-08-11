@@ -1,6 +1,12 @@
 [build-system]
-requires = ["setuptools>=77", "wheel", "setuptools-git-versioning>=3.0,<4"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "scikit-build-core>=0.3.3",
+    "find_libpython",
+    "setuptools>=77",
+    "wheel",
+    "setuptools-git-versioning>=3.0,<4",
+]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "cocotb"
@@ -62,6 +68,18 @@ version_file = "VERSION"
 count_commits_from_version_file = true
 dev_template = "{tag}.dev{ccount}+r{sha}"
 dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
+
+[tool.scikit-build]
+experimental = true
+cmake.source-dir = "."
+cmake.version = ">=3.15"
+build-dir = "build/{wheel_tag}"
+cmake.args = []
+build.verbose = false
+wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
+
+[tool.scikit-build.metadata.version]
+provider = "setuptools_git_versioning.scikit_metadata"
 
 [tool.towncrier]
     package = "cocotb"
