@@ -260,7 +260,8 @@ class TaskManager:
                     try:
                         await self._none_remaining.wait()
                     except CancelledError:
-                        pass
+                        # parent got cancelled again, so we also need to uncancel ourselves
+                        self._parent_task._uncancel()
 
                 return None  # re-raise CancelledError
             elif not self._context_continue_on_error:
@@ -281,7 +282,8 @@ class TaskManager:
                 try:
                     await self._none_remaining.wait()
                 except CancelledError:
-                    pass
+                    # parent got cancelled again, so we also need to uncancel ourselves
+                    self._parent_task._uncancel()
 
             raise cancel_exc
         except BaseException:

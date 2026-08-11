@@ -656,6 +656,7 @@ async def test_double_external_cancel_in_aexit(
     await task.complete
 
     assert task.cancelled()
+    assert task._must_cancel == 0
 
 
 @cocotb.test
@@ -751,6 +752,7 @@ async def test_external_double_cancel_in_nested_aexit(
 
     await task.complete
     assert task.cancelled()
+    assert task._must_cancel == 0
 
 
 @cocotb.test

@@ -430,6 +430,7 @@ async def test_double_external_cancel_in_waiters(_: object, kind: str) -> None:
     await task.complete
 
     assert task.cancelled()
+    assert task._must_cancel == 0
 
 
 @cocotb.test
