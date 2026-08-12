@@ -88,7 +88,7 @@ class TestManager:
 
         # start main task
         self._main_task._add_done_callback(self._test_done_callback)
-        self._main_task.start_soon()
+        self._main_task._start_soon()
         self._tasks[self._main_task] = None
 
         # start timeout if specified
@@ -253,7 +253,7 @@ def start_soon(
     """
     task = create_task(coro, name=name)
     if task._unstarted():
-        task.start_soon()
+        task._start_soon()
     elif task.done():
         raise RuntimeError("Cannot schedule a Task that has already completed.")
     return task

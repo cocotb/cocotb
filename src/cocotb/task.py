@@ -267,13 +267,11 @@ class Task(Generic[ResultType]):
         else:
             raise RuntimeError("Task in unknown state")
 
-    def start_soon(self) -> None:
+    def _start_soon(self) -> None:
         """Queues an unstarted Task to start running.
 
         Raises:
             RuntimeError: If the Task has already started.
-
-        .. versionadded:: 2.1
         """
         if self._state is not _TaskState.UNSTARTED:
             raise RuntimeError("Can only start_soon() an unstarted Task")
@@ -696,7 +694,7 @@ class Task(Generic[ResultType]):
 
     def __await__(self) -> Generator[Trigger, None, ResultType]:
         if self._unstarted():
-            self.start_soon()
+            self._start_soon()
         if not self.done():
             yield self.complete
         return self.result()
