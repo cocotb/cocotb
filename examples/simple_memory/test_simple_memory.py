@@ -12,6 +12,7 @@ Demonstrates the verification patterns a real DRAM controller exercises:
 Together these are the smallest set of behaviours that distinguish a
 multi-bank DRAM-style memory from a flat single-port RAM.
 """
+
 from __future__ import annotations
 
 import os
@@ -136,7 +137,7 @@ async def random_traffic_with_golden_model(dut):
     bank_open_row = [None] * N_BANKS
     mem = [[[0] * N_COLS for _ in range(N_ROWS)] for _ in range(N_BANKS)]
 
-    rng = random.Random(0xC0C07B)   # fixed seed → reproducible across cocotb versions
+    rng = random.Random(0xC0C07B)  # fixed seed → reproducible across cocotb versions
     n_reads = 0
     n_writes = 0
 
