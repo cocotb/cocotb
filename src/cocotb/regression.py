@@ -781,7 +781,7 @@ class RegressionManager:
     ) -> None:
         status: Status
 
-        if preview.is_enabled(preview.Future.XFAIL_IN_RESULTS):
+        if preview.is_enabled(preview.Feature.XFAIL_IN_RESULTS):
             # Use the XFAIL status for xfailed tests (like pytest)
             outcome = _TestOutcome.XFAIL
             color = self.COLOR_XFAILED
@@ -992,7 +992,7 @@ class RegressionManager:
         RATIO_FIELD = "RATIO (ns/s)"
         TOTAL_NAME = f"TESTS={self.total_tests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
-        if preview.is_enabled(preview.Future.XFAIL_IN_RESULTS):
+        if preview.is_enabled(preview.Feature.XFAIL_IN_RESULTS):
             TOTAL_NAME += f" XFAIL={self.xfailed}"
 
         TEST_FIELD_LEN = max(
