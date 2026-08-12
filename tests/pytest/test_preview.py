@@ -7,22 +7,22 @@ from collections.abc import Generator
 
 import pytest
 
-import cocotb.future
-from cocotb.future import Future, disable, enable, is_enabled
+import cocotb.preview
+from cocotb.preview import Future, disable, enable, is_enabled
 
 
 def none_enabled() -> bool:
-    return not cocotb.future._enabled_futures
+    return not cocotb.preview._enabled_futures
 
 
 def all_enabled() -> bool:
-    return cocotb.future._enabled_futures == set(Future)
+    return cocotb.preview._enabled_futures == set(Future)
 
 
 @pytest.fixture(autouse=True)
 def clear_futures() -> Generator[None, None, None]:
     """Clear enabled futures before each test."""
-    cocotb.future._enabled_futures.clear()
+    cocotb.preview._enabled_futures.clear()
     yield None
 
 
@@ -39,13 +39,13 @@ def test_futures() -> None:
 
 def test_envvar_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("COCOTB_FUTURE", raising=False)
-    cocotb.future._init()
+    cocotb.preview._init()
     assert none_enabled()
 
 
 def test_envvar_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", "")
-    cocotb.future._init()
+    cocotb.preview._init()
     assert none_enabled()
 
 
@@ -69,7 +69,7 @@ def test_envvar_empty(monkeypatch: pytest.MonkeyPatch) -> None:
 )
 def test_envvar_true(monkeypatch: pytest.MonkeyPatch, true_value: str) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", true_value)
-    cocotb.future._init()
+    cocotb.preview._init()
     assert all_enabled()
 
 
@@ -93,13 +93,13 @@ def test_envvar_true(monkeypatch: pytest.MonkeyPatch, true_value: str) -> None:
 )
 def test_envvar_false(monkeypatch: pytest.MonkeyPatch, false_value: str) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", false_value)
-    cocotb.future._init()
+    cocotb.preview._init()
     assert none_enabled()
 
 
 def test_envvar_by_future(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", "xfail_in_results")
-    cocotb.future._init()
+    cocotb.preview._init()
     assert is_enabled(Future.XFAIL_IN_RESULTS)
     # Ensure XFAIL_IN_RESULTS is the only enabled future
     disable(Future.XFAIL_IN_RESULTS)
@@ -108,7 +108,7 @@ def test_envvar_by_future(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_envvar_empty_future(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", ",xfail_in_results,,")
-    cocotb.future._init()
+    cocotb.preview._init()
     assert is_enabled(Future.XFAIL_IN_RESULTS)
     # Ensure it's the only enabled future
     disable(Future.XFAIL_IN_RESULTS)
@@ -118,5 +118,5 @@ def test_envvar_empty_future(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_envvar_unknown_future(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("COCOTB_FUTURE", ",unknown")
     with pytest.raises(ValueError, match=".*'unknown'.*"):
-        cocotb.future._init()
+        cocotb.preview._init()
     assert none_enabled()
