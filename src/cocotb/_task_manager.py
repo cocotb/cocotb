@@ -119,7 +119,7 @@ class TaskManager:
         )
         self._none_remaining.clear()
         # Start the Task to running.
-        task.start_soon()
+        task._start_soon()
         return task
 
     @overload
