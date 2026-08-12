@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-"""Enable or disable experimental features or breaking changes."""
+"""Enable or disable previews of upcoming cocotb behavior."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from cocotb._utils import DocStrEnum
 from cocotb_tools import _env
 
 
-class Future(DocStrEnum):
-    """Experimental features or breaking changes that can be enabled.
+class Feature(DocStrEnum):
+    """Preview features that can be enabled.
 
     .. versionadded:: 2.1
     """
@@ -24,71 +24,70 @@ class Future(DocStrEnum):
     )
 
 
-_future_strs = {future.value for future in Future}
+_feature_strs = {feature.value for feature in Feature}
 
-_enabled_futures: set[Future] = set()
+_enabled_features: set[Feature] = set()
 
 
-def enable(future: Future) -> None:
-    """Enable a future.
+def enable(feature: Feature) -> None:
+    """Enable a preview feature.
 
     Args:
-        future: Future to enable.
+        feature: Preview feature to enable.
 
     .. versionadded:: 2.1
     """
-    _enabled_futures.add(future)
+    _enabled_features.add(feature)
 
 
-def disable(future: Future) -> None:
-    """Disable a future.
+def disable(feature: Feature) -> None:
+    """Disable a preview feature.
 
     Args:
-        future: Future to disable.
+        feature: Preview feature to disable.
 
     .. versionadded:: 2.1
     """
-    _enabled_futures.discard(future)
+    _enabled_features.discard(feature)
 
 
-def is_enabled(future: Future) -> bool:
-    """Check if a future is enabled.
+def is_enabled(feature: Feature) -> bool:
+    """Check if a preview feature is enabled.
 
     Args:
-        future: Future to check.
+        feature: Preview feature to check.
 
     Returns:
-        :data:`True` if the future is enabled, otherwise :data:`False`.
+        :data:`True` if the feature is enabled, otherwise :data:`False`.
 
     .. versionadded:: 2.1
     """
-    return future in _enabled_futures
+    return feature in _enabled_features
 
 
-def _parse_futures(futures: str) -> Iterable[Future]:
-    for fut in futures.split(","):
-        future = fut.strip()
-        if not future:
+def _parse_features(features: str) -> Iterable[Feature]:
+    for value in features.split(","):
+        feature = value.strip()
+        if not feature:
             continue
-        if future not in _future_strs:
-            raise ValueError(f"Unknown future: {future!r}")
-        yield Future(future)
+        if feature not in _feature_strs:
+            raise ValueError(f"Unknown preview feature: {feature!r}")
+        yield Feature(feature)
 
 
 def _init() -> None:
-    futures = os.getenv("COCOTB_FUTURE")
-    if not futures:
+    features = os.getenv("COCOTB_PREVIEW")
+    if not features:
         return
 
     try:
-        bool_flag = _env.as_bool(futures)
+        bool_flag = _env.as_bool(features)
     except ValueError:
-        # if not a bool, try parsing as list of futures
-        requested_futures = list(_parse_futures(futures))
-        _enabled_futures.update(requested_futures)
+        # If not a bool, try parsing as a list of features.
+        requested_features = list(_parse_features(features))
+        _enabled_features.update(requested_features)
     else:
-        # Is bool flag, if False, skip.
-        # If True, enable all futures.
+        # If this is a false bool flag, skip. If true, enable all features.
         if not bool_flag:
             return
-        _enabled_futures.update(Future)
+        _enabled_features.update(Feature)

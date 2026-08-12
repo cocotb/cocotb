@@ -1,1 +1,1 @@
-Added :envvar:`COCOTB_FUTURE` envvar to allow users to opt-in to experimental features or breaking changes.
+Added :mod:`cocotb.preview` and the :envvar:`COCOTB_PREVIEW` environment variable to allow users to opt in to previews of upcoming cocotb behavior.
