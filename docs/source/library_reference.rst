@@ -166,6 +166,8 @@ Marking and Generating Tests
 
 .. autofunction:: cocotb.xfail
 
+.. autoclass:: cocotb.Param
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
