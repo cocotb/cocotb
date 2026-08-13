@@ -65,6 +65,10 @@ dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
 
 [tool.towncrier]
     package = "cocotb"
+    # Set explicitly so that towncrier doesn't have to import cocotb to work
+    # out the project name — that would mean building the package first just
+    # to render release notes.
+    name = "cocotb"
     directory = "docs/source/newsfragments"
     filename = "docs/source/release_notes.rst"
     issue_format = ":pr:`{issue}`"
@@ -72,6 +76,11 @@ dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
     # the second underline for the subcategories (like 'Features')
     underlines = ["=", "-"]
     all_bullets = false
+    # Renders to the same header towncrier's default template already
+    # produces, but also makes towncrier refuse (instead of silently
+    # duplicating the section) if `towncrier build` is run twice for the
+    # same version.
+    title_format = "{name} {version} ({project_date})"
 
     [[tool.towncrier.type]]
         directory = "feature"
