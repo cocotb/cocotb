@@ -251,8 +251,18 @@ class TaskManager:
                 raise RuntimeError("Reached unreachable code")  # pragma: no cover
         elif exc is not None:
             if isinstance(exc, CancelledError):
-                # Something else cancelled the parent task. Propagate CancelledError immediately.
+                # Something else cancelled the parent task.
+                # Cancel the children first, then propagate error
                 self._cancel()
+                self._parent_task._uncancel()
+
+                while not self._none_remaining.is_set():
+                    try:
+                        await self._none_remaining.wait()
+                    except CancelledError:
+                        # parent got cancelled again, so we also need to uncancel ourselves
+                        self._parent_task._uncancel()
+
                 return None  # re-raise CancelledError
             elif not self._context_continue_on_error:
                 # Block finished with an exception and we are not continuing on error.
@@ -261,12 +271,21 @@ class TaskManager:
         # Wait for all Tasks to finish / finish cancelling.
         try:
             await self._none_remaining.wait()
-        except CancelledError:
+        except CancelledError as cancel_exc:
             # Cancel all child Tasks if the current Task is cancelled by the user while
             # waiting for all child Tasks to finish. If the TaskManager is already
             # cancelling due to a child Task failure, this will no-op.
             self._cancel()
-            raise
+            self._parent_task._uncancel()
+
+            while not self._none_remaining.is_set():
+                try:
+                    await self._none_remaining.wait()
+                except CancelledError:
+                    # parent got cancelled again, so we also need to uncancel ourselves
+                    self._parent_task._uncancel()
+
+            raise cancel_exc
         except BaseException:
             # The current Task failed while waiting for child Tasks to finish.
             # This is likely because we ignored a CancelledError since there is no other

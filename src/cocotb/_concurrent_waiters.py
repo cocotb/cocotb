@@ -5,11 +5,12 @@
 from __future__ import annotations
 
 import sys
+from asyncio import CancelledError
 from collections.abc import Awaitable, Iterable
 from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
 
-from cocotb._base_triggers import _InternalEvent
-from cocotb.task import Task
+from cocotb._base_triggers import NullTrigger, _InternalEvent
+from cocotb.task import Task, current_task
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
@@ -180,6 +181,22 @@ async def _wait(
 
     try:
         await complete
+
+    except CancelledError as cancel_exc:
+        cancel_remaining()
+        current_task()._uncancel()
+
+        while remaining:
+            try:
+                await NullTrigger()
+            except CancelledError:
+                # parent got cancelled again, so we also need to uncancel ourselves
+                # Ignore subsequent cancels while waiting for children to finish
+                current_task()._uncancel()
+                continue
+
+        raise cancel_exc
+
     except BaseException:
         cancel_remaining()
         raise
