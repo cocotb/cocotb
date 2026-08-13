@@ -114,6 +114,27 @@ class Param:
     test function while ``name`` is used when generating the test name.
 
     If ``name`` is ``None``, the name is generated from ``value`` as usual.
+
+    .. autolink-skip::
+    .. code-block:: python
+
+        @cocotb.parametrize(
+            arg=[
+                Param(value=0, name="zero"),
+                Param(value=1, name="one"),
+            ],
+        )
+        async def my_test(arg: int) -> None: ...
+
+    This generates tests named ``my_test/arg=zero`` and
+    ``my_test/arg=one``, while the test receives the integer values
+    ``0`` and ``1``.
+
+    Args:
+        value: The value to be passed to the test function.
+        name: Optional name to be used in the generated test name
+
+    .. versionadded:: 2.1
     """
 
     value: Any
@@ -486,23 +507,8 @@ def parametrize(
         )
         async def my_test_2(arg1: int, arg2: int, arg3: int) -> None: ...
 
-    Named parameter values can be created using :class:`Param` to customize the
-    generated test name while still passing the original value to the test.
-
-    .. autolink-skip::
-    .. code-block:: python
-
-        @cocotb.parametrize(
-            arg=[
-                Param(value=0, name="zero"),
-                Param(value=1, name="one"),
-            ],
-        )
-        async def my_test(arg: int) -> None: ...
-
-    This generates tests named ``my_test/arg=zero`` and
-    ``my_test/arg=one``, while the test receives the integer values
-    ``0`` and ``1``.
+    See :class:`Param` to customize the
+    generated test name while still passing the original values to the test.
 
 
     Args:
