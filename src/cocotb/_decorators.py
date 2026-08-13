@@ -132,7 +132,7 @@ class Param:
 
     Args:
         value: The value to be passed to the test function.
-        name: Optional name to be used in the generated test name
+        name: Optional name to be used in the generated test name.
 
     .. versionadded:: 2.1
     """
