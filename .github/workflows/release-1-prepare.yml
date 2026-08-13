@@ -1,0 +1,201 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+#
+# Step 1 of the release process. Works for both cases:
+#
+# - First release of a new minor series (e.g. "1.6.0"): creates stable/1.6
+#   off master, then prepares release notes on it. Also opens a PR moving
+#   master on to the next minor version.
+# - A patch release on an existing series (e.g. "1.6.1"): reuses the
+#   existing stable/1.6 branch.
+#
+# Either way, it consumes towncrier newsfragments into
+# docs/source/release_notes.rst and opens a PR against the release branch
+# instead of committing directly, so the notes can be hand-edited/reviewed
+# before anything is tagged. Merging that PR is the point at which the
+# branch is considered release-ready; run "Release 2: Tag" against it
+# afterwards.
+#
+# Always pass the *final* version here, even when the plan is to tag one or
+# more release candidates first: release notes are filed under the version
+# being released, and an rc ships the notes of the release it is a
+# candidate for. Changes that land on the release branch after an rc are
+# folded into that same section by hand (and their newsfragments deleted).
+#
+# Requires a GitHub App installed on the repository, exposed as the
+# COCOTB_CI_REPOACCESS_APP_ID and COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY secrets — see "Release
+# Automation Setup" in docs/source/maintaining.rst. The default
+# GITHUB_TOKEN is deliberately not used: pull requests it creates don't
+# start any CI.
+#
+
+name: "Release 1: Prepare release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version being released, e.g. "1.6.0" or "1.6.1". Not an rc.'
+        required: true
+      commit:
+        description: "Commit to branch a new series from. Default: master's HEAD."
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.version }}
+
+permissions: {}
+
+jobs:
+  release_branch:
+    name: Determine release branch
+    runs-on: ubuntu-22.04
+    outputs:
+      branch: ${{ steps.branch.outputs.branch }}
+      created: ${{ steps.branch.outputs.created }}
+      next_minor: ${{ steps.branch.outputs.next_minor }}
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      - name: Determine release branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Version '$VERSION' doesn't look like X.Y.Z. Release notes are filed under the final version; to tag a release candidate, prepare the notes for the final version and pass the rc to 'Release 2: Tag'."
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          branch="stable/${major}.${minor}"
+
+          if gh api "repos/$REPO/branches/$branch" --silent 2>/dev/null; then
+            created=false
+          else
+            # Only auto-create the branch for the very first release of a
+            # series. A missing branch for any other patch level almost
+            # certainly means the version input has a typo.
+            if [ "$patch" != "0" ]; then
+              echo "::error::Branch '$branch' doesn't exist, but version '$VERSION' is not the first release of the ${major}.${minor} series (patch != 0). Refusing to create it from master — double check the version."
+              exit 1
+            fi
+            created=true
+          fi
+
+          {
+            echo "branch=$branch"
+            echo "created=$created"
+            echo "next_minor=${major}.$((minor + 1)).0"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$created" = "true" ]; then
+            sha="${COMMIT:-$(gh api "repos/$REPO/commits/master" --jq .sha)}"
+            gh api "repos/$REPO/git/refs" \
+              -f "ref=refs/heads/$branch" -f "sha=$sha" --silent
+            echo "### Created \`$branch\` from \`$sha\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  release_notes:
+    name: Prepare release notes
+    needs: release_branch
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ needs.release_branch.outputs.branch }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+
+      - name: Install nox
+        run: python3 -m pip install nox nox-uv
+
+      - name: Generate release notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: nox -s release_notes -- --version="$VERSION"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          base: ${{ needs.release_branch.outputs.branch }}
+          branch: release-notes/${{ inputs.version }}
+          delete-branch: true
+          commit-message: "Generate release notes for v${{ inputs.version }}"
+          title: "Release notes for v${{ inputs.version }}"
+          body: |
+            Automatically generated by towncrier from the newsfragments on
+            `${{ needs.release_branch.outputs.branch }}`.
+
+            Hand-edit this PR as needed. Merging it marks
+            `${{ needs.release_branch.outputs.branch }}` ready to tag — run
+            "Release 2: Tag" against it next, with either `${{ inputs.version }}`
+            or a release candidate of it.
+          labels: type:task
+
+  bump_master:
+    name: Move master to the next minor version
+    needs: release_branch
+    # Only when a new series was branched off: master keeps producing dev
+    # versions of whatever comes next, and that is no longer the version
+    # the new stable branch is for.
+    if: needs.release_branch.outputs.created == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: master
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump the version file
+        env:
+          NEXT_MINOR: ${{ needs.release_branch.outputs.next_minor }}
+        run: echo "$NEXT_MINOR" > VERSION
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          base: master
+          branch: version-bump/${{ needs.release_branch.outputs.next_minor }}
+          delete-branch: true
+          commit-message: "Start ${{ needs.release_branch.outputs.next_minor }} development"
+          title: "Start ${{ needs.release_branch.outputs.next_minor }} development"
+          body: |
+            `${{ needs.release_branch.outputs.branch }}` has been branched off
+            for the ${{ inputs.version }} release, so the dev versions built
+            from `master` are now leading up to
+            ${{ needs.release_branch.outputs.next_minor }}.
+          labels: type:task

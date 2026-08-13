@@ -1,0 +1,116 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+#
+# Backports a release's notes to master. Two ways in:
+#
+# - Automatically, called as a reusable workflow from build-test-release.yml
+#   after a final release tag is published.
+# - Manually via workflow_dispatch — to re-run it, e.g. to regenerate the PR
+#   with a different "since_ref", or to backport a release that predates
+#   this automation, or a release candidate (which the automatic call skips,
+#   as an rc ships the final release's notes and is not listed separately).
+#
+# All the actual work (taking the release's section out of
+# release_notes.rst at the tag, inserting it here in version order, and
+# dropping the newsfragments it consumed) lives in the
+# "backport_release_notes" nox session, so it can also be run locally:
+# nox -s backport_release_notes -- --until=v1.6.1
+#
+# Requires a GitHub App installed on the repository, exposed as the
+# COCOTB_CI_REPOACCESS_APP_ID and COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY secrets — see "Release
+# Automation Setup" in docs/source/maintaining.rst. The default
+# GITHUB_TOKEN is deliberately not used: pull requests it creates don't
+# start any CI.
+#
+
+name: "Release 3: Backport release notes to master"
+
+on:
+  workflow_dispatch:
+    inputs:
+      until:
+        description: 'Tag or ref the release notes were generated at, e.g. "v1.6.1"'
+        required: true
+      since_ref:
+        description: 'Ref to diff from. Default: the previous tag reachable from "until".'
+        required: false
+  workflow_call:
+    inputs:
+      until:
+        description: 'Tag or ref the release notes were generated at, e.g. "v1.6.1"'
+        required: true
+        type: string
+      since_ref:
+        description: 'Ref to diff from. Default: the previous tag reachable from "until".'
+        required: false
+        type: string
+    secrets:
+      COCOTB_CI_REPOACCESS_APP_ID:
+        required: true
+      COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.until }}
+
+permissions: {}
+
+jobs:
+  backport_notes:
+    name: Open release notes backport PR
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: master
+          # The session compares the release tag against master's history,
+          # so it needs all of it, tags included.
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+
+      - name: Install nox
+        run: python3 -m pip install nox nox-uv
+
+      - name: Backport release notes
+        env:
+          UNTIL: ${{ inputs.until }}
+          SINCE_REF: ${{ inputs.since_ref }}
+        run: |
+          set -euo pipefail
+          args=(--until="$UNTIL")
+          if [ -n "$SINCE_REF" ]; then
+            args+=(--since="$SINCE_REF")
+          fi
+          nox -s backport_release_notes -- "${args[@]}"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          base: master
+          branch: backport-release-notes/${{ inputs.until }}
+          delete-branch: true
+          commit-message: "Backport release notes for ${{ inputs.until }} to master"
+          title: "Backport release notes for ${{ inputs.until }} to master"
+          body: |
+            Copies the release notes section for ${{ inputs.until }} back
+            into master, and removes the newsfragments it consumed there
+            so they don't get listed again under the next release.
+
+            Review the inserted section before merging.
+          labels: type:task
