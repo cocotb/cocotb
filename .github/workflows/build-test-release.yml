@@ -89,6 +89,12 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-22.04
+    # Publishing is irreversible, so it runs in an environment: protection
+    # rules configured on it (e.g. required reviewers) apply here, and are
+    # the only chance to stop a release after the tag was pushed. Keep the
+    # environment name in sync with the PyPI Trusted Publishing settings,
+    # which have to either name this environment or none at all.
+    environment: pypi
     # Only upload tagged releases.
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     steps:
@@ -104,3 +110,77 @@ jobs:
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       # Authentication to PyPi is done through OIDC ("Trusted Publishing").
+
+  # Patch releases only ever run towncrier on a stable/X.Y branch, but
+  # master's release notes should always show the full history. Skip
+  # release candidates etc. (anything other than a final X.Y.Z tag) —
+  # those ship the final release's notes and aren't listed separately.
+  check_final_release:
+    name: Check for a final release tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-22.04
+    outputs:
+      final: ${{ steps.check.outputs.final }}
+    steps:
+    - id: check
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "final=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "final=false" >> "$GITHUB_OUTPUT"
+          echo "Skipping: '$TAG' is not a final release tag." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+  # A GitHub Release makes the tag show up on the repository's releases
+  # page, which the release notes point readers at.
+  github_release:
+    name: Publish GitHub Release
+    needs: [deploy_pypi, check_final_release]
+    if: success()
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Create the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+        FINAL: ${{ needs.check_final_release.outputs.final }}
+      run: |
+        set -euo pipefail
+
+        prerelease=()
+        if [ "$FINAL" != "true" ]; then
+          prerelease=(--prerelease)
+        fi
+
+        version="${TAG#v}"
+        notes=$(printf '%s\n\n%s\n' \
+          "Release notes: https://docs.cocotb.org/en/stable/release_notes.html" \
+          "Install with \`pip install cocotb==${version}\`.")
+
+        gh release create "$TAG" \
+          --verify-tag \
+          --title "cocotb ${version}" \
+          --notes "$notes" \
+          "${prerelease[@]}"
+
+  # Do the backport by calling "Release 3" as a reusable workflow, rather
+  # than duplicating its steps here, so the manual and automatic paths
+  # can't drift apart.
+  backport_release_notes:
+    name: Backport release notes to master
+    needs: [deploy_pypi, check_final_release]
+    # A custom `if:` replaces the implicit "needs jobs succeeded" check
+    # GitHub Actions would otherwise apply, so it has to be spelled out
+    # here too — otherwise this would still run after a failed PyPI
+    # publish.
+    if: success() && needs.check_final_release.outputs.final == 'true'
+    uses: ./.github/workflows/release-3-backport-notes.yml
+    with:
+      until: ${{ github.ref_name }}
+    secrets: inherit

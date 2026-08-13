@@ -425,6 +425,14 @@ in_progress_notes = subprocess.check_output(
     cwd="../..",
     universal_newlines=True,
 )
+# Right after a release, there are no newsfragments left to draft. Rather
+# than show an empty "No significant changes." placeholder entry next to
+# the real one for the release just made, show nothing at all. Only the
+# body is checked, so that a newsfragment merely mentioning that phrase
+# doesn't hide the whole draft.
+_, _, draft_body = in_progress_notes.partition("\n\n")
+if draft_body.strip() == "No significant changes.":
+    in_progress_notes = ""
 with open("master-notes.rst", "w") as f:
     f.write(in_progress_notes)
 
