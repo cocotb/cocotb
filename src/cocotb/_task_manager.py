@@ -271,7 +271,7 @@ class TaskManager:
         # Wait for all Tasks to finish / finish cancelling.
         try:
             await self._none_remaining.wait()
-        except CancelledError as cancel_exc:
+        except CancelledError:
             # Cancel all child Tasks if the current Task is cancelled by the user while
             # waiting for all child Tasks to finish. If the TaskManager is already
             # cancelling due to a child Task failure, this will no-op.
@@ -285,7 +285,7 @@ class TaskManager:
                     # parent got cancelled again, so we also need to uncancel ourselves
                     self._parent_task._uncancel()
 
-            raise cancel_exc
+            raise
         except BaseException:
             # The current Task failed while waiting for child Tasks to finish.
             # This is likely because we ignored a CancelledError since there is no other
