@@ -169,3 +169,58 @@ Make Variables
 The :envvar:`COCOTB_TOPLEVEL` variable is also often used by the Makefile-based build and runner system.
 
 The :envvar:`SIM_CMD_PREFIX` and :envvar:`SIM_CMD_SUFFIX` environment variables are also supported by the Makefile-based build and runner system.
+
+
+Setting Top-Level Parameters and Generics
+=========================================
+
+The Makefile flow does not provide a simulator-agnostic variable for overriding
+top-level Verilog ``parameter`` or VHDL ``generic`` values. Instead, the appropriate
+syntax must be appended to :make:var:`COMPILE_ARGS`, :make:var:`SIM_ARGS`, or
+:make:var:`EXTRA_ARGS` for the simulator in use.
+
+The :reposrc:`matrix_multiplier example <examples/matrix_multiplier/tests/Makefile>`
+demonstrates this pattern across all supported simulators. The table below summarizes
+the syntax. Substitute ``<MODULE>`` with the top-level module/entity name,
+``<PARAM>`` with the parameter/generic name, and ``<VALUE>`` with the desired value.
+
+Verilog ``parameter`` override
+------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Simulator
+     - Makefile snippet
+   * - Icarus Verilog
+     - ``COMPILE_ARGS += -P<MODULE>.<PARAM>=<VALUE>``
+   * - Questa, ModelSim, Riviera-PRO, Active-HDL, NVC
+     - ``SIM_ARGS += -g<PARAM>=<VALUE>``
+   * - Synopsys VCS
+     - ``COMPILE_ARGS += -pvalue+<MODULE>/<PARAM>=<VALUE>``
+   * - Verilator
+     - ``COMPILE_ARGS += -G<PARAM>=<VALUE>``
+   * - Cadence Xcelium, Incisive (IUS)
+     - ``EXTRA_ARGS += -defparam "<MODULE>.<PARAM>=<VALUE>"``
+
+VHDL ``generic`` override
+-------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Simulator
+     - Makefile snippet
+   * - GHDL, Questa, ModelSim, Riviera-PRO, Active-HDL, NVC
+     - ``SIM_ARGS += -g<GENERIC>=<VALUE>``
+   * - Cadence Xcelium, Incisive (IUS)
+     - ``SIM_ARGS += -generic "<MODULE>:<GENERIC>=><VALUE>"``
+
+.. note::
+
+   When using the :ref:`Python Runner <howto-python-runner>` flow, prefer the
+   simulator-agnostic ``parameters`` argument of
+   :meth:`~cocotb_tools.runner.Runner.build` instead of the per-simulator
+   syntax shown above.
