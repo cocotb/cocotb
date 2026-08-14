@@ -182,7 +182,7 @@ async def _wait(
     try:
         await complete
 
-    except CancelledError as cancel_exc:
+    except CancelledError:
         cancel_remaining()
         current_task()._uncancel()
 
@@ -195,7 +195,7 @@ async def _wait(
                 current_task()._uncancel()
                 continue
 
-        raise cancel_exc
+        raise
 
     except BaseException:
         cancel_remaining()
