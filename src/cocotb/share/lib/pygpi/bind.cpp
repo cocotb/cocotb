@@ -1035,6 +1035,7 @@ static int add_module_constants(PyObject *simulator) {
         PyModule_AddIntConstant(simulator, "NETARRAY", GPI_ARRAY) < 0 ||
         PyModule_AddIntConstant(simulator, "ENUM", GPI_ENUM) < 0 ||
         PyModule_AddIntConstant(simulator, "STRUCTURE", GPI_STRUCTURE) < 0 ||
+        PyModule_AddIntConstant(simulator, "PACKED", GPI_PACKED) < 0 ||
         PyModule_AddIntConstant(simulator, "PACKED_STRUCTURE",
                                 GPI_PACKED_STRUCTURE) < 0 ||
         PyModule_AddIntConstant(simulator, "REAL", GPI_REAL) < 0 ||

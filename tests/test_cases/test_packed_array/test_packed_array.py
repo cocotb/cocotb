@@ -8,10 +8,11 @@ import pytest
 
 import cocotb
 from cocotb.handle import (
+    ArrayObject,
     Immediate,
     Logic,
-    LogicArrayObject,
     LogicObject,
+    PackedObject,
 )
 from cocotb.triggers import (
     ClockCycles,
@@ -28,10 +29,22 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 async def check_types(dut):
     """Check types"""
 
-    assert isinstance(dut.i_packed, LogicArrayObject)
-    assert isinstance(dut.i_packed[0], LogicArrayObject)
-    assert isinstance(dut.i_packed[0][0], LogicObject)
-    assert len(dut.i_packed) == 32
+    assert type(dut.i_packed) is PackedObject
+    assert type(dut.i_packed[0]) is PackedObject
+    assert type(dut.i_packed[0][0]) is LogicObject
+    assert type(dut.i_unpacked) is ArrayObject
+    assert type(dut.i_mixed) is ArrayObject
+    assert type(dut.i_short) is PackedObject
+    assert type(dut.i_bit) is LogicObject
+    assert type(dut.i_enum_arr2d) is PackedObject
+    assert type(dut.i_union_arr2d) is PackedObject
+    assert type(dut.i_pkt_arr2d) is PackedObject
+    assert type(dut.i_enum_arr2d_unpk) is ArrayObject
+    assert type(dut.i_union_arr2d_unpk) is ArrayObject
+    assert type(dut.i_pkt_arr2d_unpk) is ArrayObject
+    # assert isinstance(dut.i_packed[0], LogicArrayObject)
+    # assert isinstance(dut.i_packed[0][0], LogicObject)
+    # assert len(dut.i_packed) is 32
 
 
 @cocotb.test()

@@ -35,6 +35,11 @@ module packed_array (
 
     // 2-D packed logic array.
     input  logic [7:0][3:0] i_packed,
+    input  logic i_unpacked [7:0][3:0],
+    input  logic  [2:0][5:0] i_mixed [7:0][3:0],
+    input  logic  [2:0] i_short,
+    input  logic  i_bit,
+
     output logic [7:0][3:0] o_packed,
 
     // 3-D packed logic array.
@@ -62,7 +67,11 @@ module packed_array (
 
     // 2-D packed array of packed structs.
     input  noc_hdr_t [1:0][3:0] i_pkt_arr2d,
-    output noc_hdr_t [1:0][3:0] o_pkt_arr2d
+    output noc_hdr_t [1:0][3:0] o_pkt_arr2d,
+
+    input  color_e  i_enum_arr2d_unpk[1:0][3:0],
+    input  word_u  i_union_arr2d_unpk[1:0][3:0],
+    input  noc_hdr_t i_pkt_arr2d_unpk[1:0][3:0]
 );
 
   assign o_packed       = i_packed;

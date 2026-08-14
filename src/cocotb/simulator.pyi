@@ -21,6 +21,7 @@ MODULE: int
 NETARRAY: int
 OBJECTS: int
 PACKAGE: int
+PACKED: int
 REAL: int
 STRING: int
 FIXED_STRING: int

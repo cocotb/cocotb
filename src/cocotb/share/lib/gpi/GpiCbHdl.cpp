@@ -34,6 +34,8 @@ const char *GpiObjHdl::get_type_str() {
         CASE_OPTION(GPI_FIXED_STRING);
         CASE_OPTION(GPI_GENARRAY);
         CASE_OPTION(GPI_PACKAGE);
+        CASE_OPTION(GPI_PACKED);
+        CASE_OPTION(GPI_PACKED_STRUCTURE);
         CASE_OPTION(GPI_LOGIC);
         CASE_OPTION(GPI_LOGIC_ARRAY);
         default:

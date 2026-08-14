@@ -53,6 +53,7 @@ __all__ = (
     "IntegerObject",
     "LogicArrayObject",
     "LogicObject",
+    "PackedObject",
     "RealObject",
     "Release",
     "SimHandleBase",
@@ -1244,6 +1245,183 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
+class PackedObject(
+    _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
+    _RangeableObjectMixin,
+    _SignednessObjectMixin,
+    Generic[ElemValueT, ChildObjectT],
+):
+    """A logic array simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
+    Verilog types that map to this object:
+
+        * All packed arrays, structs, and unions
+
+    May be accessed by index.
+    An :class:`IndexError` is raised if no bit exists at the given index.
+
+    .. code-block:: python
+
+        bit_0 = dut.my_vec[0]
+    """
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+        self._sub_handles: dict[int, ChildObjectT] = {}
+
+    def _set_value(
+        self,
+        value: LogicArray | Logic | int | str,
+        action: _GPISetAction,
+    ) -> None:
+        value_: str
+        if isinstance(value, int):
+            if not self._min_val <= value <= self._max_val:
+                raise ValueError(
+                    f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
+                )
+
+            if len(self) <= 32:
+                return _schedule_write(
+                    self, self._handle.set_signal_val_int, action, value
+                )
+            else:
+                if value < 0:
+                    value += 1 << len(self)
+                value_ = f"{value:0{len(self)}b}"
+
+        elif isinstance(value, str):
+            value_ = value.replace("_", "")  # remove visual separators
+            value_ = value_.upper()  # normalize to uppercase
+            nonliterals = set(value_) - _str_literals
+            if nonliterals:
+                nonliteral_str = ", ".join(repr(c) for c in sorted(nonliterals))
+                raise ValueError(
+                    f"String literal contains invalid logic values: {nonliteral_str}"
+                )
+
+        elif isinstance(value, (LogicArray, Logic)):
+            value_ = str(value)
+
+        else:
+            raise TypeError(
+                f"Unsupported type for value assignment: {type(value)} ({value!r})"
+            )
+
+        if len(value_) != len(self):
+            raise ValueError(
+                f"Cannot assign value of length {len(value_)} to handle of length {len(self)}"
+            )
+        _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
+
+    def get(self) -> LogicArray:
+        """Return the current value of the simulation object as a :class:`.LogicArray`."""
+        binstr = self._handle.get_signal_val_binstr()
+        return LogicArray._from_handle(
+            value=binstr,
+            warn_indexing=indexing_changed(self.range)
+            if do_indexing_changed_warning
+            else False,
+        )
+
+    def set(
+        self,
+        value: LogicArray
+        | Logic
+        | int
+        | str
+        | Deposit[LogicArray | Logic | int | str]
+        | Force[LogicArray | Logic | int | str]
+        | Freeze
+        | Release
+        | Immediate[LogicArray | Logic | int | str],
+    ) -> None:
+        """Set the value of the simulation object using a :class:`.LogicArray`-like value.
+
+        Args:
+            value: The value to set the simulation object to.
+
+        Raises:
+            TypeError: If *value* is of a type that can't be assigned to the simulation object, or readily converted into a type that can.
+            ValueError: If *value* would not fit in the bounds of the simulation object.
+
+        .. versionchanged:: 2.0
+            Using :class:`ctypes.Structure` objects to set values was removed.
+            Convert the struct object to a :class:`~cocotb.types.LogicArray` before assignment using
+            ``LogicArray("".join(format(int(byte), "08b") for byte in bytes(struct_obj)))`` instead.
+
+        .. versionchanged:: 2.0
+            Using :class:`dict` objects to set values was removed.
+            Convert the dictionary to an integer before assignment using
+            ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))`` instead.
+
+        .. versionchanged:: 2.0
+            Setting the simulation object's value with an :class:`int` *value* too large to fit in the vector results in a :exc:`ValueError` instead of an :exc:`OverflowError`.
+        """
+        self.value = value
+
+    @deprecated(
+        "`int(handle)` casts have been deprecated. Use `int(handle.value)` instead."
+    )
+    def __int__(self) -> int:
+        return int(self.value)
+
+    @deprecated(
+        "`str(handle)` casts have been deprecated. Use `str(handle.value)` instead."
+    )
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __len__(self) -> int:
+        # can't use `range` to get length because `range` is for outer-most dimension only
+        # and this object needs to support multi-dimensional packed arrays.
+        return self._handle.get_num_elems()
+
+    def __getitem__(self, index: int) -> ChildObjectT:
+        if isinstance(index, slice):
+            raise TypeError("Slice indexing is not supported")
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = self._handle.get_handle_by_index(index)
+        if not new_handle:
+            raise IndexError(f"{self._path} contains no object at index {index}")
+        path = self._path + "[" + str(index) + "]"
+        self._sub_handles[index] = cast(
+            "ChildObjectT", _make_sim_object(new_handle, path)
+        )
+        return self._sub_handles[index]
+
+    @cached_property
+    def _min_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return -(2 ** (len(self) - 1))
+
+    @cached_property
+    def _max_val(self) -> int:
+        # Backwards compatibility. Always wrap negative values.
+        return (2 ** len(self)) - 1
+
+    @cached_property
+    def rising_edge(self) -> RisingEdge:
+        """A trigger which fires whenever the value changes to a ``1``."""
+        if len(self) != 1:
+            raise TypeError(f"Can't get RisingEdge on {len(self)}-bit signal")
+        if self.is_const:
+            raise TypeError("Can't get RisingEdge on immutable signal")
+        return RisingEdge._make(self)
+
+    @cached_property
+    def falling_edge(self) -> FallingEdge:
+        """A trigger which fires whenever the value changes to a ``0``."""
+        if len(self) != 1:
+            raise TypeError(f"Can't get FallingEdge on {len(self)}-bit signal")
+        if self.is_const:
+            raise TypeError("Can't get FallingEdge on immutable signal")
+        return FallingEdge._make(self)
+
+
 class LogicArrayObject(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
@@ -1800,6 +1978,7 @@ _ConcreteHandleTypes = Union[
     HierarchyArrayObject[SimHandleBase],
     LogicObject,
     LogicArrayObject,
+    PackedObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
     RealObject,
     IntegerObject,
@@ -1816,6 +1995,7 @@ _handle2obj: dict[
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
+    cocotb.simulator.PACKED: PackedObject,
     cocotb.simulator.PACKED_STRUCTURE: LogicArrayObject,
     cocotb.simulator.LOGIC: LogicObject,
     cocotb.simulator.LOGIC_ARRAY: LogicArrayObject,
