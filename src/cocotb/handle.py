@@ -1996,7 +1996,6 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
     cocotb.simulator.PACKED: PackedObject,
-    cocotb.simulator.PACKED_STRUCTURE: LogicArrayObject,
     cocotb.simulator.LOGIC: LogicObject,
     cocotb.simulator.LOGIC_ARRAY: LogicArrayObject,
     cocotb.simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],

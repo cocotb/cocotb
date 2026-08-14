@@ -42,9 +42,9 @@ async def check_types(dut):
     assert type(dut.i_enum_arr2d_unpk) is ArrayObject
     assert type(dut.i_union_arr2d_unpk) is ArrayObject
     assert type(dut.i_pkt_arr2d_unpk) is ArrayObject
-    # assert isinstance(dut.i_packed[0], LogicArrayObject)
-    # assert isinstance(dut.i_packed[0][0], LogicObject)
-    # assert len(dut.i_packed) is 32
+    assert isinstance(dut.i_packed[0], PackedObject)
+    assert isinstance(dut.i_packed[0][0], LogicObject)
+    assert len(dut.i_packed) == 32
 
 
 @cocotb.test()

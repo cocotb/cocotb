@@ -87,6 +87,8 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
         case vpiRegBit:
         case vpiMemoryWord:
         case vpiPackedArrayVar:
+        case vpiVarSelect:
+        case vpiBitSelect:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
                 return GPI_PACKED;
@@ -272,6 +274,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
             break;
         }
+        case vpiVarSelect:
+        case vpiBitSelect:
         case vpiStructVar:
         case vpiStructNet:
         case vpiUnionVar:
@@ -279,8 +283,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
                 LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl,
-                                              GPI_PACKED_STRUCTURE, false);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false);
                 break;
             } else if (vpi_get(vpiVector, new_hdl)) {
                 is_vector = true;
