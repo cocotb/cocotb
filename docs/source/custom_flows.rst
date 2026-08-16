@@ -20,13 +20,16 @@ For all simulators, the following environment variables need to be set:
 * Define :envvar:`COCOTB_TEST_MODULES` with the name of the Python module(s) containing your testcases.
 
 See the sections below for additional settings to be done, depending on the simulator.
+Use ``cocotb-config --lib-entry INTERFACE SIMULATOR`` to obtain the interface library to load.
+For simulators that require an explicit entry function, the result uses the
+``library:entry_function`` format.
 
 .. _custom-flows-icarus:
 
 Icarus Verilog
 ==============
 
-* Call the ``vvp`` executable with the option ``-m $(cocotb-config --lib-name vpi icarus)``.
+* Call the ``vvp`` executable with the option ``-m $(cocotb-config --lib-entry vpi icarus)``.
 
 Verilator
 =========
@@ -55,7 +58,7 @@ Synopsys VCS
 * Create a file :file:`pli.tab` with the content ``acc+=rw,wn:*`` (or equivalent)
   to allow cocotb to access values in the design.
 * Extend the ``vcs`` call with the options
-  ``+vpi -P pli.tab -load $(cocotb-config --lib-name-path vpi vcs)``.
+  ``+vpi -P pli.tab -load $(cocotb-config --lib-entry vpi vcs)``.
 
 .. _custom-flows-aldec:
 .. _custom-flows-riviera:
@@ -70,7 +73,7 @@ Aldec Riviera-PRO
    .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call ``asim`` with the option
-      ``-loadvhpi $(cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap``.
+      ``-loadvhpi $(cocotb-config --lib-entry vhpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
@@ -79,7 +82,7 @@ Aldec Riviera-PRO
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
-      ``-pli $(cocotb-config --lib-name-path vpi riviera)``.
+      ``-pli $(cocotb-config --lib-entry vpi riviera)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point``
@@ -97,7 +100,7 @@ Aldec Active-HDL
    .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call ``asim`` with the option
-      ``-loadvhpi $(cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap``.
+      ``-loadvhpi $(cocotb-config --lib-entry vhpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
@@ -106,7 +109,7 @@ Aldec Active-HDL
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
-      ``-pli $(cocotb-config --lib-name-path vpi activehdl)``.
+      ``-pli $(cocotb-config --lib-entry vpi activehdl)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point``
@@ -133,7 +136,7 @@ Questa supports two different flows: the traditional flow using ``vsim``, which 
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``vsim`` or ``qrun`` executable with the option
-      ``-pli $(cocotb-config --lib-name-path vpi questa)``.
+      ``-pli $(cocotb-config --lib-entry vpi questa)``.
 
       Set the :envvar:`GPI_EXTRA` environment variable to
       ``$(cocotb-config --lib-name-path fli questa):cocotbfli_entry_point``
@@ -148,7 +151,7 @@ Cadence Incisive and Xcelium
   (or equivalent, e.g. :samp:`-afile {afile}`) option set to allow cocotb to access values in the design.
 
 * The ``xrun`` call (or ``xmsim`` in multi-step mode) needs the VPI library and entry point via the option
-  ``-loadvpisim $(cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap``.
+  ``-loadvpisim $(cocotb-config --lib-entry vpi xcelium)``.
   Alternatively, it is possible to specify the same during elaboration in multi-step mode with
   ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):.vlog_startup_routines_bootstrap``.
   The syntax is ``-loadvpi library:elab_functions[.sim_functions]``, taking two comma separated lists of
@@ -171,7 +174,7 @@ GHDL
 ====
 
 * Extend the ``ghdl -r`` call with the option
-  ``--vpi=$(cocotb-config --lib-name-path vpi ghdl)``.
+  ``--vpi=$(cocotb-config --lib-entry vpi ghdl)``.
 
 .. _custom-flows-nvc:
 
@@ -179,7 +182,7 @@ NVC
 ===
 
 * Extend the ``nvc -r`` call with the option
-  ``--load=$(cocotb-config --lib-name-path vhpi nvc)``.
+  ``--load=$(cocotb-config --lib-entry vhpi nvc)``.
 
 .. note::
    It is recommended to add ``--preserve-case`` to build arguments.
@@ -191,7 +194,7 @@ Tachyon DA CVC
 ==============
 
 * Extend the ``cvc64`` call with the option
-  ``+interp +acc+2 +loadvpi=$(cocotb-config --lib-name-path vpi cvc):vlog_startup_routines_bootstrap``.
+  ``+interp +acc+2 +loadvpi=$(cocotb-config --lib-entry vpi cvc)``.
 
 .. _custom-flows-dsim:
 
@@ -199,4 +202,4 @@ Siemens DSim
 ============
 
 * Extend the ``dsim`` call with the option
-  ``-pli_lib $(cocotb-config --lib-name-path vpi dsim) +acc+rwcbfsWF``.
+  ``-pli_lib $(cocotb-config --lib-entry vpi dsim) +acc+rwcbfsWF``.

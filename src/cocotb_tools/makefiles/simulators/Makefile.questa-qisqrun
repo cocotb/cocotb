@@ -92,7 +92,7 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa)
+    VSIM_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi questa)
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
 endif
