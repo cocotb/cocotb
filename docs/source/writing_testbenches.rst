@@ -251,18 +251,67 @@ It may appear as one or more attributes here depending on the number of compilat
     cocotb.log.info(cocotb.packages.my_package.foo.value)
 
 
+.. _passing_and_failing_tests:
+
+Passing and failing tests
+=========================
+
+When cocotb tests complete execution, they end with one of four outcomes:
+``pass``, ``fail``, ``skipped``, or ``expected fail``.
+A reference of the conditions that produce each outcome is given in :ref:`test-pass-fail`.
+
+In short, the main test coroutine normally returns to indicate a passing test,
+and raises an :exc:`!Exception` (typically by failing an :keyword:`assert` statement) to indicate a failing test.
+Expected-failure settings such as :deco:`cocotb.xfail`,
+or the ``expect_fail`` and ``expect_error`` arguments to :deco:`cocotb.test`,
+can change the final outcome.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test_pass(dut):
+        assert 2 > 1  # assertion is correct, then the coroutine ends
+
+    @cocotb.test()
+    async def test_fail(dut):
+        assert 1 > 2, "Testing the obvious"
+
+A passing test prints the following output.
+
+.. code-block::
+
+    0.00ns INFO     Test Passed: test_pass
+
+When a test fails, a stack trace is printed.
+If :mod:`pytest` is installed and :keyword:`assert` statements are used,
+a more informative stack trace is printed which includes the values that caused the assertion to fail.
+For example, the second test above will produce output similar to the following:
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test_fail (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test_fail
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
+
 Forcing a test to end with a given result
-=========================================
+-----------------------------------------
 
-In addition to the normal ways a test can pass or fail (see :ref:`passing_and_failing_tests`),
-a test can be forced to end with a given result using the following functions:
+In addition to the natural ways for a test to pass or fail,
+a running test can be ended explicitly using one of the following functions:
 
-* :func:`pytest.xfail` to end the test with an expected fail (considered a pass)
-* :func:`pytest.skip` to end the test with a skip
+* :func:`cocotb.end_test` to end the test as if it returned normally.
+  Any :deco:`cocotb.xfail` decorator, or ``expect_error`` and ``expect_fail`` arguments to :deco:`cocotb.test`, are still respected.
+* :func:`pytest.skip` to end the test with a ``skipped`` outcome.
+* :func:`pytest.xfail` to end the test with an ``expected fail`` outcome (considered a pass).
+* :func:`pytest.fail` to end the test like a failing :keyword:`assert` statement.
+  Expected-failure settings are still respected.
 
-These functions can be called from any Task and will end the test immediately with the given result.
-They are typically used when you cannot use the :deco:`cocotb.skipif` or :deco:`cocotb.xfail` decorators
-to describe the exact conditions under which a test should be skipped or have reached an expected fail state.
+These functions can be called from any :class:`~cocotb.task.Task` and will end the test immediately.
+They are typically used when the conditions under which a test should be skipped, expected to fail, or ended early
+are only known at run time, so the equivalent decorators (:deco:`cocotb.skipif`, :deco:`cocotb.xfail`)
+or arguments to :deco:`cocotb.test` cannot be used.
 
 .. code-block:: python
 
@@ -276,132 +325,6 @@ to describe the exact conditions under which a test should be skipped or have re
         ...
         if dut.read_empty.value == 0:
             pytest.xfail("The read interface is not empty, but this test is expected to fail in this case")
-
-
-.. _passing_and_failing_tests:
-
-Passing and failing tests
-=========================
-
-When cocotb tests complete execution, they have either `passed` or `failed`.
-
-In general, if the main test coroutine completes without raising an :exc:`!Exception`,
-or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`cocotb.pass_test`,
-the test is considered to have `passed`.
-Also, if the main test coroutine raises a :exc:`~asyncio.CancelledError`,
-or is :keyword:`await`\ ing a :class:`!Task` that is cancelled and does not handle it (or re-raises it),
-the test will end immediately but it will have `passed`.
-
-Below are examples of `passing` tests.
-
-.. code-block:: python
-
-    @cocotb.test()
-    async def test(dut):
-        assert 2 > 1  # assertion is correct, then the coroutine ends
-
-    @cocotb.test()
-    async def test(dut):
-        cocotb.pass_test("Reason")  # ends test with success early
-        assert 1 > 2  # this would fail, but it isn't run because the test was ended early
-
-    @cocotb.test()
-    async def test(dut):
-        async def ends_test_with_pass():
-            cocotb.pass_test("Reason")
-        cocotb.start_soon(ends_test_with_pass())
-        await Timer(10, 'ns')
-
-    @cocotb.test()
-    async def test(dut):
-        async def cancelled_after_time():
-            await Timer(1, unit='ns')
-            raise CancelledError
-        t = cocotb.start_soon(cancelled_after_time())
-        await t
-
-A passing test will print the following output.
-
-.. code-block::
-
-    0.00ns INFO     Test Passed: test
-
-A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
-fails an :keyword:`assert` statement, fails :func:`pytest.raises` or :func:`pytest.warns` checks,
-or raises any other :exc:`!Exception` besides :exc:`!CancelledError`.
-
-Below are examples of `failed` tests that failed assertion statements.
-
-.. code-block:: python
-
-    @cocotb.test()
-    async def test(dut):
-        assert 1 > 2, "Testing the obvious"
-
-    @cocotb.test()
-    async def test(dut):
-        async def fails_test():
-            assert 1 > 2
-        cocotb.start_soon(fails_test())
-        await Timer(10, 'ns')
-
-When a test fails, a stacktrace is printed.
-
-If :mod:`pytest` is installed and assert statements are used,
-a more informative stacktrace is printed which includes the values that caused the assert to fail.
-For example, see the output for the first test from above.
-
-.. code-block::
-
-    0.00ns ERROR    Test Failed: test (result was AssertionError)
-                    Traceback (most recent call last):
-                      File "test.py", line 3, in test
-                        assert 1 > 2, "Testing the obvious"
-                    AssertionError: Testing the obvious
-
-Below are examples of `failed` tests that raised an :exc:`!Exception`.
-
-.. code-block:: python
-
-    @cocotb.test()
-    async def test(dut):
-        await coro_that_does_not_exist()  # NameError
-
-    @cocotb.test()
-    async def test(dut):
-        async def coro_with_an_error():
-            dut.signal_that_does_not_exist.value = 1  # AttributeError
-        cocotb.start_soon(coro_with_an_error())
-        await Timer(10, 'ns')
-
-When a test ends with an :exc:`!Exception`, a stacktrace is printed.
-For example, see the below output for the first test from above.
-
-.. code-block::
-
-    0.00ns ERROR    Test Failed: test (result was NameError)
-                    Traceback (most recent call last):
-                      File "test.py", line 3, in test
-                        await coro_that_does_not_exist()  # NameError
-                    NameError: name 'coro_that_does_not_exist' is not defined
-
-In summary:
-
-+--------------+--------------------------------------------------------------------------+
-|| Test Passed || Test ends without raising :exc:`!Exception`.                            |
-||             || Test or Task calls :func:`cocotb.pass_test`.                            |
-||             || Test raises :exc:`~asyncio.CancelledError`.                             |
-+--------------+--------------------------------------------------------------------------+
-|| Test Failed || Test fails an :keyword:`assert` statement.                              |
-||             || Test or Task raises :exc:`AssertionError`.                              |
-||             || Test or Task fails :func:`pytest.raises` or :func:`pytest.warns` check. |
-||             || Test or Task raises any other :exc:`!Exception`.                        |
-+--------------+--------------------------------------------------------------------------+
-
-.. note::
-    For the purpose of denoting expected test failures that should be marked as passed,
-    and differentiating between specific types of failures,
-    see the ``expect_fail`` and ``expect_error`` arguments of the :func:`cocotb.test` decorator.
 
 
 Cleaning up resources
