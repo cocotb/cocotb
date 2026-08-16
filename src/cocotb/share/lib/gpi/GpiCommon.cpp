@@ -139,23 +139,8 @@ void gpi_check_cleanup(void) {
 
 bool gpi_is_finalizing(void) { return gpi_finalizing; }
 
-static void gpi_load_libs(std::vector<std::string> to_load) {
-    std::vector<std::string>::iterator iter;
-
-    for (iter = to_load.begin(); iter != to_load.end(); iter++) {
-        std::string arg = *iter;
-
-        auto const idx = arg.rfind(
-            ':');  // find from right since path could contain colons (Windows)
-        if (idx == std::string::npos) {
-            // no colon in the string
-            printf("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
-            exit(1);
-        }
-
-        std::string const lib_name = arg.substr(0, idx);
-        std::string const func_name = arg.substr(idx + 1, std::string::npos);
-
+static void gpi_load_extra(std::vector<std::string> to_load) {
+    for (const auto &lib_name : to_load) {
         void *lib_handle = utils_dyn_open(lib_name.c_str());
         if (!lib_handle) {
             printf("cocotb: Error loading shared library %s\n",
@@ -163,20 +148,16 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             exit(1);
         }
 
-        void *entry_point = utils_dyn_sym(lib_handle, func_name.c_str());
+        void *entry_point = utils_dyn_sym(lib_handle, xstr(GPI_REGISTER_IMPL));
         if (!entry_point) {
-            char const *fmt =
-                "cocotb: Unable to find entry point %s for shared library "
-                "%s\n%s";
-            char const *msg =
-                "        Perhaps you meant to use `,` instead of `:` to "
-                "separate library names, as this changed in cocotb 1.4?\n";
-            printf(fmt, func_name.c_str(), lib_name.c_str(), msg);
+            LOG_ERROR(
+                "Unable to find `" xstr(GPI_REGISTER_IMPL) "` function in GPI_EXTRA shared library %s\n",
+                lib_name.c_str());
             exit(1);
         }
 
         layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
-        LOG_TRACE("[ GPI Init ] => Impl Init (%s)", arg.c_str());
+        LOG_TRACE("[ GPI Init ] => Impl Init (%s)", lib_name.c_str());
         new_lib_entry();
         LOG_TRACE("Impl Init => [ GPI Init ]");
     }
@@ -268,7 +249,7 @@ void gpi_entry_point() {
             to_load.push_back(lib_list);
         }
 
-        gpi_load_libs(to_load);
+        gpi_load_extra(to_load);
     }
 
     // Load users
