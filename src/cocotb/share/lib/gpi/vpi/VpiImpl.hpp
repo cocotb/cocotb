@@ -346,8 +346,6 @@ class VpiImpl : public GpiImplInterface {
 
     const char *get_type_delimiter(GpiObjHdl *obj_hdl);
 
-    void main() noexcept;
-
   private:
     std::string m_product;
     std::string m_version;
