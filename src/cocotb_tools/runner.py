@@ -279,28 +279,34 @@ class Runner(ABC):
 
         self.env.update(os.environ)
 
-        gpi_users: list[str] = []
+        bootstrap_entries: list[str] = []
 
-        # Ensure libpython is in GPI_USERS before pygpi_entry_point
-        if "GPI_USERS" not in self.env:
+        if "COCOTB_BOOTSTRAP" not in self.env:
+            bootstrap_entries.append(cocotb_tools.config.gpi_entry_point())
+
+            # Ensure libpython is loaded before the PyGPI entry point.
             if (libpython_loc := self.env.get("LIBPYTHON_LOC")) is not None:
-                gpi_users.append(libpython_loc)
+                bootstrap_entries.append(
+                    cocotb_tools.config.bootstrap_entry(libpython_loc)
+                )
             else:
                 libpython_path = find_libpython.find_libpython()
                 if libpython_path is None:
                     raise ValueError(
                         "Unable to find libpython, please make sure the appropriate libpython is installed"
                     )
-                gpi_users.append(libpython_path)
+                bootstrap_entries.append(
+                    cocotb_tools.config.bootstrap_entry(libpython_path)
+                )
 
         # TODO the following line reappends the path on every call to build() or test(). This needs to not be an attribute.
         # Most of the stuff on this class really shouldn't be an attribute, but that's a non-trivial and API-breaking refactor.
         self.env["PATH"] += os.pathsep + str(cocotb_tools.config.libs_dir)
         self.env["PYTHONPATH"] = os.pathsep.join(sys.path)
         self.env["PYGPI_PYTHON_BIN"] = sys.executable
-        if "GPI_USERS" not in self.env:
-            gpi_users.append(cocotb_tools.config.pygpi_entry_point())
-            self.env["GPI_USERS"] = ";".join(gpi_users)
+        if "COCOTB_BOOTSTRAP" not in self.env:
+            bootstrap_entries.append(cocotb_tools.config.pygpi_entry_point())
+            self.env["COCOTB_BOOTSTRAP"] = os.pathsep.join(bootstrap_entries)
 
     def _set_env_build(self) -> None:
         self._set_env_common()
@@ -907,6 +913,10 @@ class Icarus(Runner):
         if shutil.which("iverilog") is None:
             raise SystemExit("ERROR: iverilog executable not found!")
 
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("icarus", "vpi")
+
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"-I{include}" for include in includes]
 
@@ -1139,15 +1149,15 @@ class Questa(Runner):
         if gpi_if_entry == "fli":
             lib_opts = [
                 "-foreign",
-                "cocotb_init "
-                + cocotb_tools.config.lib_name_path("fli", "questa").as_posix(),
+                "cocotb_bootstrap_entry "
+                + cocotb_tools.config.lib_entry("fli", "questa"),
             ]
         elif gpi_if_entry == "vhpi":
             lib_opts = ["-voptargs=-access=rw+/."]
             lib_opts += [
                 "-foreign",
-                "vhpi_startup_routines_bootstrap "
-                + cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix(),
+                "cocotb_bootstrap_entry "
+                + cocotb_tools.config.lib_entry("vhpi", "questa"),
             ]
         else:
             lib_opts = [
@@ -1175,16 +1185,13 @@ class Questa(Runner):
             ]
         )
 
-        gpi_extra_list = []
         for gpi_if in self.gpi_interfaces[1:]:
             gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
-            if gpi_if_lib_path.is_file():
-                gpi_extra_list.append(
-                    gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
-                )
-            else:
+            if not gpi_if_lib_path.is_file():
                 raise RuntimeError(f"{gpi_if_lib_path} library not found.")
-        self.env["GPI_EXTRA"] = ",".join(gpi_extra_list)
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
+            "questa", *self.gpi_interfaces
+        )
 
         return cmds
 
@@ -1343,14 +1350,14 @@ class QuestaQIS(Runner):
         if gpi_if_entry == "fli":
             lib_opts = [
                 "-foreign",
-                "cocotb_init "
-                + cocotb_tools.config.lib_name_path("fli", "questa").as_posix(),
+                "cocotb_bootstrap_entry "
+                + cocotb_tools.config.lib_entry("fli", "questa"),
             ]
         elif gpi_if_entry == "vhpi":
             lib_opts = [
                 "-foreign",
-                "vhpi_startup_routines_bootstrap "
-                + cocotb_tools.config.lib_name_path("vhpi", "questa").as_posix(),
+                "cocotb_bootstrap_entry "
+                + cocotb_tools.config.lib_entry("vhpi", "questa"),
             ]
         else:
             lib_opts = [
@@ -1387,16 +1394,13 @@ class QuestaQIS(Runner):
             ]
         )
 
-        gpi_extra_list = []
         for gpi_if in self.gpi_interfaces[1:]:
             gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
-            if gpi_if_lib_path.is_file():
-                gpi_extra_list.append(
-                    gpi_if_lib_path.as_posix() + f":cocotb{gpi_if}_entry_point"
-                )
-            else:
+            if not gpi_if_lib_path.is_file():
                 raise RuntimeError(f"{gpi_if_lib_path} library not found.")
-        self.env["GPI_EXTRA"] = ",".join(gpi_extra_list)
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
+            "questa", *self.gpi_interfaces
+        )
 
         return cmds
 
@@ -1415,6 +1419,7 @@ class Ghdl(Runner):
         super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("ghdl", "vpi")
 
     def _simulator_in_path(self) -> None:
         if shutil.which("ghdl") is None:
@@ -1561,6 +1566,7 @@ class Nvc(Runner):
         super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("nvc", "vhpi")
 
     def _simulator_in_path(self) -> None:
         if shutil.which("nvc") is None:
@@ -1731,9 +1737,8 @@ class AldecBase(Runner):
                 PLUSARGS=" ".join(_as_tcl_value(v) for v in self.plusargs),
             )
 
-            self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_entry("vpi", "riviera")
-                + ":cocotbvpi_entry_point"
+            self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
+                "riviera", "vhpi", "vpi"
             )
         else:
             do_script += "asim +access +w_nets -interceptcoutput -pli {EXT_NAME} {EXTRA_ARGS} {TOPLEVEL} {PLUSARGS} \n".format(
@@ -1750,9 +1755,8 @@ class AldecBase(Runner):
                 PLUSARGS=" ".join(_as_tcl_value(v) for v in self.plusargs),
             )
 
-            self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
-                + ":cocotbvhpi_entry_point"
+            self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
+                "riviera", "vpi", "vhpi"
             )
 
         do_script = self._append_pre_cmd(do_script)
@@ -1880,6 +1884,7 @@ class Verilator(Runner):
         super()._set_env_test()
         if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
             self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("verilator", "vpi")
 
     def _simulator_in_path(self) -> None:
         # the verilator binary is only needed for building
@@ -1952,7 +1957,7 @@ class Verilator(Runner):
                 "-o",
                 self.hdl_toplevel,
                 "-LDFLAGS",
-                f"-Wl,-rpath,{cocotb_tools.config.libs_dir} -L{cocotb_tools.config.libs_dir} -lcocotbvpi_verilator",
+                f"-Wl,-rpath,{cocotb_tools.config.libs_dir} -L{cocotb_tools.config.libs_dir} -lcocotb_bootstrap -rdynamic",
             ]
             + (["--trace"] if self.waves else [])
             + [arg.value for arg in self._build_args]
@@ -2165,10 +2170,7 @@ class Xcelium(Runner):
                 *self._get_sim_cmd_suffix(),
             ]
         ]
-        self.env["GPI_EXTRA"] = (
-            cocotb_tools.config.lib_name_path("vhpi", "xcelium").as_posix()
-            + ":cocotbvhpi_entry_point"
-        )
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("xcelium", "vpi", "vhpi")
 
         return cmds
 
@@ -2188,6 +2190,10 @@ class Vcs(Runner):
     def _simulator_in_path(self) -> None:
         if shutil.which("vcs") is None:
             raise SystemExit("ERROR: vcs executable not found!")
+
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("vcs", "vpi")
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{include}" for include in includes]
@@ -2288,6 +2294,10 @@ class Dsim(Runner):
     def _simulator_in_path(self) -> None:
         if shutil.which("dsim") is None:
             raise SystemExit("ERROR: dsim executable not found!")
+
+    def _set_env_test(self) -> None:
+        super()._set_env_test()
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("dsim", "vpi")
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{include}" for include in includes]

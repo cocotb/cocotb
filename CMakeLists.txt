@@ -248,6 +248,14 @@ if(UNIX)
     list(APPEND GPI_LINK_LIBS dl)
 endif()
 
+add_cocotb_library(cocotb_bootstrap
+    SOURCES
+        ${SHARE_LIB_DIR}/gpi/dynload.cpp
+        ${SHARE_LIB_DIR}/gpi/bootstrapper.cpp
+    LIBRARIES ${GPI_LINK_LIBS}
+    RC_LIBRARIES ""
+)
+
 add_cocotb_library(gpi
     SOURCES
         ${SHARE_LIB_DIR}/gpi/GpiCbHdl.cpp
@@ -480,7 +488,7 @@ if(WIN32)
 endif()
 
 if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
-    install(TARGETS gpi DESTINATION cocotb/libs)
+    install(TARGETS cocotb_bootstrap gpi DESTINATION cocotb/libs)
 
     set(SIM_TARGETS
         cocotbvpi_icarus cocotbvpi_modelsim cocotbvhpi_modelsim

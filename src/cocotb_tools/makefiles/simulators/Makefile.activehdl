@@ -31,19 +31,21 @@ endif
 ALOG_ARGS += -dbg
 ACOM_ARGS += -dbg
 
-GPI_EXTRA:=
+GPI_IMPL:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     # backslashes needed because we embed in `echo` below
     GPI_ARGS = -pli \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi activehdl)\"
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl activehdl vpi)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl activehdl vpi vhpi)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     # backslashes needed because we embed in `echo` below
     GPI_ARGS = -loadvhpi \"$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vhpi activehdl)\"
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl activehdl vhpi)
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi activehdl):cocotbvpi_entry_point
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl activehdl vhpi vpi)
 endif
 else
    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
@@ -66,7 +68,7 @@ endif
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) $(COCOTB_ENV) \
+	set -o pipefail; GPI_IMPL=$(GPI_IMPL) $(COCOTB_ENV) \
 	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(SIM_CMD_SUFFIX)
 
 	$(call check_results)
