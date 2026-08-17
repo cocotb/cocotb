@@ -144,7 +144,9 @@ def gpi_entry_point() -> str:
 def pygpi_entry_point() -> str:
     import cocotb.simulator  # noqa: PLC0415
 
-    return bootstrap_entry(Path(cocotb.simulator.__file__).resolve(), "initialize")
+    return bootstrap_entry(
+        Path(cocotb.simulator.__file__).resolve(), "pygpi_initialize"
+    )
 
 
 def _gpi_impl_path(interface: str, simulator: str) -> Path:
