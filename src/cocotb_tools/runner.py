@@ -1182,10 +1182,6 @@ class Questa(Runner):
             ]
         )
 
-        for gpi_if in self.gpi_interfaces[1:]:
-            gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
-            if not gpi_if_lib_path.is_file():
-                raise RuntimeError(f"{gpi_if_lib_path} library not found.")
         self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
             "questa", *self.gpi_interfaces
         )
@@ -1391,10 +1387,6 @@ class QuestaQIS(Runner):
             ]
         )
 
-        for gpi_if in self.gpi_interfaces[1:]:
-            gpi_if_lib_path = cocotb_tools.config.lib_name_path(gpi_if, "questa")
-            if not gpi_if_lib_path.is_file():
-                raise RuntimeError(f"{gpi_if_lib_path} library not found.")
         self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl(
             "questa", *self.gpi_interfaces
         )
