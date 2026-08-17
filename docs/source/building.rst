@@ -63,7 +63,7 @@ Make Variables
 .. make:var:: VHDL_GPI_INTERFACE
 
     Explicitly sets the simulator interface to use when :make:var:`TOPLEVEL_LANG` is ``vhdl``.
-    This includes the initial GPI interface loaded, and :envvar:`GPI_EXTRA` library loaded in mixed language simulations.
+    This includes the initial GPI interface loaded, and :envvar:`GPI_IMPL` library loaded in mixed language simulations.
     Valid values are ``vpi``, ``vhpi``, or ``fli``.
     Not all simulators support all values; refer to the :ref:`simulator-support` section for details.
 
@@ -164,7 +164,7 @@ Make Variables
     i.e. ``libpython.so`` or ``python.dll`` on Windows.
     This is determined with ``cocotb-config --libpython`` during build.
 
-    This is only used if :envvar:`GPI_USERS` is not already defined by the user.
+    This is only used if :envvar:`COCOTB_BOOTSTRAP` is not already defined by the user.
 
 The :envvar:`COCOTB_TOPLEVEL` variable is also often used by the Makefile-based build and runner system.
 

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "../intrusive_deque.hpp"
+#include "./dynload.hpp"
 #include "./gpi_priv.hpp"
 #include "./logging.hpp"
 
@@ -80,7 +81,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
         if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("GPI: %s support already registered, check GPI_EXTRA",
+            LOG_WARN("GPI: %s support already registered, check GPI_IMPL",
                      func_tbl->get_name_c());
             return -1;
         }
@@ -120,7 +121,7 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             ':');  // find from right since path could contain colons (Windows)
         if (idx == std::string::npos) {
             // no colon in the string
-            printf("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
+            printf("cocotb: Error parsing GPI_IMPL %s\n", arg.c_str());
             exit(1);
         }
 
@@ -136,13 +137,10 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
 
         void *entry_point = utils_dyn_sym(lib_handle, func_name.c_str());
         if (!entry_point) {
-            char const *fmt =
+            printf(
                 "cocotb: Unable to find entry point %s for shared library "
-                "%s\n%s";
-            char const *msg =
-                "        Perhaps you meant to use `,` instead of `:` to "
-                "separate library names, as this changed in cocotb 1.4?\n";
-            printf(fmt, func_name.c_str(), lib_name.c_str(), msg);
+                "%s\n",
+                func_name.c_str(), lib_name.c_str());
             exit(1);
         }
 
@@ -153,75 +151,11 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
     }
 }
 
-static int gpi_load_users() {
-    auto users = getenv("GPI_USERS");
-    if (!users) {
-        LOG_ERROR("No GPI_USERS specified, exiting...");
-        return -1;
-    }
-    // I would have loved to use istringstream and getline, but it causes a
-    // compilation issue when compiling with newer GCCs against C++11.
-    std::string users_str = users;
-    std::string::size_type start_idx = 0;
-    bool done = false;
-    while (!done) {
-        auto next_delim = users_str.find(';', start_idx);
-        if (next_delim == std::string::npos) {
-            done = true;
-            next_delim = users_str.length();
-        }
-        auto user = users_str.substr(start_idx, next_delim - start_idx);
-        start_idx = next_delim + 1;
-
-        auto split_idx = user.rfind(',');
-
-        std::string lib_name;
-        std::string func_name;
-        if (split_idx == std::string::npos) {
-            lib_name = std::move(user);
-        } else {
-            lib_name = user.substr(0, split_idx);
-            func_name = user.substr(split_idx + 1, std::string::npos);
-        }
-
-        void *lib_handle = utils_dyn_open(lib_name.c_str());
-        if (!lib_handle) {
-            LOG_ERROR("Error loading library '%s'", lib_name.c_str());
-            gpi_finish();
-            return -1;
-        }
-
-        if (split_idx != std::string::npos) {
-            void *func_handle = utils_dyn_sym(lib_handle, func_name.c_str());
-            if (!func_handle) {
-                LOG_ERROR(
-                    "Error getting entry func '%s' from loaded library '%s'",
-                    func_name.c_str(), lib_name.c_str());
-                gpi_finish();
-                return -1;
-            }
-
-            LOG_INFO("Running entry func '%s' from loaded library '%s'",
-                     func_name.c_str(), lib_name.c_str());
-
-            auto entry_func = (void (*)(void))func_handle;
-            LOG_TRACE("[ GPI Init ] => User Init (%s:%s)", lib_name.c_str(),
-                      func_name.c_str());
-            entry_func();
-            LOG_TRACE("User Init => [ GPI Init ]");
-        } else {
-            LOG_INFO("Loaded entry library: '%s'", lib_name.c_str());
-        }
-    }
-
-    return 0;
-}
-
 void gpi_entry_point() {
     LOG_TRACE("=> [ GPI Init ]");
 
     /* Lets look at what other libs we were asked to load too */
-    char *lib_env = getenv("GPI_EXTRA");
+    char *lib_env = getenv("GPI_IMPL");
 
     if (lib_env) {
         std::string lib_list = lib_env;
@@ -240,11 +174,6 @@ void gpi_entry_point() {
         }
 
         gpi_load_libs(to_load);
-    }
-
-    // Load users
-    if (gpi_load_users()) {
-        return;
     }
 
     gpi_print_registered_impl();
@@ -278,6 +207,16 @@ GPI_EXPORT void gpi_init_logging_and_debug() {
             // LCOV_EXCL_STOP
         }
     }
+}
+
+int gpi_initialize() {
+    gpi_init_logging_and_debug();
+    gpi_entry_point();
+
+    // Some simulators load their interface library during compilation or
+    // elaboration. In that case no implementation is registered so we exit
+    // gracefully.
+    return gpi_has_registered_impl() ? 0 : 1;
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {

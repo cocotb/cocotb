@@ -1,0 +1,1 @@
+:external+cocotb21:envvar:`GPI_USERS` was removed and replaced with :envvar:`COCOTB_BOOTSTRAP` which generally loads any libraries, not strictly after the GPI is initialized.
