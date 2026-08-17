@@ -127,14 +127,18 @@ def bootstrap_entry(
     return f"{library_str},{entry_point}"
 
 
+def _shared_library_path(name: str) -> Path:
+    extension = ".dll" if os.name == "nt" else ".so"
+    for prefix in ("", "lib"):
+        library_path = libs_dir / f"{prefix}{name}{extension}"
+        if library_path.is_file():
+            return library_path
+    raise FileNotFoundError(f"Shared library {name!r} not found")
+
+
 def gpi_entry_point() -> str:
     """Return the libgpi entry for ``COCOTB_BOOTSTRAP``."""
-    for prefix in ("", "lib"):
-        for ext in (".so", ".dll"):
-            libgpi_path = libs_dir / f"{prefix}gpi{ext}"
-            if libgpi_path.is_file():
-                return bootstrap_entry(libgpi_path, "gpi_initialize")
-    raise FileNotFoundError("libgpi not found")
+    return bootstrap_entry(_shared_library_path("gpi"), "gpi_initialize")
 
 
 def pygpi_entry_point() -> str:
@@ -143,11 +147,7 @@ def pygpi_entry_point() -> str:
     return bootstrap_entry(Path(cocotb.simulator.__file__).resolve(), "initialize")
 
 
-def lib_name_path(interface: str, simulator: str) -> Path:
-    """
-    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
-    """
-
+def _gpi_impl_path(interface: str, simulator: str) -> Path:
     interface_name = interface.lower()
     supported_interfaces = ["vpi", "vhpi", "fli"]
     if interface_name not in supported_interfaces:
@@ -196,21 +196,18 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     else:
         lib_prefix = "lib"
 
-    lib_name = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
-    return libs_dir / lib_name
+    filename = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
+    return libs_dir / filename
 
 
 def lib_entry(interface: str, simulator: str) -> str:
-    """Return the interface library and, when required, its entry function.
-
-    The returned value is suitable for simulator options which accept either a
-    library path or a ``library:entry_function`` pair.  Simulators which can
-    discover the standard interface entry point receive only the library path.
-    """
+    """Return the bootstrap library and, when required, its entry function."""
 
     interface_name = interface.lower()
     simulator_name = simulator.lower()
-    library = lib_name_path(interface_name, simulator_name).as_posix()
+    # Validate the interface and simulator names.
+    _gpi_impl_path(interface_name, simulator_name)
+    library = _shared_library_path("cocotb_bootstrap").as_posix()
 
     requires_entry_function = {
         ("vpi", "cvc"),
@@ -233,7 +230,7 @@ def gpi_impl(simulator: str, *interfaces: str) -> str:
     entries = []
     for interface in interfaces:
         interface_name = interface.lower()
-        library = lib_name_path(interface_name, simulator).as_posix()
+        library = _gpi_impl_path(interface_name, simulator).as_posix()
         entries.append(f"{library}:cocotb{interface_name}_entry_point")
     return ",".join(entries)
 
@@ -273,14 +270,8 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Print the absolute path to the interface libraries location",
     )
     group.add_argument(
-        "--lib-name-path",
-        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
-        nargs=2,
-        metavar=("INTERFACE", "SIMULATOR"),
-    )
-    group.add_argument(
         "--lib-entry",
-        help="Print the interface library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
+        help="Print the bootstrap library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
     )
@@ -328,8 +319,6 @@ def main() -> None:
         print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
-    elif args.lib_name_path:
-        print(lib_name_path(*args.lib_name_path).as_posix())
     elif args.lib_entry:
         print(lib_entry(*args.lib_entry))
     elif args.gpi_impl:
