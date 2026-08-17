@@ -85,7 +85,7 @@ static void pygpi_init_debug() {
 static int start_of_sim_time(void *);
 static void finalize(void *);
 
-extern "C" PYGPI_EXPORT int initialize(void) {
+extern "C" PYGPI_EXPORT int pygpi_initialize(void) {
     pygpi_init_debug();
     pygpi_logging_initialize();
 
