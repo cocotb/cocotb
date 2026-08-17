@@ -311,12 +311,6 @@ class VhpiImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
-    /** Entry point for the simulator.
-     *
-     * Called if this GpiImpl will act as the main simulator entry point.
-     */
-    void main() noexcept;
-
   private:
     std::string m_product;
     std::string m_version;
