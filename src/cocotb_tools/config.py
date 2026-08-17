@@ -198,7 +198,7 @@ def _gpi_impl_path(interface: str, simulator: str) -> Path:
     else:
         lib_prefix = "lib"
 
-    filename = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
+    filename = f"{lib_prefix}gpi_impl_{library_name}_{interface_name}{lib_ext}"
     return libs_dir / filename
 
 
@@ -232,8 +232,9 @@ def gpi_impl(simulator: str, *interfaces: str) -> str:
     entries = []
     for interface in interfaces:
         interface_name = interface.lower()
-        library = _gpi_impl_path(interface_name, simulator).as_posix()
-        entries.append(f"{library}:cocotb{interface_name}_entry_point")
+        library_path = _gpi_impl_path(interface_name, simulator)
+        entry_point = f"{library_path.stem.removeprefix('lib')}_entry"
+        entries.append(f"{library_path.as_posix()}:{entry_point}")
     return ",".join(entries)
 
 
