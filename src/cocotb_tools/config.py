@@ -172,6 +172,32 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     return libs_dir / lib_name
 
 
+def lib_entry(interface: str, simulator: str) -> str:
+    """Return the interface library and, when required, its entry function.
+
+    The returned value is suitable for simulator options which accept either a
+    library path or a ``library:entry_function`` pair.  Simulators which can
+    discover the standard interface entry point receive only the library path.
+    """
+
+    interface_name = interface.lower()
+    simulator_name = simulator.lower()
+    library = lib_name_path(interface_name, simulator_name).as_posix()
+
+    entry_functions = {
+        ("vpi", "cvc"): "vlog_startup_routines_bootstrap",
+        ("vpi", "ius"): "vlog_startup_routines_bootstrap",
+        ("vpi", "xcelium"): "vlog_startup_routines_bootstrap",
+        ("vhpi", "activehdl"): "vhpi_startup_routines_bootstrap",
+        ("vhpi", "riviera"): "vhpi_startup_routines_bootstrap",
+    }
+    entry_function = entry_functions.get((interface_name, simulator_name))
+
+    if entry_function is None:
+        return library
+    return f"{library}:{entry_function}"
+
+
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
@@ -213,6 +239,12 @@ def _get_parser() -> argparse.ArgumentParser:
         metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
+        "--lib-entry",
+        help="Print the interface library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
+        nargs=2,
+        metavar=("INTERFACE", "SIMULATOR"),
+    )
+    group.add_argument(
         "--version",
         action="store_true",
         help="Print the version of cocotb",
@@ -247,6 +279,8 @@ def main() -> None:
         print(libs_dir.as_posix())
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
+    elif args.lib_entry:
+        print(lib_entry(*args.lib_entry))
     elif args.pygpi_entry_point:
         print(pygpi_entry_point())
     elif args.version:

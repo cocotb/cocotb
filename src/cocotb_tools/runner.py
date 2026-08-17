@@ -1032,7 +1032,7 @@ class Icarus(Runner):
                 *self._get_sim_cmd_prefix(),
                 "vvp",
                 "-m",
-                cocotb_tools.config.lib_name_path("vpi", "icarus").as_posix(),
+                cocotb_tools.config.lib_entry("vpi", "icarus"),
                 *self.test_args,
                 str(self.sim_file),
                 *plusargs,
@@ -1152,7 +1152,7 @@ class Questa(Runner):
         else:
             lib_opts = [
                 "-pli",
-                cocotb_tools.config.lib_name_path("vpi", "questa").as_posix(),
+                cocotb_tools.config.lib_entry("vpi", "questa"),
             ]
 
         cmds.append(
@@ -1355,7 +1355,7 @@ class QuestaQIS(Runner):
         else:
             lib_opts = [
                 "-pli",
-                cocotb_tools.config.lib_name_path("vpi", "questa").as_posix(),
+                cocotb_tools.config.lib_entry("vpi", "questa"),
             ]
 
         cmds.append(
@@ -1520,7 +1520,7 @@ class Ghdl(Runner):
             + [f"--work={self.hdl_toplevel_library}"]
             + ghdl_run_args
             + [self.sim_hdl_toplevel]
-            + ["--vpi=" + cocotb_tools.config.lib_name_path("vpi", "ghdl").as_posix()]
+            + ["--vpi=" + cocotb_tools.config.lib_entry("vpi", "ghdl")]
             + self.plusargs
             + self._get_parameter_options(self.parameters)
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
@@ -1627,7 +1627,7 @@ class Nvc(Runner):
             + self._get_parameter_options(self.parameters)
             + ["-r"]
             + self.test_args
-            + ["--load=" + cocotb_tools.config.lib_name_path("vhpi", "nvc").as_posix()]
+            + ["--load=" + cocotb_tools.config.lib_entry("vhpi", "nvc")]
             + self.plusargs
             + ([f"--wave={self._waves_file()}"] if self.waves or self.gui else [])
             + self._get_sim_cmd_suffix(),
@@ -1681,9 +1681,7 @@ class AldecBase(Runner):
             verilog_args_str = " ".join(v for v in verilog_args)
             vhdl_args_str = " ".join(v for v in vhdl_args)
             hdl_library = _as_tcl_value(self.hdl_library)
-            ext_name = _as_tcl_value(
-                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
-            )
+            ext_name = _as_tcl_value(cocotb_tools.config.lib_entry("vpi", "riviera"))
 
             do_script.append(f"alib {hdl_library}")
 
@@ -1722,8 +1720,7 @@ class AldecBase(Runner):
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
                 EXT_NAME=_as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vhpi", "riviera").as_posix()
-                    + ":vhpi_startup_routines_bootstrap"
+                    cocotb_tools.config.lib_entry("vhpi", "riviera")
                 ),
                 EXTRA_ARGS=" ".join(
                     _as_tcl_value(v)
@@ -1735,7 +1732,7 @@ class AldecBase(Runner):
             )
 
             self.env["GPI_EXTRA"] = (
-                cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
+                cocotb_tools.config.lib_entry("vpi", "riviera")
                 + ":cocotbvpi_entry_point"
             )
         else:
@@ -1743,9 +1740,7 @@ class AldecBase(Runner):
                 TOPLEVEL=_as_tcl_value(
                     f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
                 ),
-                EXT_NAME=_as_tcl_value(
-                    cocotb_tools.config.lib_name_path("vpi", "riviera").as_posix()
-                ),
+                EXT_NAME=_as_tcl_value(cocotb_tools.config.lib_entry("vpi", "riviera")),
                 EXTRA_ARGS=" ".join(
                     _as_tcl_value(v)
                     for v in (
@@ -2156,8 +2151,7 @@ class Xcelium(Runner):
                 f"{self.build_dir}/xrun_snapshot",
                 # + ["-vpicompat 1800v2005"]  # <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
                 "-loadvpisim",
-                cocotb_tools.config.lib_name_path("vpi", "xcelium").as_posix()
-                + ":vlog_startup_routines_bootstrap",
+                cocotb_tools.config.lib_entry("vpi", "xcelium"),
                 "-cds_implicit_tmpdir",
                 tmpdir,
                 "-licqueue",
@@ -2243,7 +2237,7 @@ class Vcs(Runner):
             cmds = [
                 ["vcs"]
                 + self._build_opts
-                + ["-load", cocotb_tools.config.lib_name_path("vpi", "vcs").as_posix()]
+                + ["-load", cocotb_tools.config.lib_entry("vpi", "vcs")]
                 + [arg.value for arg in self._build_args]
                 + self._get_include_options(self.includes)
                 + self._get_define_options(self.defines)
@@ -2331,7 +2325,7 @@ class Dsim(Runner):
                 "-work",
                 str(self.build_dir),
                 "-pli_lib",
-                cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                cocotb_tools.config.lib_entry("vpi", "dsim"),
                 "+acc+rwcbfsWF",
                 "-image",
                 "image",
@@ -2364,7 +2358,7 @@ class Dsim(Runner):
                     "-work",
                     str(self.build_dir),
                     "-pli_lib",
-                    cocotb_tools.config.lib_name_path("vpi", "dsim").as_posix(),
+                    cocotb_tools.config.lib_entry("vpi", "dsim"),
                     "+acc+rwcbfsWF",
                     "-genimage",
                     "image",
