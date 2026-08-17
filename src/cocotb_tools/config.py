@@ -143,7 +143,7 @@ def lib_name_path(interface: str, simulator: str) -> Path:
         "nvc",
         "dsim",
     ]
-    if simulator_name not in supported_sims:
+    if simulator not in supported_sims:
         raise ValueError(
             "Wrong simulator name. Supported: " + ", ".join(supported_sims)
         )
