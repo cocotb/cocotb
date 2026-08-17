@@ -168,7 +168,7 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     string(TOLOWER ${SIM_NAME} SIM_LOWER)
-    set(TARGET_NAME cocotbvpi_${SIM_LOWER})
+    set(TARGET_NAME gpi_impl_${SIM_LOWER}_vpi)
 
     add_cocotb_library(${TARGET_NAME}
         SOURCES
@@ -177,7 +177,7 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
             ${SHARE_LIB_DIR}/gpi/vpi/VpiObj.cpp
             ${SHARE_LIB_DIR}/gpi/vpi/VpiIterator.cpp
             ${SHARE_LIB_DIR}/gpi/vpi/VpiSignal.cpp
-        DEFINES COCOTBVPI_EXPORTS ${SIM_DEFINE}
+        DEFINES COCOTBVPI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_${SIM_LOWER}_vpi_entry ${SIM_DEFINE}
         LIBRARIES gpi ${ARG_EXTRA_LIBS}
     )
 
@@ -205,7 +205,7 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     string(TOLOWER ${SIM_NAME} SIM_LOWER)
-    set(TARGET_NAME cocotbvhpi_${SIM_LOWER})
+    set(TARGET_NAME gpi_impl_${SIM_LOWER}_vhpi)
 
     add_cocotb_library(${TARGET_NAME}
         SOURCES
@@ -214,7 +214,7 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
             ${SHARE_LIB_DIR}/gpi/vhpi/VhpiObj.cpp
             ${SHARE_LIB_DIR}/gpi/vhpi/VhpiIterator.cpp
             ${SHARE_LIB_DIR}/gpi/vhpi/VhpiSignal.cpp
-        DEFINES COCOTBVHPI_EXPORTS ${SIM_DEFINE}
+        DEFINES COCOTBVHPI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_${SIM_LOWER}_vhpi_entry ${SIM_DEFINE}
         LIBRARIES gpi ${ARG_EXTRA_LIBS}
     )
 
@@ -249,24 +249,24 @@ endif()
 add_vpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
 add_vhpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
 
-add_cocotb_library(cocotbfli_modelsim
+add_cocotb_library(gpi_impl_modelsim_fli
     SOURCES
         ${SHARE_LIB_DIR}/gpi/fli/FliImpl.cpp
         ${SHARE_LIB_DIR}/gpi/fli/FliCbHdl.cpp
         ${SHARE_LIB_DIR}/gpi/fli/FliObjHdl.cpp
-    DEFINES COCOTBFLI_EXPORTS
+    DEFINES COCOTBFLI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_modelsim_fli_entry
     LIBRARIES gpi ${MODELSIM_EXTRA_LIBS}
 )
 
 if(WIN32)
-    target_link_directories(cocotbfli_modelsim PRIVATE ${COCOTB_DEF_DIR})
+    target_link_directories(gpi_impl_modelsim_fli PRIVATE ${COCOTB_DEF_DIR})
 endif()
 
 if(NOT WIN32)
     if(APPLE)
-        target_link_options(cocotbfli_modelsim PRIVATE -undefined dynamic_lookup)
+        target_link_options(gpi_impl_modelsim_fli PRIVATE -undefined dynamic_lookup)
     else()
-        target_link_options(cocotbfli_modelsim PRIVATE -Wl,--allow-shlib-undefined)
+        target_link_options(gpi_impl_modelsim_fli PRIVATE -Wl,--allow-shlib-undefined)
     endif()
 endif()
 
@@ -322,28 +322,28 @@ if(WIN32)
 endif()
 
 if(WIN32)
-    add_dependencies(cocotbvpi_icarus icarus_import_lib)
-    add_dependencies(cocotbvpi_modelsim modelsim_import_lib)
-    add_dependencies(cocotbvhpi_modelsim modelsim_import_lib)
-    add_dependencies(cocotbfli_modelsim modelsim_import_lib)
-    add_dependencies(cocotbvpi_ghdl ghdl_import_lib)
-    add_dependencies(cocotbvhpi_nvc nvcvhpi_import_lib)
-    add_dependencies(cocotbvpi_aldec aldec_import_lib)
-    add_dependencies(cocotbvhpi_aldec aldec_import_lib)
+    add_dependencies(gpi_impl_icarus_vpi icarus_import_lib)
+    add_dependencies(gpi_impl_modelsim_vpi modelsim_import_lib)
+    add_dependencies(gpi_impl_modelsim_vhpi modelsim_import_lib)
+    add_dependencies(gpi_impl_modelsim_fli modelsim_import_lib)
+    add_dependencies(gpi_impl_ghdl_vpi ghdl_import_lib)
+    add_dependencies(gpi_impl_nvc_vhpi nvcvhpi_import_lib)
+    add_dependencies(gpi_impl_aldec_vpi aldec_import_lib)
+    add_dependencies(gpi_impl_aldec_vhpi aldec_import_lib)
 endif()
 
 if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     install(TARGETS cocotb_bootstrap gpi DESTINATION cocotb/libs)
 
     set(SIM_TARGETS
-        cocotbvpi_icarus cocotbvpi_modelsim cocotbvhpi_modelsim
-        cocotbfli_modelsim cocotbvpi_ghdl cocotbvpi_aldec cocotbvhpi_aldec
-        cocotbvhpi_nvc)
+        gpi_impl_icarus_vpi gpi_impl_modelsim_vpi gpi_impl_modelsim_vhpi
+        gpi_impl_modelsim_fli gpi_impl_ghdl_vpi gpi_impl_aldec_vpi
+        gpi_impl_aldec_vhpi gpi_impl_nvc_vhpi)
 
     if(UNIX)
         list(APPEND SIM_TARGETS
-            cocotbvpi_ius cocotbvhpi_ius cocotbvpi_vcs
-            cocotbvpi_verilator cocotbvpi_dsim)
+            gpi_impl_ius_vpi gpi_impl_ius_vhpi gpi_impl_vcs_vpi
+            gpi_impl_verilator_vpi gpi_impl_dsim_vpi)
     endif()
 
     install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
