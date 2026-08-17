@@ -137,7 +137,7 @@ The cocotb part of the output will look like the following:
 .. code-block:: text
     :class: full-width
 
-      -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:113  in initialize                      Using Python 3.12.3 interpreter at /usr/bin/python3.12
+      -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:113  in pygpi_initialize                Using Python 3.12.3 interpreter at /usr/bin/python3.12
       0.00ns INFO     cocotb                             Running on Icarus Verilog version 13.0 (devel)
       0.00ns INFO     cocotb                             Seeding Python random module with 1766343030
       0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /home/user/.local/lib/python3.12/site-packages/cocotb
@@ -165,7 +165,7 @@ If any of these values are not what you expect them to be, your Makefile or Pyth
 .. code-block:: text
     :class: full-width
 
-    ..ib/pygpi/embed.cpp:113  in initialize                      Using Python 3.12.3 interpreter at /usr/bin/python3.12
+    ..ib/pygpi/embed.cpp:113  in pygpi_initialize                Using Python 3.12.3 interpreter at /usr/bin/python3.12
     Running on Icarus Verilog version 13.0 (devel)
     Seeding Python random module with 1766343030
     Initialized cocotb v2.0.1 from /home/user/.local/lib/python3.12/site-packages/cocotb
