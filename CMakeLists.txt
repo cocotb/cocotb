@@ -22,6 +22,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_SKIP_RPATH TRUE)
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
@@ -32,16 +33,11 @@ else()
 endif()
 
 if(WIN32)
-    set(LIB_EXT "dll")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-else()
-    set(LIB_EXT "so")
 endif()
 
 if(MSVC)
     set(EXTRA_CXX_FLAGS "/permissive-" "/W4")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /MANIFEST:NO")
 else()
     set(BASE_WARNS
         "-Wall" "-Wextra" "-Wcast-qual" "-Wwrite-strings" "-Wconversion"
@@ -77,120 +73,13 @@ set(INCLUDE_DIRS
 set(SHARE_LIB_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/lib)
 set(COCOTB_DEF_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
 
-if(WIN32)
-    function(create_sxs_assembly_manifest NAME FILENAME LIBRARIES DEPENDENCY_ONLY MANIFEST_VAR)
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            set(ARCHITECTURE "amd64")
-        else()
-            set(ARCHITECTURE "x86")
-        endif()
-
-        set(DEPENDENCIES "")
-        foreach(LIB ${LIBRARIES})
-            string(APPEND DEPENDENCIES "        <dependency>\n")
-            string(APPEND DEPENDENCIES "            <dependentAssembly>\n")
-            string(APPEND DEPENDENCIES "                <assemblyIdentity name=\"${LIB}\" version=\"1.0.0.0\" type=\"win32\" processorArchitecture=\"${ARCHITECTURE}\" />\n")
-            string(APPEND DEPENDENCIES "            </dependentAssembly>\n")
-            string(APPEND DEPENDENCIES "        </dependency>\n")
-        endforeach()
-
-        if(NOT DEPENDENCY_ONLY)
-            set(MANIFEST_BODY "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
-            string(APPEND MANIFEST_BODY "<assembly xmlns=\"urn:schemas-microsoft-com:asm.v1\" manifestVersion=\"1.0\">\n")
-            string(APPEND MANIFEST_BODY "    <assemblyIdentity name=\"${NAME}\" version=\"1.0.0.0\" type=\"win32\" processorArchitecture=\"${ARCHITECTURE}\" />\n")
-            string(APPEND MANIFEST_BODY "    <file name=\"${FILENAME}\" />\n")
-            string(APPEND MANIFEST_BODY "${DEPENDENCIES}")
-            string(APPEND MANIFEST_BODY "</assembly>\n")
-        else()
-            set(MANIFEST_BODY "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n")
-            string(APPEND MANIFEST_BODY "<assembly xmlns=\"urn:schemas-microsoft-com:asm.v1\" manifestVersion=\"1.0\">\n")
-            string(APPEND MANIFEST_BODY "${DEPENDENCIES}")
-            string(APPEND MANIFEST_BODY "</assembly>\n")
-        endif()
-
-        set(${MANIFEST_VAR} "${MANIFEST_BODY}" PARENT_SCOPE)
-    endfunction()
-
-    function(create_rc_file RC_FILENAME NAME FILENAME LIBRARIES RUNTIME_LIBRARIES)
-        create_sxs_assembly_manifest(${NAME} ${FILENAME} "${LIBRARIES}" FALSE MANIFEST)
-
-        string(REPLACE "\"" "\"\"" MANIFEST "${MANIFEST}")
-        string(REPLACE "\n" "\\r\\n\"\n\"" MANIFEST "${MANIFEST}")
-        set(MANIFEST "\"${MANIFEST}\"")
-
-        set(RC_BODY "#pragma code_page(65001) // UTF-8\n")
-        string(APPEND RC_BODY "#include <Windows.h>\n\n")
-        string(APPEND RC_BODY "LANGUAGE 0x00, 0x00\n\n")
-        string(APPEND RC_BODY "ISOLATIONAWARE_MANIFEST_RESOURCE_ID RT_MANIFEST\n")
-        string(APPEND RC_BODY "BEGIN\n")
-        string(APPEND RC_BODY "${MANIFEST}\n")
-        string(APPEND RC_BODY "END\n")
-
-        if(RUNTIME_LIBRARIES)
-            create_sxs_assembly_manifest(${NAME} ${FILENAME} "${RUNTIME_LIBRARIES}" TRUE RUNTIME_MANIFEST)
-            string(REPLACE "\"" "\"\"" RUNTIME_MANIFEST "${RUNTIME_MANIFEST}")
-            string(REPLACE "\n" "\\r\\n\"\n\"" RUNTIME_MANIFEST "${RUNTIME_MANIFEST}")
-            set(RUNTIME_MANIFEST "\"${RUNTIME_MANIFEST}\"")
-            string(APPEND RC_BODY "\n1000 RT_MANIFEST\n")
-            string(APPEND RC_BODY "BEGIN\n")
-            string(APPEND RC_BODY "${RUNTIME_MANIFEST}\n")
-            string(APPEND RC_BODY "END\n")
-        endif()
-
-        file(WRITE ${RC_FILENAME} "${RC_BODY}")
-    endfunction()
-endif()
-
 function(add_cocotb_library TARGET_NAME)
     set(options "")
     set(oneValueArgs "OUTPUT_NAME")
-    set(multiValueArgs "SOURCES" "LIBRARIES" "DEFINES" "RC_LIBRARIES" "RC_RUNTIME_LIBRARIES")
+    set(multiValueArgs "SOURCES" "LIBRARIES" "DEFINES")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    set(ALL_SOURCES ${ARG_SOURCES})
-    if(WIN32)
-        set(RC_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.rc")
-        set(LIB_NAME ${ARG_OUTPUT_NAME})
-        if(NOT LIB_NAME)
-            set(LIB_NAME ${TARGET_NAME})
-        endif()
-
-        if(MSVC AND LIB_NAME MATCHES "^lib(.+)")
-            string(REGEX REPLACE "^lib" "" LIB_NAME ${LIB_NAME})
-        endif()
-
-        set(RC_LIBS ${ARG_RC_LIBRARIES})
-        if(MSVC)
-            set(RC_LIBS_PROCESSED "")
-            foreach(LIB ${RC_LIBS})
-                if(LIB MATCHES "^lib(.+)")
-                    string(REGEX REPLACE "^lib" "" LIB ${LIB})
-                endif()
-                list(APPEND RC_LIBS_PROCESSED ${LIB})
-            endforeach()
-            set(RC_LIBS ${RC_LIBS_PROCESSED})
-        endif()
-
-        set(RC_RUNTIME_LIBS ${ARG_RC_RUNTIME_LIBRARIES})
-        if(MSVC AND RC_RUNTIME_LIBS)
-            set(RC_RUNTIME_LIBS_PROCESSED "")
-            foreach(LIB ${RC_RUNTIME_LIBS})
-                if(LIB MATCHES "^lib(.+)")
-                    string(REGEX REPLACE "^lib" "" LIB ${LIB})
-                endif()
-                list(APPEND RC_RUNTIME_LIBS_PROCESSED ${LIB})
-            endforeach()
-            set(RC_RUNTIME_LIBS ${RC_RUNTIME_LIBS_PROCESSED})
-        endif()
-
-
-        create_rc_file(
-            ${RC_FILENAME} ${LIB_NAME} "${LIB_NAME}.${LIB_EXT}" "${RC_LIBS}" "${RC_RUNTIME_LIBS}"
-        )
-        list(APPEND ALL_SOURCES ${RC_FILENAME})
-    endif()
-
-    add_library(${TARGET_NAME} SHARED ${ALL_SOURCES})
+    add_library(${TARGET_NAME} SHARED ${ARG_SOURCES})
 
     if(SKBUILD_STATE STREQUAL "editable")
         set_target_properties(${TARGET_NAME} PROPERTIES
@@ -218,29 +107,6 @@ function(add_cocotb_library TARGET_NAME)
     if(WIN32)
         target_compile_definitions(${TARGET_NAME} PRIVATE WIN32)
     endif()
-
-    if(NOT WIN32)
-        if("${TARGET_NAME}" STREQUAL "simulator")
-            if(APPLE)
-                set(_rpath "@loader_path/libs")
-            else()
-                set(_rpath "\$ORIGIN/libs")
-            endif()
-        else()
-            if(APPLE)
-                set(_rpath "@loader_path")
-            else()
-                set(_rpath "\$ORIGIN")
-            endif()
-        endif()
-        set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "${_rpath}")
-
-        if(APPLE)
-            if(NOT "${TARGET_NAME}" STREQUAL "simulator")
-                set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_NAME_DIR "@rpath")
-            endif()
-        endif()
-    endif()
 endfunction()
 
 set(GPI_LINK_LIBS "")
@@ -253,7 +119,6 @@ add_cocotb_library(cocotb_bootstrap
         ${SHARE_LIB_DIR}/gpi/dynload.cpp
         ${SHARE_LIB_DIR}/gpi/bootstrapper.cpp
     LIBRARIES ${GPI_LINK_LIBS}
-    RC_LIBRARIES ""
 )
 
 add_cocotb_library(gpi
@@ -264,7 +129,6 @@ add_cocotb_library(gpi
         ${SHARE_LIB_DIR}/gpi/logging.cpp
     DEFINES GPI_EXPORTS
     LIBRARIES ${GPI_LINK_LIBS}
-    RC_LIBRARIES ""
 )
 
 add_cocotb_library(simulator
@@ -274,7 +138,6 @@ add_cocotb_library(simulator
         ${SHARE_LIB_DIR}/pygpi/logging.cpp
     DEFINES PYGPI_EXPORTS
     LIBRARIES gpi ${Python_LIBRARIES}
-    RC_LIBRARIES ""
 )
 
 if(SKBUILD_STATE STREQUAL "editable")
@@ -316,7 +179,6 @@ function(add_vpi_library SIM_NAME SIM_DEFINE)
             ${SHARE_LIB_DIR}/gpi/vpi/VpiSignal.cpp
         DEFINES COCOTBVPI_EXPORTS ${SIM_DEFINE}
         LIBRARIES gpi ${ARG_EXTRA_LIBS}
-        RC_LIBRARIES "gpi"
     )
 
     if(WIN32)
@@ -354,7 +216,6 @@ function(add_vhpi_library SIM_NAME SIM_DEFINE)
             ${SHARE_LIB_DIR}/gpi/vhpi/VhpiSignal.cpp
         DEFINES COCOTBVHPI_EXPORTS ${SIM_DEFINE}
         LIBRARIES gpi ${ARG_EXTRA_LIBS}
-        RC_LIBRARIES "gpi"
     )
 
     if(WIN32)
@@ -395,7 +256,6 @@ add_cocotb_library(cocotbfli_modelsim
         ${SHARE_LIB_DIR}/gpi/fli/FliObjHdl.cpp
     DEFINES COCOTBFLI_EXPORTS
     LIBRARIES gpi ${MODELSIM_EXTRA_LIBS}
-    RC_LIBRARIES "gpi"
 )
 
 if(WIN32)
@@ -459,21 +319,6 @@ if(WIN32)
             add_custom_target(${SIM}_import_lib ALL DEPENDS ${COCOTB_DEF_DIR}/lib${SIM}.a)
         endforeach()
     endif()
-
-    set(APPCONFIG_CONTENT "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
-<configuration>
-    <windows>
-        <assemblyBinding xmlns=\"urn:schemas-microsoft-com:asm.v1\">
-            <probing privatePath=\"libs\" />
-        </assemblyBinding>
-    </windows>
-</configuration>")
-
-    file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config "${APPCONFIG_CONTENT}")
-    # Loader looks for <basename of pyd>.2.config next to the extension module.
-    file(WRITE ${CMAKE_BINARY_DIR}/cocotb/simulator${PYTHON_EXT_SUFFIX}.2.config
-        "${APPCONFIG_CONTENT}"
-    )
 endif()
 
 if(WIN32)
@@ -506,16 +351,4 @@ if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     install(TARGETS simulator
         RUNTIME DESTINATION cocotb
         LIBRARY DESTINATION cocotb)
-
-    # Windows loads simulator.pyd next to cocotb/; put gpi.dll here too (also under libs/).
-    if(WIN32)
-        install(TARGETS gpi
-            RUNTIME DESTINATION cocotb
-            LIBRARY DESTINATION cocotb)
-        install(FILES ${CMAKE_BINARY_DIR}/cocotb/simulator.2.config DESTINATION cocotb)
-        file(GLOB PYD_CONFIG_FILES ${CMAKE_BINARY_DIR}/cocotb/*.pyd.2.config)
-        if(PYD_CONFIG_FILES)
-            install(FILES ${PYD_CONFIG_FILES} DESTINATION cocotb)
-        endif()
-    endif()
 endif()
