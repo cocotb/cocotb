@@ -297,9 +297,9 @@ GPI_EXPORT void gpi_end_sim();
 typedef void (*layer_entry_func)();
 
 /* Use this macro in an implementation layer to define an entry point */
-#define GPI_ENTRY_POINT(NAME, func)                     \
-    extern "C" {                                        \
-    COCOTB_EXPORT void NAME##_entry_point() { func(); } \
+#define GPI_ENTRY_POINT(NAME, func)                 \
+    extern "C" {                                    \
+    COCOTB_EXPORT void GPI_IMPL_ENTRY() { func(); } \
     }
 
 #endif /* COCOTB_GPI_PRIV_H_ */
