@@ -1,1 +1,1 @@
-Removed the :func:`!cocotb_tools.config.lib_name` function.
+Removed the :func:`!cocotb_tools.config.lib_name` and :func:`!cocotb_tools.config.lib_name_path` functions.
