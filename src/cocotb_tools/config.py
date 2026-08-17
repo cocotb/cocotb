@@ -147,11 +147,7 @@ def pygpi_entry_point() -> str:
     return bootstrap_entry(Path(cocotb.simulator.__file__).resolve(), "initialize")
 
 
-def lib_name_path(interface: str, simulator: str) -> Path:
-    """
-    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
-    """
-
+def _gpi_impl_path(interface: str, simulator: str) -> Path:
     interface_name = interface.lower()
     supported_interfaces = ["vpi", "vhpi", "fli"]
     if interface_name not in supported_interfaces:
@@ -200,8 +196,8 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     else:
         lib_prefix = "lib"
 
-    lib_name = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
-    return libs_dir / lib_name
+    filename = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
+    return libs_dir / filename
 
 
 def lib_entry(interface: str, simulator: str) -> str:
@@ -210,7 +206,7 @@ def lib_entry(interface: str, simulator: str) -> str:
     interface_name = interface.lower()
     simulator_name = simulator.lower()
     # Validate the interface and simulator names.
-    lib_name_path(interface_name, simulator_name)
+    _gpi_impl_path(interface_name, simulator_name)
     library = _shared_library_path("cocotb_bootstrap").as_posix()
 
     requires_entry_function = {
@@ -234,7 +230,7 @@ def gpi_impl(simulator: str, *interfaces: str) -> str:
     entries = []
     for interface in interfaces:
         interface_name = interface.lower()
-        library = lib_name_path(interface_name, simulator).as_posix()
+        library = _gpi_impl_path(interface_name, simulator).as_posix()
         entries.append(f"{library}:cocotb{interface_name}_entry_point")
     return ",".join(entries)
 
@@ -272,12 +268,6 @@ def _get_parser() -> argparse.ArgumentParser:
         "--lib-dir",
         action="store_true",
         help="Print the absolute path to the interface libraries location",
-    )
-    group.add_argument(
-        "--lib-name-path",
-        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
-        nargs=2,
-        metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
         "--lib-entry",
@@ -329,8 +319,6 @@ def main() -> None:
         print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
-    elif args.lib_name_path:
-        print(lib_name_path(*args.lib_name_path).as_posix())
     elif args.lib_entry:
         print(lib_entry(*args.lib_entry))
     elif args.gpi_impl:
