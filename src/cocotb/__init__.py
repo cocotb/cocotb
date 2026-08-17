@@ -5,14 +5,32 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import ctypes
+import os
 from logging import Logger
+from pathlib import Path
 from types import SimpleNamespace
 
-from cocotb._decorators import Param, parametrize, skipif, test, xfail
-from cocotb._test_manager import create_task, end_test, pass_test, start, start_soon
-from cocotb.handle import SimHandleBase
+# For loading cocotb while not in a simulator, we need to preload libgpi (POSIX), or
+# use os.add_dll_directory (Windows), so the GPI library is available before we import
+# the simulator module.
+_libs_dir = Path(__file__).resolve().parent / "libs"
+if os.name == "nt":
+    os.add_dll_directory(_libs_dir)  # type: ignore[attr-defined]
+else:
+    ctypes.CDLL(str(_libs_dir / "libgpi.so"), mode=ctypes.RTLD_GLOBAL)
 
-from ._version import __version__ as _version
+from cocotb._decorators import Param, parametrize, skipif, test, xfail  # noqa: E402
+from cocotb._test_manager import (  # noqa: E402
+    create_task,
+    end_test,
+    pass_test,
+    start,
+    start_soon,
+)
+from cocotb.handle import SimHandleBase  # noqa: E402
+
+from ._version import __version__ as _version  # noqa: E402
 
 __all__ = (
     "RANDOM_SEED",
