@@ -5,6 +5,6 @@ from cocotb.triggers import Timer
 
 
 @cocotb.test()
-async def test_name_error(_):
-    # GPI init will fail, so the file contents don't really matter.
+async def test_bootstrap_loading(_):
+    # Bootstrap loading will fail, so this test should never run.
     await Timer(100, "ns")

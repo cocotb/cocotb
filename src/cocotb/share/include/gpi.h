@@ -100,6 +100,15 @@ extern "C" {
  */
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
+/** Initialize the GPI and load the implementations listed in GPI_IMPL.
+ *
+ * This is an entry point for libcocotb_bootstrap.
+ *
+ * @return `0` if initialization completed successfully, or `1` if no GPI
+ * implementation was registered.
+ */
+GPI_EXPORT int gpi_initialize(void);
+
 /** Stop the simulation after control returns to the GPI. */
 GPI_EXPORT void gpi_finish(void);
 
