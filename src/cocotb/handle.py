@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import enum
 import logging
-import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
 from functools import cached_property
@@ -551,31 +550,19 @@ class HierarchyArrayObject(
             dut.gen_pipe_stages[idx].reg.value = 0
 
         # make sure we have all the pipe stages
-        assert len(dut.gen_pipe_stage) == len(dut.gen_pipe_stages.range)
+        assert len(dut.gen_pipe_stages) == len(dut.gen_pipe_stages.range)
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
     def _sub_handle_key(self, name: str) -> int:
-        # This is slightly hacky, but we need to extract the index from the name
-        # See also GEN_IDX_SEP_* in VhpiImpl.h for the VHPI separators.
-        #
-        # FLI and VHPI:       _name(X) where X is the index
-        # VHPI(ALDEC):        _name__X where X is the index
-        # VPI:                _name[X] where X is the index
-        result = re.match(rf"{re.escape(self._name)}__(?P<index>\d+)$", name)
-        if not result:
-            result = re.match(
-                rf"{re.escape(self._name)}\((?P<index>\d+)\)$", name, re.IGNORECASE
-            )
-        if not result:
-            result = re.match(rf"{re.escape(self._name)}\[(?P<index>\d+)\]$", name)
-
-        if result:
-            return int(result.group("index"))
-        else:
-            raise ValueError(f"Unable to match an index pattern: {name}")
+        if name.endswith("]"):
+            try:
+                return int(name[name.rfind("[") + 1 : -1])
+            except ValueError:
+                pass
+        raise ValueError(f"Unable to match an index pattern: {name}")
 
     def _child_path(self, key: int) -> str:
         return f"{self._path}[{key}]"

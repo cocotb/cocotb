@@ -273,6 +273,10 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
         if (found != std::string::npos) {
             fq_name += name.substr(found);
+            const std::size_t index_begin = found + sizeof(GEN_IDX_SEP_LHS) - 1;
+            const std::size_t index_length =
+                name.size() - index_begin - sizeof(GEN_IDX_SEP_RHS) + 1;
+            name = "[" + name.substr(index_begin, index_length) + "]";
         } else {
             LOG_WARN("VHPI: Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;

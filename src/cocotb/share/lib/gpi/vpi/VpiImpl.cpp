@@ -311,8 +311,10 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiGenScope:
         case vpiGenScopeArray: {
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
+            const bool is_normalized_index =
+                !name.empty() && name.front() == '[' && name.back() == ']';
 
-            if (hdl_name != name) {
+            if (hdl_name != name && !is_normalized_index) {
                 LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
                           fq_name.c_str(), hdl_name.c_str(), name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
@@ -603,7 +605,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     snprintf(buff, 14, "[%d]", index);
 
     std::string idx = buff;
-    std::string name = parent->get_name() + idx;
+    std::string name = '[' + std::to_string(index) + ']';
     std::string fq_name = parent->get_fullname() + idx;
     GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
