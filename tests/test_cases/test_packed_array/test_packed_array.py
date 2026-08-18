@@ -22,8 +22,6 @@ from cocotb.triggers import (
 )
 from cocotb.types import Logic
 
-SIM_NAME = cocotb.SIM_NAME.lower()
-
 
 @cocotb.test()
 async def check_types(dut):
