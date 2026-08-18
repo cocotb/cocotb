@@ -577,7 +577,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "VPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC, GPI_LOGIC, GPI_ARRAY, or GPI_STRING to have an index.",
+            "GPI_LOGIC, GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED "
+            "to have an index.",
             parent->get_type_str());
         return NULL;
     }
