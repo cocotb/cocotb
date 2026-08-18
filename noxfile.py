@@ -3,15 +3,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import argparse
 import glob
 import os
+import re
 import shutil
+import subprocess
 from contextlib import suppress
 from pathlib import Path
 from typing import cast
 
 import nox
 import nox_uv
+from packaging.version import InvalidVersion, Version
 
 nox.options.default_venv_backend = "uv"
 
@@ -640,4 +644,299 @@ def docs_spelling(session: nox.Session) -> None:
         "-b",
         "spelling",
         *session.posargs,
+    )
+
+
+# Everything below is shared by the "release_notes" and
+# "backport_release_notes" sessions, and mirrors the towncrier settings in
+# pyproject.toml.
+RELEASE_NOTES = Path("docs") / "source" / "release_notes.rst"
+NEWSFRAGMENTS = Path("docs") / "source" / "newsfragments"
+# Inserted by towncrier as the header of each release's section. Also the
+# marker this file uses to find where a section starts and ends.
+SECTION_HEADER_RE = re.compile(r"^cocotb (?P<version>\S+) \([^)]*\)$")
+# Final releases only: X.Y.Z, no rc/b/a suffix.
+FINAL_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+
+def _git(*args: str, check: bool = True) -> str:
+    """Run a git command and return its stdout."""
+    return subprocess.run(
+        ["git", *args], capture_output=True, text=True, check=check
+    ).stdout
+
+
+def _section_starts(lines: list[str]) -> list[tuple[int, str]]:
+    """Return the ``(line number, version)`` of every release notes section."""
+    return [
+        (i, m.group("version"))
+        for i, line in enumerate(lines)
+        if (m := SECTION_HEADER_RE.match(line))
+        # A header is always underlined with '=' (see pyproject.toml).
+        and i + 1 < len(lines)
+        and set(lines[i + 1]) == {"="}
+    ]
+
+
+def _find_section(lines: list[str], version: str) -> tuple[int, int] | None:
+    """Return the ``[start, end)`` line range of a version's release notes."""
+    starts = _section_starts(lines)
+    for index, (start, found) in enumerate(starts):
+        if found == version:
+            end = starts[index + 1][0] if index + 1 < len(starts) else len(lines)
+            return start, end
+    return None
+
+
+@nox_uv.session(
+    # towncrier only needs its config and the newsfragments; it is told the
+    # project name and version explicitly, so there is no need to build and
+    # install cocotb itself here.
+    uv_no_install_project=True,
+    uv_groups=["docs"],
+    uv_sync_locked=False,
+)
+def release_notes(session: nox.Session) -> None:
+    """Consume towncrier newsfragments into docs/source/release_notes.rst.
+
+    Pass the version being released with ``--version``, e.g.
+    ``nox -s release_notes -- --version=1.6.1``.
+
+    Release notes are always filed under the final version, never under a
+    release candidate: an rc is tagged from the very notes that the final
+    release will ship, so this session is run once per release, before the
+    first rc. Anything that lands on the release branch after an rc has to
+    be folded into that existing section by hand (and its newsfragment
+    deleted), which is also why re-running this session for a version that
+    already has a section is refused rather than silently appending a
+    second one.
+    """
+    parser = argparse.ArgumentParser(prog="nox -s release_notes --")
+    parser.add_argument("--version", required=True)
+    args, towncrier_args = parser.parse_known_args(session.posargs)
+
+    if not FINAL_VERSION_RE.match(args.version):
+        session.error(
+            f"{args.version!r} is not a final X.Y.Z version. Release notes are "
+            "filed under the version being released, not under a release "
+            "candidate: run this session once with the final version, then tag "
+            "the rc from the resulting notes."
+        )
+
+    if _find_section(RELEASE_NOTES.read_text().splitlines(), args.version):
+        session.error(
+            f"{RELEASE_NOTES} already has a section for {args.version}. To add "
+            "changes that landed after it was generated, edit that section by "
+            f"hand and delete the newsfragments it covers from {NEWSFRAGMENTS}."
+        )
+
+    session.run(
+        "towncrier",
+        "build",
+        "--yes",
+        f"--version={args.version}",
+        *towncrier_args,
+    )
+
+
+@nox_uv.session(
+    uv_no_install_project=True,
+    uv_groups=[],
+    uv_sync_locked=False,
+)
+def backport_release_notes(session: nox.Session) -> None:
+    """Copy a release's notes onto the currently checked out branch
+    (normally master), without committing.
+
+    towncrier only ever runs on a release branch (patch releases aren't
+    made from master), but master's release notes should show the full
+    history. This takes the finished section for the release — including
+    any hand-edits made while reviewing it — out of ``--until``'s
+    docs/source/release_notes.rst, inserts it here in version order, and
+    deletes the newsfragments the release consumed so they aren't listed
+    again under the next release.
+
+    The section is inserted by version rather than always at the top,
+    because a patch release on an older series can well be published after
+    a newer series' first release: master's notes may already start with
+    2.1.0 when 2.0.2's notes are backported.
+
+    Pass the tag the release was made at with ``--until``, e.g.
+    ``nox -s backport_release_notes -- --until=v1.6.1``. The notes section
+    to copy is the one for that tag's version, ignoring any rc suffix
+    (rcs ship the final release's notes); override with ``--version`` if
+    it is named differently.
+
+    Which newsfragments the release consumed is determined from the
+    commits between ``--since`` and ``--until``. By default ``--since`` is
+    whichever is more recent of: the previous tag reachable from
+    ``--until``, or where ``--until``'s branch forked from master. The
+    former is normally right for a patch release (e.g. finds v1.6.1 before
+    v1.6.2); the latter is needed for the first release of a new series,
+    where the "previous reachable tag" can walk past a sibling stable
+    branch's own later releases — those aren't ancestors — into shared
+    history from further back (e.g. finding v2.0.0 instead of v2.0.1,
+    because v2.0.1 was tagged only on stable/2.0, which diverged before
+    stable/2.1's fork point). Pass ``--since`` to override either way.
+    """
+    parser = argparse.ArgumentParser(prog="nox -s backport_release_notes --")
+    parser.add_argument("--until", required=True)
+    parser.add_argument("--since")
+    parser.add_argument(
+        "--version",
+        help="Version whose notes section to copy. Default: derived from --until.",
+    )
+    args = parser.parse_args(session.posargs)
+
+    if subprocess.run(
+        ["git", "rev-parse", "--verify", args.until],
+        capture_output=True,
+        check=False,
+    ).returncode:
+        session.error(
+            f"{args.until!r} is not a ref in this repository. If this is a CI "
+            "checkout, make sure tags are fetched (fetch-depth: 0)."
+        )
+
+    # Uncommitted changes to the files this session rewrites would be
+    # silently folded into the result, so refuse them. Anything else in the
+    # working tree is none of this session's business and is left alone.
+    if _git(
+        "status",
+        "--porcelain",
+        "--",
+        RELEASE_NOTES.as_posix(),
+        NEWSFRAGMENTS.as_posix(),
+    ).strip():
+        session.error(
+            f"{RELEASE_NOTES} and/or {NEWSFRAGMENTS} have uncommitted changes. "
+            "Commit or stash them first."
+        )
+
+    version = args.version
+    if version is None:
+        # Release notes are filed under the final version, so drop any rc
+        # suffix: the notes for v1.6.0rc1 are the "cocotb 1.6.0" section.
+        match = re.match(r"^v?(?P<version>\d+\.\d+\.\d+)", args.until)
+        if match is None:
+            session.error(
+                f"Can't tell which version {args.until!r} released. Pass "
+                "--version explicitly."
+            )
+        version = match.group("version")
+
+    since = args.since
+    if since is None:
+        # The previous release tag is normally the right boundary (patch
+        # releases: e.g. v1.6.1 before v1.6.2). But for the first release
+        # of a new series, "nearest ancestor tag" can walk straight past
+        # a sibling stable branch's later releases — they're not
+        # ancestors — into shared history from further back (e.g. finding
+        # v2.0.0 instead of v2.0.1, because v2.0.1 was tagged only on
+        # stable/2.0, which diverged from stable/2.1's fork point).
+        # Between that tag and where this branch actually forked from
+        # master, use whichever is more recent.
+        #
+        # In a CI checkout master is a local branch, but locally it can be
+        # stale or missing entirely, so prefer the remote-tracking ref.
+        master = "master"
+        if not subprocess.run(
+            ["git", "rev-parse", "--verify", "origin/master"],
+            capture_output=True,
+            check=False,
+        ).returncode:
+            master = "origin/master"
+
+        fork_point = subprocess.run(
+            ["git", "merge-base", args.until, master],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        describe = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0", f"{args.until}^"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if describe.returncode == 0:
+            tag_ancestor = describe.stdout.strip()
+            fork_point_is_newer = (
+                subprocess.run(
+                    ["git", "merge-base", "--is-ancestor", tag_ancestor, fork_point],
+                    check=False,
+                ).returncode
+                == 0
+            )
+            since = fork_point if fork_point_is_newer else tag_ancestor
+        else:
+            since = fork_point
+
+    session.log(f"Backporting the {version} release notes from {args.until}.")
+
+    released_lines = _git(
+        "show", f"{args.until}:{RELEASE_NOTES.as_posix()}"
+    ).splitlines()
+    bounds = _find_section(released_lines, version)
+    if bounds is None:
+        session.error(
+            f"{args.until} has no 'cocotb {version} (...)' section in "
+            f"{RELEASE_NOTES}. Pass --version if the section is named "
+            "differently."
+        )
+    section = "\n".join(released_lines[bounds[0] : bounds[1]]).rstrip("\n")
+
+    lines = RELEASE_NOTES.read_text().splitlines()
+    if _find_section(lines, version):
+        session.error(
+            f"{RELEASE_NOTES} already has a section for {version} here — "
+            "these release notes have been backported already."
+        )
+
+    # Insert ahead of the first older release, so that backporting a patch
+    # release of an older series doesn't put it above a newer one.
+    existing = _section_starts(lines)
+    insert_at = len(lines)
+    for start, other in existing:
+        try:
+            is_older = Version(other) < Version(version)
+        except InvalidVersion:
+            continue
+        if is_older:
+            insert_at = start
+            break
+    else:
+        if existing:
+            session.log(
+                f"{version} is older than every release listed in "
+                f"{RELEASE_NOTES}; appending it at the end."
+            )
+
+    lines[insert_at:insert_at] = [*section.splitlines(), "", ""]
+    RELEASE_NOTES.write_text("\n".join(lines).rstrip("\n") + "\n")
+    _git("add", "--", RELEASE_NOTES.as_posix())
+
+    # Every newsfragment the release consumed was deleted somewhere between
+    # `since` and `until` — either by towncrier, or by hand while folding a
+    # late change into the notes. Whatever of those still exists here (it
+    # was added to master first, then backported to the release branch)
+    # is now covered by the section just inserted.
+    consumed = dict.fromkeys(
+        _git(
+            "log",
+            "--format=",
+            "--diff-filter=D",
+            "--name-only",
+            f"{since}..{args.until}",
+            "--",
+            NEWSFRAGMENTS.as_posix(),
+        ).split()
+    )
+    stale = [fragment for fragment in consumed if Path(fragment).exists()]
+    if stale:
+        _git("rm", "--quiet", "--", *stale)
+    session.log(
+        f"Inserted the {version} notes and removed {len(stale)} of "
+        f"{len(consumed)} consumed newsfragment(s)."
     )
