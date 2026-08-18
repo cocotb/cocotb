@@ -86,7 +86,7 @@ class SimHandleBase(ABC):
         :meta public:
         """
 
-    @cached_property
+    @property
     def _name(self) -> str:
         """The name of an object.
 
@@ -94,7 +94,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_name_string()
 
-    @cached_property
+    @property
     def _type(self) -> str:
         """The type of an object as a string.
 
@@ -106,7 +106,7 @@ class SimHandleBase(ABC):
     def _log(self) -> Logger:
         return logging.getLogger(f"cocotb.{self._name}")
 
-    @cached_property
+    @property
     def _def_name(self) -> str:
         """The name of a GPI object's definition.
 
@@ -118,7 +118,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_definition_name()
 
-    @cached_property
+    @property
     def _def_file(self) -> str:
         """The name of the file that sources the object's definition.
 
@@ -939,7 +939,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value = _OldImmediate(value)
         self.value = value
 
-    @cached_property
+    @property
     def is_const(self) -> bool:
         """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
         return self._handle.get_const()
@@ -1221,14 +1221,14 @@ class _SignednessObjectMixin(SimHandleBase):
     @abstractmethod
     def __len__(self) -> int: ...
 
-    @cached_property
+    @property
     def is_signed(self) -> bool:
         signed = self._handle.get_signed()
         if signed == -1:
             raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
         return bool(signed)
 
-    @cached_property
+    @property
     def _min_val(self) -> int:
         signed = self._handle.get_signed()
         if signed == 0:
@@ -1236,7 +1236,7 @@ class _SignednessObjectMixin(SimHandleBase):
         else:
             return -(2 ** (len(self) - 1))
 
-    @cached_property
+    @property
     def _max_val(self) -> int:
         signed = self._handle.get_signed()
         if signed == 1:
@@ -1387,12 +1387,12 @@ class _LogicArrayObjectBase(
         self._sub_handles[index] = res
         return res
 
-    @cached_property
+    @property
     def _min_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
         return -(2 ** (len(self) - 1))
 
-    @cached_property
+    @property
     def _max_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
         return (2 ** len(self)) - 1
