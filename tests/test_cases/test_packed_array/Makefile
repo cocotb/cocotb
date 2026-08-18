@@ -4,8 +4,8 @@
 
 ifeq ($(SIM),)
 all:
-	@echo "Skipping test_packed_array since icarus flattens multi-dimensional arrays (gh-2595)
-"
+	@echo "Skipping test_packed_array since icarus flattens multi-dimensional arrays (gh-2595)"
+
 clean::
 # nothing to clean, just define target in this branch
 
