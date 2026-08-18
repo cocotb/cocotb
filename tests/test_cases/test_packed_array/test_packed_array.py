@@ -10,7 +10,6 @@ import cocotb
 from cocotb.handle import (
     ArrayObject,
     Immediate,
-    Logic,
     LogicObject,
     PackedObject,
 )
@@ -21,6 +20,7 @@ from cocotb.triggers import (
     Timer,
     ValueChange,
 )
+from cocotb.types import Logic
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
