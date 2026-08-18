@@ -425,8 +425,19 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiBlockStmtK:
         case vhpiCompInstStmtK: {
             std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
-            const bool is_normalized_index =
-                !name.empty() && name.front() == '[' && name.back() == ']';
+            const std::size_t index_begin = hdl_name.rfind(GEN_IDX_SEP_LHS);
+            const std::size_t suffix_length = sizeof(GEN_IDX_SEP_RHS) - 1;
+            const bool normalized_index_name =
+                name.length() >= 2 && name.front() == '[' &&
+                name.back() == ']' && index_begin != std::string::npos &&
+                hdl_name.length() >= suffix_length &&
+                hdl_name.compare(hdl_name.length() - suffix_length,
+                                 suffix_length, GEN_IDX_SEP_RHS) == 0 &&
+                name.substr(1, name.length() - 2) ==
+                    hdl_name.substr(index_begin + sizeof(GEN_IDX_SEP_LHS) - 1,
+                                    hdl_name.length() - index_begin -
+                                        sizeof(GEN_IDX_SEP_LHS) -
+                                        sizeof(GEN_IDX_SEP_RHS) + 2);
 
             if (base_type == vhpiRootInstK && !compare_names(hdl_name, name)) {
                 vhpiHandleT arch = vhpi_handle(vhpiDesignUnit, new_hdl);
@@ -440,7 +451,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 }
             }
 
-            if (!compare_names(name, hdl_name) && !is_normalized_index) {
+            if (!compare_names(name, hdl_name) && !normalized_index_name) {
                 LOG_DEBUG("VHPI: Found pseudo-region %s", fq_name.c_str());
                 gpi_type = GPI_GENARRAY;
             } else {
