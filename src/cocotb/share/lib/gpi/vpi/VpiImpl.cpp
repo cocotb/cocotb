@@ -211,6 +211,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiLongIntVar:
         case vpiLongIntNet:
         case vpiPackedArrayVar:
+        case vpiVarSelect:
+        case vpiBitSelect:
         case vpiPackedArrayNet:
         case vpiRealVar:
         case vpiRealNet:
@@ -274,8 +276,6 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
             break;
         }
-        case vpiVarSelect:
-        case vpiBitSelect:
         case vpiStructVar:
         case vpiStructNet:
         case vpiUnionVar:
