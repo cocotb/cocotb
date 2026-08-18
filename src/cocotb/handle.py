@@ -1889,11 +1889,6 @@ _ConcreteHandleTypes = Union[
 ]
 
 
-_handle2obj: dict[
-    cocotb.simulator.sim_obj,
-    _ConcreteHandleTypes,
-] = {}
-
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
@@ -1927,18 +1922,9 @@ def _make_sim_object(
         NotImplementedError: If no matching object for GPI type could be found.
     """
 
-    # Enforce singletons since it's possible to retrieve handles avoiding
-    # the hierarchy by getting driver/load information
-    try:
-        return _handle2obj[handle]
-    except KeyError:
-        pass
-
     t = handle.get_type()
     if (cls := _type2cls.get(t)) is None:
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
-    obj = cls(handle, path)
-    _handle2obj[handle] = obj
-    return obj
+    return cls(handle, path)
