@@ -9,7 +9,6 @@ import enum
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
-from functools import cached_property
 from logging import Logger
 from typing import (
     Any,
@@ -33,7 +32,7 @@ from cocotb._gpi_triggers import (
     ValueChange,
     current_gpi_trigger,
 )
-from cocotb._utils import DocIntEnum
+from cocotb._utils import DocIntEnum, slot_cached_property
 from cocotb.types import Array, Logic, LogicArray, Range
 from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 from cocotb.types._logic_array import _str_literals
@@ -76,6 +75,17 @@ class SimHandleBase(ABC):
         ``get_definition_name()`` and ``get_definition_file()`` were removed in favor of :meth:`_def_name` and :meth:`_def_file`, respectively.
     """
 
+    __slots__ = (
+        "__weakref__",
+        "_def_file_cache",
+        "_def_name_cache",
+        "_handle",
+        "_log_cache",
+        "_name_cache",
+        "_path",
+        "_type_cache",
+    )
+
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         self._handle = handle
@@ -85,7 +95,7 @@ class SimHandleBase(ABC):
         :meta public:
         """
 
-    @cached_property
+    @slot_cached_property
     def _name(self) -> str:
         """The name of an object.
 
@@ -93,7 +103,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_name_string()
 
-    @cached_property
+    @slot_cached_property
     def _type(self) -> str:
         """The type of an object as a string.
 
@@ -101,11 +111,11 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_type_string()
 
-    @cached_property
+    @slot_cached_property
     def _log(self) -> Logger:
         return logging.getLogger(f"cocotb.{self._name}")
 
-    @cached_property
+    @slot_cached_property
     def _def_name(self) -> str:
         """The name of a GPI object's definition.
 
@@ -117,7 +127,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_definition_name()
 
-    @cached_property
+    @slot_cached_property
     def _def_file(self) -> str:
         """The name of the file that sources the object's definition.
 
@@ -159,7 +169,9 @@ class SimHandleBase(ABC):
 class _RangeableObjectMixin(SimHandleBase):
     """Base class for simulation objects that have a range."""
 
-    @cached_property
+    __slots__ = ()
+
+    @slot_cached_property
     def range(self) -> Range:
         """Return a :class:`~cocotb.types.Range` over the indexes of the array/vector."""
         left, right, direction = self._handle.get_range()
@@ -218,6 +230,8 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
     See :class:`HierarchyObject` and :class:`HierarchyArrayObject` for examples.
     """
+
+    __slots__ = ("_discovered", "_sub_handles")
 
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
@@ -432,6 +446,8 @@ class HierarchyObject(_HierarchyObjectBase[str]):
         assert len(dut.some_module) == total
     """
 
+    __slots__ = ()
+
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -552,6 +568,8 @@ class HierarchyArrayObject(
         # make sure we have all the pipe stages
         assert len(dut.gen_pipe_stages) == len(dut.gen_pipe_stages.range)
     """
+
+    __slots__ = ("_range",)
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -824,6 +842,11 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     Inherits from :class:`SimHandleBase`.
     """
 
+    __slots__ = ("_is_const",)
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
     @property
     def value(self) -> ValueGetT:
         """Get or set the value of the simulation object.
@@ -926,7 +949,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value = _OldImmediate(value)
         self.value = value
 
-    @cached_property
+    @slot_cached_property
     def is_const(self) -> bool:
         """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
         return self._handle.get_const()
@@ -989,6 +1012,8 @@ class ArrayObject(
         for child_idx in reversed(dut.array_object.range):
             dut.array_object[child_idx]
     """
+
+    __slots__ = ("_range", "_sub_handles")
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -1085,14 +1110,16 @@ class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
     NonArrayValueObjects support :meth:`value_change` triggers.
     """
 
-    @cached_property
+    __slots__ = ("_edge_cache", "_value_change")
+
+    @slot_cached_property
     def value_change(self) -> ValueChange:
         """A trigger which fires whenever the value changes."""
         if self.is_const:
             raise TypeError("Can't get ValueChange on immutable signal.")
         return ValueChange._make(self)
 
-    @cached_property
+    @slot_cached_property
     def _edge(self) -> Edge:
         if self.is_const:
             raise TypeError("Can't get Edge on immutable signal.")
@@ -1117,6 +1144,8 @@ class LogicObject(
         * ``std_ulogic``
         * ``bit``
     """
+
+    __slots__ = ("_falling_edge", "_rising_edge")
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -1175,14 +1204,14 @@ class LogicObject(
         """
         self.value = value
 
-    @cached_property
+    @slot_cached_property
     def rising_edge(self) -> RisingEdge:
         """A trigger which fires whenever the value changes to a ``1``."""
         if self.is_const:
             raise TypeError("Can't get RisingEdge on immutable signal")
         return RisingEdge._make(self)
 
-    @cached_property
+    @slot_cached_property
     def falling_edge(self) -> FallingEdge:
         """A trigger which fires whenever the value changes to a ``0``."""
         if self.is_const:
@@ -1206,24 +1235,26 @@ class LogicObject(
 
 
 class _SignednessObjectMixin(SimHandleBase):
+    __slots__ = ()
+
     @abstractmethod
     def __len__(self) -> int: ...
 
-    @cached_property
+    @slot_cached_property
     def is_signed(self) -> bool:
         signed = self._handle.get_signed()
         if signed == -1:
             raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
         return bool(signed)
 
-    @cached_property
+    @slot_cached_property
     def _min_val(self) -> int:
         if not self.is_signed:
             return 0
         else:
             return -(2 ** (len(self) - 1))
 
-    @cached_property
+    @slot_cached_property
     def _max_val(self) -> int:
         if self.is_signed:
             return (2 ** (len(self) - 1)) - 1
@@ -1239,11 +1270,21 @@ class _LogicArrayObjectBase(
 ):
     """Base class for logic array simulation objects."""
 
+    __slots__ = (
+        "_falling_edge",
+        "_is_signed",
+        "_max_val_cache",
+        "_min_val_cache",
+        "_range",
+        "_rising_edge",
+        "_sub_handles_cache",
+    )
+
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
-    @cached_property
+    @slot_cached_property
     def _sub_handles(self) -> dict[int, ChildObjectT]:
         # Here lazily creating this is meaningful, as with HierarchyArrayObject and ArrayObject,
         # users are likely to index into the object, meaning the cache will be used.
@@ -1373,17 +1414,17 @@ class _LogicArrayObjectBase(
         self._sub_handles[index] = res
         return res
 
-    @cached_property
+    @slot_cached_property
     def _min_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
         return -(2 ** (len(self) - 1))
 
-    @cached_property
+    @slot_cached_property
     def _max_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
         return (2 ** len(self)) - 1
 
-    @cached_property
+    @slot_cached_property
     def rising_edge(self) -> RisingEdge:
         """A trigger which fires whenever the value changes to a ``1``."""
         if len(self) != 1:
@@ -1392,7 +1433,7 @@ class _LogicArrayObjectBase(
             raise TypeError("Can't get RisingEdge on immutable signal")
         return RisingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
 
-    @cached_property
+    @slot_cached_property
     def falling_edge(self) -> FallingEdge:
         """A trigger which fires whenever the value changes to a ``0``."""
         if len(self) != 1:
@@ -1416,6 +1457,8 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
 
         bit_0 = dut.my_vec[0]
     """
+
+    __slots__ = ()
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -1450,6 +1493,8 @@ class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
         Verilog packed objects no longer map to this type, but :class:`PackedObject`.
     """
 
+    __slots__ = ()
+
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1462,6 +1507,8 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
     This type is used when a ``real`` object in VHDL or ``float`` object in Verilog is seen.
     They are assumed to be IEEE 754 double precision floating point types.
     """
+
+    __slots__ = ()
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -1528,6 +1575,8 @@ class EnumObject(
     .. note::
         There is currently no support for getting the enumeration names or values.
     """
+
+    __slots__ = ("_is_signed", "_max_val_cache", "_min_val_cache")
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
@@ -1645,6 +1694,8 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         This may cause changes in behavior, but in the direction of better correctness.
     """
 
+    __slots__ = ("_is_signed", "_max_val_cache", "_min_val_cache")
+
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1729,6 +1780,8 @@ class StringObject(
     This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
     """
 
+    __slots__ = ("_range",)
+
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
@@ -1803,6 +1856,8 @@ class FixedStringObject(StringObject):
     This type is used when a VHDL `string` simulation object is seen.
     This is because in VHDL string are fixed-length unlike Verilog string
     """
+
+    __slots__ = ()
 
     def _set_value(
         self,

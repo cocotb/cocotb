@@ -15,7 +15,7 @@ from collections.abc import Iterable
 from enum import Enum, IntEnum
 from functools import wraps
 from types import TracebackType
-from typing import Any, TypeVar, cast, overload
+from typing import Any, Callable, Generic, TypeVar, cast, overload
 
 from cocotb._compat import StrEnum
 
@@ -233,3 +233,58 @@ def safe_divide(a: float, b: float) -> float:
             return float("nan")
         else:
             return float("inf")
+
+
+SlotCachedObjectT = TypeVar("SlotCachedObjectT")
+SlotCachedValueT = TypeVar("SlotCachedValueT")
+
+
+class slot_cached_property(Generic[SlotCachedObjectT, SlotCachedValueT]):
+    """A cached property whose value is stored in a slot.
+
+    Public property names use a leading underscore for their cache slot. Private
+    property names use an `_cache` suffix to avoid conflicting with the descriptor
+    itself.
+    """
+
+    def __init__(self, func: Callable[[SlotCachedObjectT], SlotCachedValueT]) -> None:
+        self.func = func
+        self.slot_name = (
+            f"{func.__name__}_cache"
+            if func.__name__.startswith("_")
+            else f"_{func.__name__}"
+        )
+        self.__doc__ = func.__doc__
+
+    @overload
+    def __get__(
+        self, instance: None, owner: type[SlotCachedObjectT] | None = None
+    ) -> slot_cached_property[SlotCachedObjectT, SlotCachedValueT]: ...
+
+    @overload
+    def __get__(
+        self,
+        instance: SlotCachedObjectT,
+        owner: type[SlotCachedObjectT] | None = None,
+    ) -> SlotCachedValueT: ...
+
+    def __get__(
+        self,
+        instance: SlotCachedObjectT | None,
+        owner: type[SlotCachedObjectT] | None = None,
+    ) -> slot_cached_property[SlotCachedObjectT, SlotCachedValueT] | SlotCachedValueT:
+        if instance is None:
+            return self
+
+        try:
+            return cast("SlotCachedValueT", getattr(instance, self.slot_name))
+        except AttributeError:
+            value = self.func(instance)
+            setattr(instance, self.slot_name, value)
+            return value
+
+    def __set__(self, instance: SlotCachedObjectT, value: SlotCachedValueT) -> None:
+        setattr(instance, self.slot_name, value)
+
+    def __delete__(self, instance: SlotCachedObjectT) -> None:
+        delattr(instance, self.slot_name)
