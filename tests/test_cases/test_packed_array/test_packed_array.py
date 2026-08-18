@@ -221,12 +221,12 @@ async def iterate_2d(dut):
     """Iterate 2d"""
 
     values = [0xA, 0xB, 0xC, 0xD]
-    for idx, val in enumerate(values):
-        dut.i_packed[idx].value = val
+    for handle, val in zip(dut.i_packed, values):
+        handle.value = val
 
     await Timer(1)
-    for idx, val in enumerate(values):
-        assert dut.o_packed[idx].value == val
+    for handle, val in zip(dut.o_packed, values):
+        assert handle.value == val
 
 
 # Multidimensional arrays with typed elements
