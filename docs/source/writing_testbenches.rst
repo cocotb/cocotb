@@ -177,6 +177,33 @@ The following example shows these in action:
 See :ref:`coroutines` for more examples of what can be done with coroutines.
 
 
+.. _writing_tbs_setting_values:
+
+How cocotb sets values on signals
+=================================
+
+cocotb sets a value on a signal by making a :term:`deposit`.
+A deposit is a one-shot write; cocotb does not act as a :term:`driver <driving>`,
+so it does not continuously drive the signal the way HDL code does.
+The default write is an :term:`inertial deposit`, and :class:`Immediate` can be used
+to make a :term:`no-delay deposit` instead.
+
+Because a deposit is not a driver, the written value can be overwritten by the
+signal's HDL drivers at the end of the next evaluation cycle. If the HDL design
+drives the signal, the value read back after that point is the value resolved from
+the HDL drivers, which may be ``z``, ``X``, ``U``, or another value. If the signal
+has no HDL drivers, the deposited value stays in place until another deposit,
+:class:`Force`, or :class:`Release` changes it.
+
+.. code-block:: python
+
+    dut.my_signal.value = 12
+    dut.my_signal.value = Deposit(12)     # equivalent syntax
+    dut.my_signal.value = Immediate(12)   # no-delay deposit
+
+See :ref:`assignment-methods` for details of each assignment action.
+
+
 .. _writing_tbs_assigning_values_forcing_freezing:
 
 Forcing and freezing signals
@@ -205,6 +232,61 @@ the various actions described in :ref:`assignment-methods` can be used.
 .. warning::
 
     Not all simulators support these features; refer to the :ref:`simulator-support` section for details or to `issues with label "upstream" <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Aupstream>`_
+
+
+.. _writing_tbs_tristate_bus_example:
+
+Example: interacting with a tri-state bus
+-----------------------------------------
+
+A tri-state bus is a common case where the difference between a deposit and a driver matters.
+Consider a design whose bidirectional bus is driven by the design when ``oe`` is high:
+
+.. code-block:: systemverilog
+
+    module tristate_bus (
+        input  wire       oe,
+        input  wire [7:0] tx_data,
+        inout  wire [7:0] bus
+    );
+        assign bus = oe ? tx_data : 8'bz;
+    endmodule
+
+A cocotb deposit is not a driver, so even while ``oe`` is low, the design's ``z`` driver
+overwrites the deposited value at the end of the next evaluation cycle.
+Use :class:`Force` when cocotb needs to take control of the bus, and :class:`Release` to
+give control back to the design:
+
+.. code-block:: python
+
+    from cocotb.handle import Deposit, Force, Release
+    from cocotb.triggers import Timer
+
+    @cocotb.test()
+    async def tri_state_bus_example(dut):
+        # While oe is low the design drives the bus with 'z'.
+        dut.oe.value = 0
+        dut.tx_data.value = 0x5A
+
+        # A deposit is not a driver: the design's 'z' driver overwrites it.
+        dut.bus.value = Deposit(0xA5)
+        await Timer(1, unit="ns")
+        # dut.bus.value is 'zzzzzzzz', not 0xA5
+
+        # Force gives cocotb control of the bus even while the design is driving 'z'.
+        dut.bus.value = Force(0xA5)
+        await Timer(1, unit="ns")
+        assert dut.bus.value == 0xA5
+
+        # The forced value also wins once the design starts driving tx_data.
+        dut.oe.value = 1
+        await Timer(1, unit="ns")
+        assert dut.bus.value == 0xA5
+
+        # Release gives the bus back to the design's driver.
+        dut.bus.value = Release()
+        await Timer(1, unit="ns")
+        assert dut.bus.value == 0x5A
 
 
 .. _writing_tbs_accessing_underscore_identifiers:
