@@ -91,7 +91,13 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
         case vpiBitSelect:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
+#ifdef GHDL
+                // GHDL is a VHDL simulator - VHDL doesn't distinguish
+                // packed/unpacked
+                return GPI_LOGIC_ARRAY;
+#else
                 return GPI_PACKED;
+#endif
             } else {
                 return GPI_LOGIC;
             }
