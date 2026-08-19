@@ -18,6 +18,7 @@ from cocotb.handle import (
     HierarchyObject,
     Immediate,
     IntegerObject,
+    LogicArrayObject,
     PackedObject,
     StringObject,
 )
@@ -401,7 +402,7 @@ async def access_internal_register_array(dut):
 
 
 # Icarus reports vpiVector=0 for single-element vectors (e.g. `logic [0:0]`), so cocotb
-# discovers them as scalar LogicObject instances rather than LogicArrayObject instances.
+# discovers them as scalar LogicObject instances rather than vector instances.
 # The root cause is upstream in Icarus (https://github.com/steveicarus/iverilog/issues/1441);
 # this test pins the expected behavior and is marked xfail for Icarus until that is fixed.
 # See cocotb/cocotb#5686.
@@ -410,9 +411,11 @@ async def access_internal_register_array(dut):
     reason="Icarus reports single-element vectors as scalars (gh-5686, steveicarus/iverilog#1441)",
 )
 @cocotb.test
-async def single_element_vector_is_packed_array(dut):
-    """A single-element vector should be discovered as a PackedObject, not a scalar."""
-    assert isinstance(dut.one_bit_vector, PackedObject)
+async def single_element_vector_is_not_scalar(dut):
+    """A single-element vector should be discovered as a vector, not a scalar."""
+    # Verilog vectors are packed; VHDL vectors are not.
+    expected = PackedObject if LANGUAGE in ["verilog"] else LogicArrayObject
+    assert isinstance(dut.one_bit_vector, expected)
 
 
 @cocotb.test(
