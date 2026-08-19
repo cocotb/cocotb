@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+TOPLEVEL_LANG ?= verilog
+
 ifeq ($(SIM),)
 all:
 	@echo "Skipping test_packed_array since icarus flattens multi-dimensional arrays (gh-2595)"
@@ -12,6 +14,20 @@ clean::
 else ifneq ($(filter $(shell echo $(SIM) | tr A-Z a-z),icarus),)
 all:
 	@echo "Skipping test_packed_array since $(SIM) flattens multi-dimensional arrays (gh-2595)"
+
+clean::
+# nothing to clean, just define target in this branch
+
+else ifneq ($(filter $(shell echo $(SIM) | tr A-Z a-z),riviera),)
+all:
+	@echo "Skipping test_packed_array since $(SIM) crashes on packed structs (gh-4753)"
+
+clean::
+# nothing to clean, just define target in this branch
+
+else ifneq ($(TOPLEVEL_LANG),verilog)
+all:
+	@echo "Skipping test_packed_array since the design is SystemVerilog and TOPLEVEL_LANG is $(TOPLEVEL_LANG)"
 
 clean::
 # nothing to clean, just define target in this branch
