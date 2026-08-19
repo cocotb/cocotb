@@ -4,6 +4,7 @@
 [![CI](https://github.com/cocotb/cocotb/actions/workflows/build-test-dev.yml/badge.svg?branch=master)](https://github.com/cocotb/cocotb/actions/workflows/build-test-dev.yml)
 [![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 [![codecov](https://codecov.io/gh/cocotb/cocotb/branch/master/graph/badge.svg)](https://codecov.io/gh/cocotb/cocotb)
+[![inspect.software](https://raw.githubusercontent.com/inspect-software/badges/main/v1/c/cocotb/cocotb.svg)](https://inspect.software/software/cocotb/cocotb)
 
 * Check out the [tutorial](https://docs.cocotb.org/en/stable/quickstart.html)
 * Read the [docs](https://docs.cocotb.org/en/stable/)
