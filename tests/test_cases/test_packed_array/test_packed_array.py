@@ -21,6 +21,13 @@ from cocotb.triggers import (
     ValueChange,
 )
 from cocotb.types import Logic
+from cocotb_tools.sim_versions import VerilatorVersion
+
+xfail_without_packed_indexing = cocotb.xfail(
+    cocotb.SIM_NAME.startswith("Verilator")
+    and VerilatorVersion(cocotb.SIM_VERSION) < VerilatorVersion("5.048"),
+    reason="Verilator does not index packed dimensions over VPI before v5.048",
+)
 
 
 @cocotb.test()
@@ -63,6 +70,7 @@ async def read_write_2d_flat(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_2d_element(dut):
     """Read/write 2-D element"""
 
@@ -103,6 +111,7 @@ async def read_write_3d_outer_dimension(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_3d_middle_dimension(dut):
     """Read/write the middle 3-D packed dimension"""
 
@@ -122,6 +131,7 @@ async def read_write_3d_bit(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def hierarchical_read_matches_flat_value(dut):
     """Read every 3-D packed element after writing a unique flat value"""
 
@@ -138,6 +148,7 @@ async def hierarchical_read_matches_flat_value(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_mixed_ranges(dut):
     """Read/write a packed array with non-zero and mixed-direction ranges"""
 
@@ -158,6 +169,7 @@ async def read_write_mixed_ranges(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_indexed_width_boundaries(dut):
     """Read/write indexed packed dimensions at 1-, 32-, and 33-bit widths"""
 
@@ -185,6 +197,7 @@ async def immediate_write_to_indexed_dimension(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_typed_outer_dimensions(dut):
     """Read/write non-leaf dimensions of packed typed arrays"""
 
@@ -215,6 +228,7 @@ async def invalid_indexed_packed_dimensions(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def iterate_2d(dut):
     """Iterate 2d"""
 
@@ -231,6 +245,7 @@ async def iterate_2d(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_enum_2d_element(dut):
     """Read/write enum"""
 
@@ -242,6 +257,7 @@ async def read_write_enum_2d_element(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_union_2d_element(dut):
     """Read/write union"""
 
@@ -253,6 +269,7 @@ async def read_write_union_2d_element(dut):
 
 
 @cocotb.test()
+@xfail_without_packed_indexing
 async def read_write_struct_2d_element(dut):
     """Read/write struct"""
 
