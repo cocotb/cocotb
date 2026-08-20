@@ -518,21 +518,9 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
          * pseudo-handle to behave like the first index.
          */
         if (new_hdl == NULL) {
-            int left = parent->get_range_left();
-            int right = parent->get_range_right();
-            bool ascending = parent->get_range_dir() == GPI_RANGE_UP;
-
             LOG_DEBUG(
                 "Unable to find handle through vpi_handle_by_index(), "
                 "attempting second method");
-
-            if ((ascending && (index < left || index > right)) ||
-                (!ascending && (index > left || index < right))) {
-                LOG_ERROR(
-                    "Invalid Index - Index %d is not in the range of [%d:%d]",
-                    index, left, right);
-                return NULL;
-            }
 
             /* Get the number of constraints to determine if the index will
              * result in a pseudo-handle or should be found */
@@ -577,10 +565,25 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
             new_hdl = vpi_handle_by_name(&writable[0], NULL);
 
-            /* Create a pseudo-handle if not the last index into a
-             * multi-dimensional array */
-            if (new_hdl == NULL && constraint_cnt > 1) {
-                new_hdl = p_hdl;
+            if (new_hdl == NULL) {
+                int left = parent->get_range_left();
+                int right = parent->get_range_right();
+                bool ascending = parent->get_range_dir() == GPI_RANGE_UP;
+
+                if ((ascending && (index < left || index > right)) ||
+                    (!ascending && (index > left || index < right))) {
+                    LOG_ERROR(
+                        "Invalid Index - Index %d is not in the range of "
+                        "[%d:%d]",
+                        index, left, right);
+                    return NULL;
+                }
+
+                /* Create a pseudo-handle if not the last index into a
+                 * multi-dimensional array */
+                if (constraint_cnt > 1) {
+                    new_hdl = p_hdl;
+                }
             }
         }
     } else {
