@@ -235,8 +235,8 @@ async def iterate_2d(dut):
     values = [0xA, 0xB, 0xC, 0xD]
     for handle, val in zip(dut.i_packed, values):
         handle.value = val
+        await Timer(1)
 
-    await Timer(1)
     for handle, val in zip(dut.o_packed, values):
         assert handle.value == val
 
