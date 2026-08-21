@@ -226,8 +226,6 @@ static void pygpi_logging_finalize(void *) {
     m_logger_map.clear();
 }
 
-PyObject *pEventFn = NULL;
-
 // Disabled by default
 int pygpi_debug_enabled = 0;
 int python_context_tracing_enabled = 0;

@@ -83,7 +83,6 @@ static void pygpi_init_debug() {
 }
 
 static int start_of_sim_time(void *);
-static int end_of_sim_time(void *);
 static void finalize(void *);
 
 extern "C" PYGPI_EXPORT void initialize(void) {
@@ -172,7 +171,6 @@ extern "C" PYGPI_EXPORT void initialize(void) {
     }
 
     gpi_register_start_of_sim_time_callback(start_of_sim_time, nullptr);
-    gpi_register_end_of_sim_time_callback(end_of_sim_time, nullptr);
     gpi_register_finalize_callback(finalize, nullptr);
 
     /* Before returning we check if the user wants pause the simulator thread
@@ -213,7 +211,6 @@ static void finalize(void *) {
     // So we check if Python is still initialized before doing cleanup.
     if (Py_IsInitialized()) {
         PyGILState_Ensure();  // Don't save state as we are calling Py_Finalize
-        pEventFn = NULL;
         Py_Finalize();
     }
 }
@@ -260,33 +257,5 @@ static int start_of_sim_time(void *) {
     }
     Py_DECREF(cocotb_retval);
 
-    return 0;
-}
-
-static int end_of_sim_time(void *) {
-    PYGPI_LOG_TRACE("GPI End Sim => [ PYGPI End ]");
-    DEFER(PYGPI_LOG_TRACE("[ PYGPI End ] => GPI End Sim"));
-
-    /* Indicate to the upper layer that a sim event occurred */
-
-    if (pEventFn) {
-        PyGILState_STATE gstate;
-        c_to_python();
-        gstate = PyGILState_Ensure();
-
-        PyObject *pValue = PyObject_CallNoArgs(pEventFn);
-        if (pValue == NULL) {
-            // Printing a SystemExit calls exit(1), which we don't want.
-            if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
-                PyErr_Print();
-            }
-            // Clear error so re-entering Python doesn't fail.
-            PyErr_Clear();
-            PYGPI_LOG_ERROR("Passing event to upper layer failed");
-        }
-        Py_XDECREF(pValue);
-        PyGILState_Release(gstate);
-        python_to_c();
-    }
     return 0;
 }
