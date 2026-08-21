@@ -93,6 +93,15 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
 
     int type = vpi_get(vpiType, vpi_hdl);
 
+    // Resolve vpiRefObj to the actual type for iteration lookup
+    if (type == vpiRefObj) {
+        vpiHandle actual_hdl = vpi_handle(vpiActual, vpi_hdl);
+        if (actual_hdl != NULL) {
+            type = vpi_get(vpiType, actual_hdl);
+            vpi_free_object(actual_hdl);
+        }
+    }
+
     try {
         selected = &iterate_over.at(type);
     } catch (std::out_of_range const &) {
