@@ -1377,9 +1377,7 @@ class _LogicArrayObjectBase(
         if handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = f"{self._path}[{index}]"
-        res = cast(
-            "ChildObjectT", _make_sim_object(handle, path)
-        )
+        res = cast("ChildObjectT", _make_sim_object(handle, path))
         self._sub_handles[index] = res
         return res
 
