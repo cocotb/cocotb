@@ -918,23 +918,6 @@ static PyObject *initialize_logger(PyObject *, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *set_sim_event_callback(PyObject *, PyObject *args) {
-    if (pEventFn) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Simulator event callback already set!");
-        return NULL;
-    }
-
-    PyObject *sim_event_callback;
-    if (!PyArg_ParseTuple(args, "O", &sim_event_callback)) {
-        PyErr_Print();
-        Py_RETURN_NONE;
-    }
-    Py_INCREF(sim_event_callback);
-    pEventFn = sim_event_callback;
-    Py_RETURN_NONE;
-}
-
 class GpiClock {
   public:
     GpiClock(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
@@ -1330,12 +1313,6 @@ static PyMethodDef SimulatorMethods[] = {
                "get_logger: Callable[[str], Logger]"
                ") -> None\n"
                "Initialize the GPI logger with Python logging functions.")},
-    {"set_sim_event_callback", set_sim_event_callback, METH_VARARGS,
-     PyDoc_STR("set_sim_event_callback(sim_event_callback, /)\n"
-               "--\n\n"
-               "set_sim_event_callback(sim_event_callback: Callable[[], "
-               "object]) -> None\n"
-               "Set the callback for simulator events.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
