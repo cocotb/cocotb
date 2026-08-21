@@ -1369,16 +1369,19 @@ class _LogicArrayObjectBase(
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slice indexing is not supported")
-        if index in self._sub_handles:
+        try:
             return self._sub_handles[index]
-        new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
+        except KeyError:
+            pass
+        handle = self._handle.get_handle_by_index(index)
+        if handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(
-            "ChildObjectT", _make_sim_object(new_handle, path)
+        path = f"{self._path}[{index}]"
+        res = cast(
+            "ChildObjectT", _make_sim_object(handle, path)
         )
-        return self._sub_handles[index]
+        self._sub_handles[index] = res
+        return res
 
     @cached_property
     def _min_val(self) -> int:
