@@ -24,4 +24,4 @@ def _shutdown() -> None:
 def _init() -> None:
     import cocotb.simulator  # noqa: PLC0415
 
-    cocotb.simulator.set_sim_event_callback(_shutdown)
+    cocotb.simulator.register_end_of_sim_time_callback(_shutdown)
