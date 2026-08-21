@@ -1369,6 +1369,8 @@ class _LogicArrayObjectBase(
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slice indexing is not supported")
+        if index not in self.range:
+            raise IndexError(f"{self._path} contains no object at index {index}")
         try:
             return self._sub_handles[index]
         except KeyError:
