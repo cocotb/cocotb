@@ -19,10 +19,32 @@
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-class GpiCbHdl;
 class GpiImplInterface;
 class GpiIterator;
 class GpiCbHdl;
+
+class GpiCbHdl {
+  public:
+    virtual ~GpiCbHdl() = default;
+
+    /** Remove the callback before it fires.
+     *
+     * This function should delete the object.
+     */
+    virtual int remove() = 0;
+
+    /** Set user callback info
+     *
+     * Not on init to prevent having to pass around the arguments everywhere.
+     * Secondary initialization routine. ONLY CALL ONCE!
+     */
+    virtual void set_cb_info(int (*cb_func)(void *),
+                             void *cb_data) noexcept = 0;
+
+    /** Get the current user callback function and data. */
+    virtual void get_cb_info(int (**cb_func)(void *),
+                             void **cb_data) const noexcept = 0;
+};
 
 /* Base GPI class others are derived from */
 class GPI_EXPORT GpiHdl {
@@ -142,27 +164,18 @@ class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 /* GPI Callback handle */
 // To set a callback it needs the signal to do this on,
 // vpiHandle/vhpiHandleT for instance. The
-class GPI_EXPORT GpiCbHdl : public GpiHdl {
+class GPI_EXPORT GpiCbHdlBase : public GpiHdl, public GpiCbHdl {
   public:
-    GpiCbHdl() = delete;
-    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl) {}
+    GpiCbHdlBase() = delete;
+    GpiCbHdlBase(GpiImplInterface *impl) : GpiHdl(impl) {}
 
-    // TODO Some of these routines don't need to be declared here. Only remove()
-    // and get_cb_info() need to. In fact, declaring these here means we can't
-    // do things like pass arguments to arm().
-
-    /** Set user callback info
-     *
-     * Not on init to prevent having to pass around the arguments everywhere.
-     * Secondary initialization routine. ONLY CALL ONCE!
-     */
-    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept {
+    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept override {
         this->m_cb_func = cb_func;
         this->m_cb_data = cb_data;
     }
 
-    /** Get the current user callback function and data. */
-    void get_cb_info(int (**cb_func)(void *), void **cb_data) noexcept {
+    void get_cb_info(int (**cb_func)(void *),
+                     void **cb_data) const noexcept override {
         if (cb_func) {
             *cb_func = m_cb_func;
         }
@@ -177,12 +190,6 @@ class GPI_EXPORT GpiCbHdl : public GpiHdl {
      * Secondary initialization routine. ONLY CALL ONCE!
      */
     virtual int arm() = 0;
-
-    /** Remove the callback before it fires.
-     *
-     * This function should delete the object.
-     */
-    virtual int remove() = 0;
 
     /** Run the callback.
      *
@@ -256,6 +263,10 @@ class GPI_EXPORT GpiImplInterface {
                                                  void *gpi_cb_data) = 0;
     virtual GpiCbHdl *register_readwrite_callback(int (*gpi_function)(void *),
                                                   void *gpi_cb_data) = 0;
+    virtual GpiCbHdl *register_start_of_sim_time_callback(
+        int (*cb_func)(void *), void *cb_data) = 0;
+    virtual GpiCbHdl *register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                        void *cb_data) = 0;
 
   private:
     std::string m_name;
@@ -264,10 +275,8 @@ class GPI_EXPORT GpiImplInterface {
 /* Called from implementation layers back up the stack */
 GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
-// GpiImpls are currently expected to register single callbacks with the
-// interface for the start and end of simulation time. These functions are
-// called by the GpiImpls. The GPI layer will do the callback muxing.
-GPI_EXPORT void gpi_start_of_sim_time();
+// This is still exposed to the implementation layers for ensuring end of sim
+// callbacks are always called.
 GPI_EXPORT void gpi_end_of_sim_time();
 
 GPI_EXPORT void gpi_entry_point();

@@ -58,7 +58,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data) {
     GPI_TO_SIM(VHPI, cb_data->user_data);
 }
 
-VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
+VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdlBase(impl) {
     cb_data.reason = 0;
     cb_data.cb_rtn = handle_vhpi_callback;
     cb_data.obj = NULL;
