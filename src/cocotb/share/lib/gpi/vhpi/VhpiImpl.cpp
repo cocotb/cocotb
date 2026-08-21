@@ -1063,8 +1063,37 @@ GpiCbHdl *VhpiImpl::register_nexttime_callback(int (*cb_func)(void *),
     return cb_hdl;
 }
 
+GpiCbHdl *VhpiImpl::register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                        void *cb_data) {
+    auto *cb_hdl = new VhpiStartupCbHdl(this);
+
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
+
+GpiCbHdl *VhpiImpl::register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                      void *cb_data) {
+    auto *cb_hdl = new VhpiShutdownCbHdl(this);
+
+    auto err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
+
 void VhpiImpl::sim_end() {
-    m_sim_finish_cb->remove();
     int err = vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
     // LCOV_EXCL_START
     if (err) {
@@ -1082,49 +1111,7 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
     return compare_names(a.substr(0, a_idx), b.substr(0, b_idx));
 }
 
-static int startup_callback(void *) {
-    LOG_TRACE("GPI => [ GPI (VHPI startup) ]");
-    gpi_start_of_sim_time();
-    LOG_TRACE("[ GPI (VHPI startup) ] => GPI");
-    return 0;
-}
-
-static int shutdown_callback(void *) {
-    LOG_TRACE("GPI => [ GPI (VHPI shutdown) ]");
-    gpi_end_of_sim_time();
-    LOG_TRACE("[ GPI (VHPI shutdown) ] => GPI");
-    return 0;
-}
-
 void VhpiImpl::main() noexcept {
-    auto startup_cb = new VhpiStartupCbHdl(this);
-    auto err = startup_cb->arm();
-    // LCOV_EXCL_START
-    if (err) {
-        LOG_CRITICAL(
-            "VHPI: Unable to register startup callback! Simulation will end.");
-        check_vhpi_error();
-        delete startup_cb;
-        exit(1);
-    }
-    // LCOV_EXCL_STOP
-    startup_cb->set_cb_info(startup_callback, nullptr);
-
-    auto shutdown_cb = new VhpiShutdownCbHdl(this);
-    err = shutdown_cb->arm();
-    // LCOV_EXCL_START
-    if (err) {
-        LOG_CRITICAL(
-            "VHPI: Unable to register shutdown callback! Simulation will end.");
-        check_vhpi_error();
-        startup_cb->remove();
-        delete shutdown_cb;
-        exit(1);
-    }
-    // LCOV_EXCL_STOP
-    shutdown_cb->set_cb_info(shutdown_callback, nullptr);
-    m_sim_finish_cb = shutdown_cb;
-
     gpi_register_impl(this);
     gpi_entry_point();
 }
