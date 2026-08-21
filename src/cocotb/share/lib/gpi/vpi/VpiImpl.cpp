@@ -87,9 +87,17 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
         case vpiRegBit:
         case vpiMemoryWord:
         case vpiPackedArrayVar:
+        case vpiVarSelect:
+        case vpiBitSelect:
         case vpiPackedArrayNet:
             if (is_vector || num_elements > 1) {
+#ifdef GHDL
+                // GHDL is a VHDL simulator - VHDL doesn't distinguish
+                // packed/unpacked
                 return GPI_LOGIC_ARRAY;
+#else
+                return GPI_PACKED;
+#endif
             } else {
                 return GPI_LOGIC;
             }
@@ -209,6 +217,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiLongIntVar:
         case vpiLongIntNet:
         case vpiPackedArrayVar:
+        case vpiVarSelect:
+        case vpiBitSelect:
         case vpiPackedArrayNet:
         case vpiRealVar:
         case vpiRealNet:
@@ -279,8 +289,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
                 LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl,
-                                              GPI_PACKED_STRUCTURE, false);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false);
                 break;
             } else if (vpi_get(vpiVector, new_hdl)) {
                 is_vector = true;
@@ -489,8 +498,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         writable.push_back('\0');
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
-    } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+    } else if (obj_type == GPI_LOGIC_ARRAY || obj_type == GPI_ARRAY ||
+               obj_type == GPI_STRING || obj_type == GPI_PACKED) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
@@ -505,21 +514,9 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
          * pseudo-handle to behave like the first index.
          */
         if (new_hdl == NULL) {
-            int left = parent->get_range_left();
-            int right = parent->get_range_right();
-            bool ascending = parent->get_range_dir() == GPI_RANGE_UP;
-
             LOG_DEBUG(
                 "Unable to find handle through vpi_handle_by_index(), "
                 "attempting second method");
-
-            if ((ascending && (index < left || index > right)) ||
-                (!ascending && (index > left || index < right))) {
-                LOG_ERROR(
-                    "Invalid Index - Index %d is not in the range of [%d:%d]",
-                    index, left, right);
-                return NULL;
-            }
 
             /* Get the number of constraints to determine if the index will
              * result in a pseudo-handle or should be found */
@@ -564,16 +561,32 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
             new_hdl = vpi_handle_by_name(&writable[0], NULL);
 
-            /* Create a pseudo-handle if not the last index into a
-             * multi-dimensional array */
-            if (new_hdl == NULL && constraint_cnt > 1) {
-                new_hdl = p_hdl;
+            if (new_hdl == NULL) {
+                int left = parent->get_range_left();
+                int right = parent->get_range_right();
+                bool ascending = parent->get_range_dir() == GPI_RANGE_UP;
+
+                if ((ascending && (index < left || index > right)) ||
+                    (!ascending && (index > left || index < right))) {
+                    LOG_ERROR(
+                        "Invalid Index - Index %d is not in the range of "
+                        "[%d:%d]",
+                        index, left, right);
+                    return NULL;
+                }
+
+                /* Create a pseudo-handle if not the last index into a
+                 * multi-dimensional array */
+                if (constraint_cnt > 1) {
+                    new_hdl = p_hdl;
+                }
             }
         }
     } else {
         LOG_ERROR(
             "VPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC, GPI_LOGIC, GPI_ARRAY, or GPI_STRING to have an index.",
+            "GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED "
+            "to have an index.",
             parent->get_type_str());
         return NULL;
     }

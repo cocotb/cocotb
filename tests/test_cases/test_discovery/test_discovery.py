@@ -19,6 +19,7 @@ from cocotb.handle import (
     Immediate,
     IntegerObject,
     LogicArrayObject,
+    PackedObject,
     StringObject,
 )
 from cocotb.triggers import Timer
@@ -394,14 +395,14 @@ async def access_boolean(dut):
 @cocotb.test(skip=LANGUAGE in ["vhdl"])
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
-    assert isinstance(dut.register_array[1], LogicArrayObject)
+    assert isinstance(dut.register_array[1], PackedObject)
     dut.register_array[1].value = 4
     await Timer(1, "ns")
     assert dut.register_array[1].value == 4
 
 
 # Icarus reports vpiVector=0 for single-element vectors (e.g. `logic [0:0]`), so cocotb
-# discovers them as scalar LogicObject instances rather than LogicArrayObject instances.
+# discovers them as scalar LogicObject instances rather than vector instances.
 # The root cause is upstream in Icarus (https://github.com/steveicarus/iverilog/issues/1441);
 # this test pins the expected behavior and is marked xfail for Icarus until that is fixed.
 # See cocotb/cocotb#5686.
@@ -410,9 +411,11 @@ async def access_internal_register_array(dut):
     reason="Icarus reports single-element vectors as scalars (gh-5686, steveicarus/iverilog#1441)",
 )
 @cocotb.test
-async def single_element_vector_is_logic_array(dut):
-    """A single-element vector should be discovered as a LogicArrayObject, not a scalar."""
-    assert isinstance(dut.one_bit_vector, LogicArrayObject)
+async def single_element_vector_is_not_scalar(dut):
+    """A single-element vector should be discovered as a vector, not a scalar."""
+    # Verilog vectors are packed; VHDL vectors are not.
+    expected = PackedObject if LANGUAGE in ["verilog"] else LogicArrayObject
+    assert isinstance(dut.one_bit_vector, expected)
 
 
 @cocotb.test(
@@ -458,12 +461,12 @@ async def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_LOGIC"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_LOGIC_ARRAY"),
+        (dut.temp, "GPI_PACKED"),
         (dut.logic_b, "GPI_LOGIC"),
         (dut.logic_c, "GPI_LOGIC"),
         (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_LOGIC_ARRAY"),
+        (dut.stream_in_data, "GPI_PACKED"),
         (dut.and_output, "GPI_LOGIC"),
         (dut.logic_a, "GPI_LOGIC"),
     ]
