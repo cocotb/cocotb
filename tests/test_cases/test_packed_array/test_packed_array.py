@@ -223,6 +223,10 @@ async def invalid_indexed_packed_dimensions(dut):
         dut.i_packed_3d[1][2][4]
     with pytest.raises(IndexError):
         dut.i_packed_3d[-1]
+    with pytest.raises(IndexError):
+        dut.i_packed_32[-1]
+    with pytest.raises(IndexError):
+        dut.i_packed_32[1]
     with pytest.raises(TypeError):
         dut.i_packed_3d[1:0]
 

@@ -259,12 +259,9 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
 #else
             num_elements = vpi_get(vpiSize, new_hdl);
 #endif
-            auto gpi_type = to_gpi_objtype(type, num_elements, is_vector);
-            if ((type == vpiEnumVar || type == vpiEnumNet) &&
-                vpi_get(vpiPacked, new_hdl)) {
-                gpi_type = GPI_PACKED;
-            }
-            new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
+            new_obj = new VpiSignalObjHdl(
+                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
+                false);
             break;
         }
         case vpiParameter:
