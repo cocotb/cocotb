@@ -7,7 +7,7 @@
 
 Each environment must contain the following fields:
 - lang: The TOPLEVEL_LANG of the test. Must be one of "verilog" or "vhdl".
-- sim: The SIM of the test. Must be one of "icarus", "ghdl", "nvc", "verilator", "riviera", "questa", "xcelium", or "vcs".
+- sim: The SIM of the test. Must be one of "icarus", "ghdl", "nvc", "verilator", "riviera", "questa", "xcelium", "vcs", or "ryusim".
 - sim-version: The version of the simulator to use. Valid values depend upon the simulator and build recipe.
 - os: The OS to operate on. Must be a valid value for the "jobs.<job_name>.runs-on" field for Github Actions.
 - python-version: The Python version to test with. Must be a valid value for the "python-version" field of the "actions/setup-python" Github Action.
@@ -175,6 +175,17 @@ ENVS = [
         "lang": "verilog",
         "sim": "verilator",
         "sim-version": "master",
+        "os": "ubuntu-22.04",
+        "python-version": "3.10",
+        "group": "experimental",
+    },
+    # RyuSim (third-party, free; experimental group — scheduled, not every PR).
+    # Track the latest release here, like Verilator's "master"; pin a specific
+    # version only if/when RyuSim graduates to a ci-free/extended row.
+    {
+        "lang": "verilog",
+        "sim": "ryusim",
+        "sim-version": "latest",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "experimental",
