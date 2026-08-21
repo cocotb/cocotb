@@ -501,9 +501,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         writable.push_back('\0');
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
-    } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
-               obj_type == GPI_ARRAY || obj_type == GPI_STRING ||
-               obj_type == GPI_PACKED) {
+    } else if (obj_type == GPI_LOGIC_ARRAY || obj_type == GPI_ARRAY ||
+               obj_type == GPI_STRING || obj_type == GPI_PACKED) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
