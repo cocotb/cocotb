@@ -2422,6 +2422,8 @@ class RyuSim(Runner):
 
     def _set_env_test(self) -> None:
         super()._set_env_test()
+        if "COCOTB_TRUST_INERTIAL_WRITES" not in self.env:
+            self.env["COCOTB_TRUST_INERTIAL_WRITES"] = "1"
         # Ensure cocotb's VPI libraries are discoverable when the simulation
         # model dynamically loads them via --vpi-load.
         lib_dir = str(cocotb_tools.config.libs_dir)

@@ -1,1 +1,2 @@
 Added support for the RyuSim simulator. See :ref:`sim-ryusim` and :class:`cocotb_tools.runner.RyuSim`.
+RyuSim applies inertial writes according to the standard, so :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is enabled by default for it.
