@@ -24,9 +24,9 @@
 class FliImpl;
 class FliSignalObjHdl;
 
-class FliCbHdl : public GpiCbHdl {
+class FliCbHdl : public GpiCbHdlBase {
   public:
-    using GpiCbHdl::GpiCbHdl;
+    using GpiCbHdlBase::GpiCbHdlBase;
     virtual bool is_shutdown_cb() const noexcept { return false; }
 };
 
@@ -451,6 +451,10 @@ class FliImpl : public GpiImplInterface {
                                          void *cb_data) override;
     GpiCbHdl *register_readwrite_callback(int (*function)(void *),
                                           void *cb_data) override;
+    GpiCbHdl *register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                  void *cb_data) override;
+    GpiCbHdl *register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                void *cb_data) override;
 
     /* Method to provide strings from operation types */
     GpiObjHdl *create_gpi_obj_from_handle(void *hdl, const std::string &name,
@@ -471,10 +475,6 @@ class FliImpl : public GpiImplInterface {
     bool isTypeSignal(int type, int full_type);
 
   private:
-    // We store the shutdown callback handle here so sim_end() can remove() it
-    // if it's called.
-    FliShutdownCbHdl *m_sim_finish_cb;
-
     // Cache simulator info
     std::string m_product;
     std::string m_version;
