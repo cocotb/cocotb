@@ -96,7 +96,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data) {
     return ret;
 }
 
-VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) {
+VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdlBase(impl) {
     vpi_time.high = 0;
     vpi_time.low = 0;
     vpi_time.type = vpiSimTime;

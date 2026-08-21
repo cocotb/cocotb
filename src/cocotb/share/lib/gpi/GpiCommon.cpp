@@ -13,14 +13,13 @@
 #include <utility>
 #include <vector>
 
+#include "../intrusive_deque.hpp"
 #include "./gpi_priv.hpp"
 #include "./logging.hpp"
 
 using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
-static vector<std::pair<int (*)(void *), void *>> start_of_sim_time_cbs;
-static vector<std::pair<void (*)(void *), void *>> end_of_sim_time_cbs;
 static vector<std::pair<void (*)(void *), void *>> finalize_cbs;
 
 class GpiHandleStore {
@@ -91,27 +90,6 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 }
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
-
-void gpi_start_of_sim_time() {
-    for (auto &cb_info : start_of_sim_time_cbs) {
-        // start_of_sime_time should never fail, this should be moved to
-        // gpi_load_users, as should the (argc,argv)
-        LOG_TRACE("[ GPI Start Sim ] => User Start callback");
-        int error = cb_info.first(cb_info.second);
-        LOG_TRACE("User Start callback => [ GPI Start Sim ]");
-        if (error) {
-            gpi_end_of_sim_time();
-        }
-    }
-}
-
-void gpi_end_of_sim_time() {
-    for (auto &cb_info : end_of_sim_time_cbs) {
-        LOG_TRACE("[ GPI End Sim ] => User End callback");
-        cb_info.first(cb_info.second);
-        LOG_TRACE("User End callback => [ GPI End Sim ]");
-    }
-}
 
 void gpi_finish() { gpi_finalizing = true; }
 
@@ -737,14 +715,111 @@ const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
 
-int gpi_register_start_of_sim_time_callback(int (*cb)(void *), void *cb_data) {
-    start_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
-    return 0;
+class InternalCbHdl : public GpiCbHdl, public detail::IntrusiveDequeNode {
+  public:
+    InternalCbHdl(int (*cb_func)(void *), void *cb_data) noexcept
+        : m_cb_func(cb_func), m_cb_data(cb_data) {}
+
+    ~InternalCbHdl() noexcept override { deque_remove(); }
+
+    int remove() override {
+        deque_remove();
+        delete this;
+        return 0;
+    }
+
+    int run() {
+        int error = m_cb_func(m_cb_data);
+        delete this;
+        return error;
+    }
+
+    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept override {
+        this->m_cb_func = cb_func;
+        this->m_cb_data = cb_data;
+    }
+
+    void get_cb_info(int (**cb_func)(void *),
+                     void **cb_data) const noexcept override {
+        if (cb_func) {
+            *cb_func = m_cb_func;
+        }
+        if (cb_data) {
+            *cb_data = m_cb_data;
+        }
+    }
+
+  private:
+    int (*m_cb_func)(void *);
+    void *m_cb_data;
+};
+
+static detail::IntrusiveDeque<InternalCbHdl> start_of_sim_time_cbs;
+static GpiCbHdl *start_of_sim_time_underlying_cb_hdl = nullptr;
+
+static int run_startup_callbacks(void *) {
+    int error = 0;
+    while (auto cb = start_of_sim_time_cbs.pop_front()) {
+        LOG_TRACE("[ GPI Start of Sim ] => User Start of Sim callback");
+        error |= cb->run();
+        LOG_TRACE("User Start of Sim callback => [ GPI Start of Sim ]");
+    }
+    start_of_sim_time_underlying_cb_hdl = nullptr;
+    return error;
 }
 
-int gpi_register_end_of_sim_time_callback(void (*cb)(void *), void *cb_data) {
-    end_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
-    return 0;
+gpi_cb_hdl gpi_register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                   void *cb_data) {
+    if (!start_of_sim_time_underlying_cb_hdl) {
+        // It should not matter which implementation we use for this so just
+        // pick the first one
+        GpiCbHdl *cb_hdl =
+            registered_impls[0]->register_start_of_sim_time_callback(
+                run_startup_callbacks, nullptr);
+        if (!cb_hdl) {
+            LOG_ERROR("Failed to register a start of sim time callback");
+            return nullptr;
+        }
+        start_of_sim_time_underlying_cb_hdl = cb_hdl;
+    }
+    auto cb_hdl = new InternalCbHdl(cb_func, cb_data);
+    start_of_sim_time_cbs.push_back(cb_hdl);
+    return cb_hdl;
+}
+
+static detail::IntrusiveDeque<InternalCbHdl> end_of_sim_time_cbs;
+static GpiCbHdl *end_of_sim_time_underlying_cb_hdl = nullptr;
+
+static int run_end_of_sim_callbacks(void *) {
+    int error = 0;
+    while (auto cb = end_of_sim_time_cbs.pop_front()) {
+        LOG_TRACE("[ GPI End of Sim ] => User End of Sim callback");
+        error |= cb->run();
+        LOG_TRACE("User End of Sim callback => [ GPI End of Sim ]");
+    }
+    end_of_sim_time_underlying_cb_hdl = nullptr;
+    return error;
+}
+
+void gpi_end_of_sim_time() { run_end_of_sim_callbacks(nullptr); }
+
+gpi_cb_hdl gpi_register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                 void *cb_data) {
+    if (!end_of_sim_time_underlying_cb_hdl) {
+        // It should not matter which implementation we use for this so just
+        // pick the first one
+        GpiCbHdl *cb_hdl =
+            registered_impls[0]->register_end_of_sim_time_callback(
+                run_end_of_sim_callbacks, nullptr);
+        if (!cb_hdl) {
+            LOG_ERROR("Failed to register an end of sim time callback");
+            return nullptr;
+        }
+        end_of_sim_time_underlying_cb_hdl = cb_hdl;
+    }
+    auto cb_hdl = new InternalCbHdl(cb_func, cb_data);
+    end_of_sim_time_cbs.push_back(cb_hdl);
+    return cb_hdl;
 }
 
 int gpi_register_finalize_callback(void (*cb)(void *), void *cb_data) {
