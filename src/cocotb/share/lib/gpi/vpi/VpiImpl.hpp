@@ -73,7 +73,7 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
         __check_vpi_error(__FILE__, __func__, __LINE__); \
     } while (0)
 
-class VpiCbHdl : public GpiCbHdl {
+class VpiCbHdl : public GpiCbHdlBase {
   public:
     VpiCbHdl(GpiImplInterface *impl);
 
@@ -328,6 +328,10 @@ class VpiImpl : public GpiImplInterface {
                                          void *cb_data) override;
     GpiCbHdl *register_readwrite_callback(int (*function)(void *),
                                           void *cb_data) override;
+    GpiCbHdl *register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                  void *cb_data) override;
+    GpiCbHdl *register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                void *cb_data) override;
     GpiObjHdl *get_child_by_name(const std::string &name,
                                  GpiObjHdl *parent) override;
     GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
@@ -345,9 +349,6 @@ class VpiImpl : public GpiImplInterface {
     void main() noexcept;
 
   private:
-    // We store the shutdown callback handle here so sim_end() can remove() it
-    // if it's called.
-    VpiShutdownCbHdl *m_sim_finish_cb;
     std::string m_product;
     std::string m_version;
     int m_argc = 0;
