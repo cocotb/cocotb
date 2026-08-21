@@ -85,7 +85,7 @@ static void pygpi_init_debug() {
 static int start_of_sim_time(void *);
 static void finalize(void *);
 
-extern "C" PYGPI_EXPORT void initialize(void) {
+extern "C" PYGPI_EXPORT int pygpi_initialize(void) {
     pygpi_init_debug();
     pygpi_logging_initialize();
 
@@ -95,7 +95,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
     if (python_init_called) {
         // LCOV_EXCL_START
         PYGPI_LOG_ERROR("PyGPI library initialized again!");
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     python_init_called = 1;
@@ -107,7 +107,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
 
     if (get_interpreter_path(interpreter_path, sizeof(interpreter_path))) {
         // LCOV_EXCL_START
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
     PYGPI_LOG_INFO("Using Python %s interpreter at %ls", PY_VERSION,
@@ -132,7 +132,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
         if (status.func != NULL) {
             PYGPI_LOG_ERROR("\tfunction: %s", status.func);
         }
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 
@@ -146,7 +146,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
         if (status.func != NULL) {
             PYGPI_LOG_ERROR("\tfunction: %s", status.func);
         }
-        return;
+        return -1;
         // LCOV_EXCL_STOP
     }
 
@@ -185,14 +185,14 @@ extern "C" PYGPI_EXPORT void initialize(void) {
             // LCOV_EXCL_START
             PYGPI_LOG_ERROR(
                 "COCOTB_ATTACH only needs to be set to ~30 seconds");
-            return;
+            return -1;
             // LCOV_EXCL_STOP
         }
         if ((errno != 0 && sleep_time == 0) || (sleep_time <= 0)) {
             // LCOV_EXCL_START
             PYGPI_LOG_ERROR(
                 "COCOTB_ATTACH must be set to an integer base 10 or omitted");
-            return;
+            return -1;
             // LCOV_EXCL_STOP
         }
 
@@ -201,6 +201,7 @@ extern "C" PYGPI_EXPORT void initialize(void) {
             sleep_time, getpid());
         sleep((unsigned int)sleep_time);
     }
+    return 0;
 }
 
 static void finalize(void *) {

@@ -15,12 +15,14 @@ this chapter shows the minimum settings to be done.
 
 For all simulators, the following environment variables need to be set:
 
-* Define :envvar:`GPI_USERS` using ``$(cocotb-config --libpython);$(cocotb-config --pygpi-entry-point)``.
+* Define :envvar:`COCOTB_BOOTSTRAP` using
+  ``$(cocotb-config --gpi-entry-point):$(cocotb-config --libpython):$(cocotb-config --pygpi-entry-point)``
+  on Linux and macOS. Use ``;`` instead of ``:`` on Windows.
 * Define :envvar:`PYGPI_PYTHON_BIN` using ``$(cocotb-config --python-bin)``.
 * Define :envvar:`COCOTB_TEST_MODULES` with the name of the Python module(s) containing your testcases.
 
 See the sections below for additional settings to be done, depending on the simulator.
-Use ``cocotb-config --lib-entry INTERFACE SIMULATOR`` to obtain the interface library to load.
+Use ``cocotb-config --lib-entry INTERFACE SIMULATOR`` to obtain the bootstrap library and entry point to load.
 For simulators that require an explicit entry function, the result uses the
 ``library:entry_function`` format.
 
@@ -29,6 +31,7 @@ For simulators that require an explicit entry function, the result uses the
 Icarus Verilog
 ==============
 
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl icarus vpi)``.
 * Call the ``vvp`` executable with the option ``-m $(cocotb-config --lib-entry vpi icarus)``.
 
 Verilator
@@ -40,11 +43,11 @@ Verilator
 
       --vpi --prefix Vtop \
       -LDFLAGS "-Wl,-rpath,$(cocotb-config --lib-dir) \
-          -L$(cocotb-config --lib-dir) \
-          -lcocotbvpi_verilator" \
+          $(cocotb-config --lib-entry vpi verilator) -rdynamic" \
       $(cocotb-config --share)/lib/verilator/verilator.cpp
 
 * Run Verilator's makefile as follows: ``CPPFLAGS="-std=c++11" make -f Vtop.mk``
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl verilator vpi)`` before running the model.
 
 .. note::
    You may want to add ``--public-flat-rw`` to make all signals in the design accessible over the VPI;
@@ -59,6 +62,7 @@ Synopsys VCS
   to allow cocotb to access values in the design.
 * Extend the ``vcs`` call with the options
   ``+vpi -P pli.tab -load $(cocotb-config --lib-entry vpi vcs)``.
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl vcs vpi)``.
 
 .. _custom-flows-aldec:
 .. _custom-flows-riviera:
@@ -75,18 +79,20 @@ Aldec Riviera-PRO
       For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-entry vhpi riviera)``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi riviera):cocotbvpi_entry_point``
-      if there are also (System)Verilog modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl riviera vhpi)``.
+      If there are also (System)Verilog modules in the design, use
+      ``$(cocotb-config --gpi-impl riviera vhpi vpi)``.
 
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-entry vpi riviera)``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point``
-      if there are also VHDL modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl riviera vpi)``.
+      If there are also VHDL modules in the design, use
+      ``$(cocotb-config --gpi-impl riviera vpi vhpi)``.
 
 .. _custom-flows-activehdl:
 
@@ -102,18 +108,20 @@ Aldec Active-HDL
       For a design with a VHDL toplevel, call ``asim`` with the option
       ``-loadvhpi $(cocotb-config --lib-entry vhpi activehdl)``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point``
-      if there are also (System)Verilog modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl activehdl vhpi)``.
+      If there are also (System)Verilog modules in the design, use
+      ``$(cocotb-config --gpi-impl activehdl vhpi vpi)``.
 
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call ``alog`` and ``asim`` with the option
       ``-pli $(cocotb-config --lib-entry vpi activehdl)``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point``
-      if there are also VHDL modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl activehdl vpi)``.
+      If there are also VHDL modules in the design, use
+      ``$(cocotb-config --gpi-impl activehdl vpi vhpi)``.
 
 .. _custom-flows-siemens:
 
@@ -127,20 +135,22 @@ Questa supports two different flows: the traditional flow using ``vsim``, which 
    .. tab-item:: Design with a VHDL Toplevel
 
       For a design with a VHDL toplevel, call the ``vsim`` or ``qrun`` executable with the option
-      ``-foreign "cocotb_init $(cocotb-config --lib-name-path fli questa)"``.
+      ``-foreign "cocotb_bootstrap_entry $(cocotb-config --lib-entry fli questa)"``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point``
-      if there are also (System)Verilog modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl questa fli)``.
+      If there are also (System)Verilog modules in the design, use
+      ``$(cocotb-config --gpi-impl questa fli vpi)``.
 
    .. tab-item:: Design with a (System)Verilog Toplevel
 
       For a design with a (System)Verilog toplevel, call the ``vsim`` or ``qrun`` executable with the option
       ``-pli $(cocotb-config --lib-entry vpi questa)``.
 
-      Set the :envvar:`GPI_EXTRA` environment variable to
-      ``$(cocotb-config --lib-name-path fli questa):cocotbfli_entry_point``
-      if there are also VHDL modules in the design.
+      Set the :envvar:`GPI_IMPL` environment variable to
+      ``$(cocotb-config --gpi-impl questa vpi)``.
+      If there are also VHDL modules in the design, use
+      ``$(cocotb-config --gpi-impl questa vpi fli)``.
 
 .. _custom-flows-cadence:
 
@@ -152,17 +162,13 @@ Cadence Incisive and Xcelium
 
 * The ``xrun`` call (or ``xmsim`` in multi-step mode) needs the VPI library and entry point via the option
   ``-loadvpisim $(cocotb-config --lib-entry vpi xcelium)``.
-  Alternatively, it is possible to specify the same during elaboration in multi-step mode with
-  ``-loadvpi $(cocotb-config --lib-name-path vpi xcelium):.vlog_startup_routines_bootstrap``.
-  The syntax is ``-loadvpi library:elab_functions[.sim_functions]``, taking two comma separated lists of
-  methods. The first list is invoked during elaboration and then simulation, while the second only applies
-  to simulation and it is the one to use to register callbacks. Specifying the entry point in ``elab_functions``
-  works but has the downside of initializing cocotb during elaboration, not only simulation.
 
-* If the design contains any VHDL modules, set the :envvar:`GPI_EXTRA` environment variable to
-  ``$(cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point``.
+
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl xcelium vpi)``.
+  If the design contains any VHDL modules, use
+  ``$(cocotb-config --gpi-impl xcelium vpi vhpi)``.
   This is because directly loading the VHPI library causes an error in Xcelium,
-  so always load the VPI library and supply VHPI via ``GPI_EXTRA``.
+  so always load the VPI library and supply VHPI via ``GPI_IMPL``.
 
 .. note::
   For a design with a VHDL toplevel, call the ``xrun`` or ``xmelab`` executable with the option
@@ -175,6 +181,7 @@ GHDL
 
 * Extend the ``ghdl -r`` call with the option
   ``--vpi=$(cocotb-config --lib-entry vpi ghdl)``.
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl ghdl vpi)``.
 
 .. _custom-flows-nvc:
 
@@ -183,6 +190,7 @@ NVC
 
 * Extend the ``nvc -r`` call with the option
   ``--load=$(cocotb-config --lib-entry vhpi nvc)``.
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl nvc vhpi)``.
 
 .. note::
    It is recommended to add ``--preserve-case`` to build arguments.
@@ -195,6 +203,7 @@ Tachyon DA CVC
 
 * Extend the ``cvc64`` call with the option
   ``+interp +acc+2 +loadvpi=$(cocotb-config --lib-entry vpi cvc)``.
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl cvc vpi)``.
 
 .. _custom-flows-dsim:
 
@@ -203,3 +212,4 @@ Siemens DSim
 
 * Extend the ``dsim`` call with the option
   ``-pli_lib $(cocotb-config --lib-entry vpi dsim) +acc+rwcbfsWF``.
+* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl dsim vpi)``.

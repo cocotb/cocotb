@@ -1111,44 +1111,12 @@ bool VhpiImpl::compare_generate_labels(const std::string &a,
     return compare_names(a.substr(0, a_idx), b.substr(0, b_idx));
 }
 
-void VhpiImpl::main() noexcept {
-    gpi_register_impl(this);
-    gpi_entry_point();
-}
-
-static bool from_bootstrap = false;
-
-// This is run by the simulator at startup when this is the main GPI entrypoint
-static void vhpi_main() {
-    LOG_TRACE("%s => [ VHPI (vhpi_main) ]",
-              from_bootstrap ? "Bootstrap" : "Sim (vhpi_startup_routines)");
-    auto vhpi_table = new VhpiImpl("VHPI");
-    vhpi_table->main();
-    LOG_TRACE("[ VHPI (vhpi_main) ] => %s",
-              from_bootstrap ? "Bootstrap" : "Sim (vhpi_startup_routines)");
-}
-
-// This is run by GPI when requested for mixed-language simulations
+// Loaded by GPI via GPI_IMPL.
 static void register_impl() {
     LOG_TRACE("GPI Init => [ VHPI (register_impl) ]");
     auto vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
     LOG_TRACE("[ VHPI (register_impl) ] => GPI Init");
-}
-
-// pre-defined VHPI registration table
-extern "C" {
-COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
-    gpi_init_logging_and_debug, vhpi_main, nullptr};
-
-// For non-VHPI compliant applications that cannot find vhpi_startup_routines
-COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
-    gpi_init_logging_and_debug();
-    LOG_TRACE("Sim => [ VHPI (vhpi_startup_routines_bootstrap) ]");
-    from_bootstrap = true;
-    vhpi_main();
-    LOG_TRACE("[ VHPI (vhpi_startup_routines_bootstrap) ] => Sim");
-}
 }
 
 GPI_ENTRY_POINT(cocotbvhpi, register_impl)

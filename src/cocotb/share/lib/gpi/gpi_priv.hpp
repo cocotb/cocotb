@@ -285,9 +285,6 @@ GPI_EXPORT bool gpi_is_finalizing();
 GPI_EXPORT void gpi_init_logging_and_debug();
 GPI_EXPORT void gpi_end_sim();
 
-void *utils_dyn_open(const char *lib_name);
-void *utils_dyn_sym(void *handle, const char *sym_name);
-
 #define GPI_TO_USER_CB(impl) LOG_TRACE("[ " xstr(impl) " ] => User Callback")
 
 #define USER_CB_TO_GPI(impl) LOG_TRACE("User Callback => [ " xstr(impl) " ]")
@@ -300,9 +297,9 @@ void *utils_dyn_sym(void *handle, const char *sym_name);
 typedef void (*layer_entry_func)();
 
 /* Use this macro in an implementation layer to define an entry point */
-#define GPI_ENTRY_POINT(NAME, func)                     \
-    extern "C" {                                        \
-    COCOTB_EXPORT void NAME##_entry_point() { func(); } \
+#define GPI_ENTRY_POINT(NAME, func)                 \
+    extern "C" {                                    \
+    COCOTB_EXPORT void GPI_IMPL_ENTRY() { func(); } \
     }
 
 #endif /* COCOTB_GPI_PRIV_H_ */

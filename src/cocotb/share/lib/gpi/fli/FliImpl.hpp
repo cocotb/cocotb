@@ -464,8 +464,6 @@ class FliImpl : public GpiImplInterface {
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
 
-    void main() noexcept;
-
   private:
     bool isValueConst(int kind);
     bool isValueLogic(mtiTypeIdT type);
