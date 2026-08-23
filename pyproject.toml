@@ -76,7 +76,11 @@ cmake.version = ">=3.15"
 build-dir = "build/{wheel_tag}"
 cmake.args = []
 build.verbose = false
-wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
+wheel.packages = [
+    "python/cocotb",
+    "python/cocotb_tools",
+    "python/pygpi",
+]
 
 [tool.scikit-build.metadata.version]
 provider = "setuptools_git_versioning.scikit_metadata"
@@ -262,7 +266,7 @@ patch = ["subprocess"]
 
 [tool.coverage.paths]
 source = [
-    "src/cocotb/",
+    "python/cocotb/",
     ".nox/**/cocotb/",
 ]
 
@@ -312,7 +316,7 @@ implicit_reexport = false
 show_error_codes = true
 pretty = true
 allow_redefinition = true
-mypy_path = "src/"
+mypy_path = "python/"
 
 # TODO add lower bounds and justifications
 [dependency-groups]
