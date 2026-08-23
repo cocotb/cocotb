@@ -68,6 +68,21 @@ Environment Variables
         and loading from libraries that `aren't` prefixed with "lib".
         Paths `should not` contain commas.
 
+CMake Package
+=============
+
+The GPI development library is available to CMake consumers as the
+``cocotb::gpi`` target:
+
+.. code-block:: cmake
+
+    find_package(cocotb CONFIG REQUIRED COMPONENTS gpi)
+    target_link_libraries(my_target PRIVATE cocotb::gpi)
+
+When cocotb is installed in a Python environment, pass its package directory
+to CMake with
+``-Dcocotb_DIR=$(cocotb-config --cmakedir)``.
+
 C API
 =====
 

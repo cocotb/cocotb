@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/cocotbTargets.cmake")
+
+set(cocotb_gpi_FOUND TRUE)
+set(cocotb_bootstrap_FOUND TRUE)
+check_required_components(cocotb)

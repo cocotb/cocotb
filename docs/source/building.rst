@@ -7,9 +7,9 @@ Makefile-based Build System and Test Runner
 cocotb has traditionally provided a Makefile-based design build system and test runner.
 The build system should be *sufficient*, but may not be easy to use for more serious projects.
 
-Makefiles are provided for a variety of simulators in :file:`src/cocotb-tools/makefiles/simulators`.
+Makefiles are provided for a variety of simulators in :file:`python/cocotb_tools/makefiles/simulators`.
 
-The common Makefile :file:`src/cocotb-tools/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the :make:var:`SIM` variable.
+The common Makefile :file:`python/cocotb_tools/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the :make:var:`SIM` variable.
 
 Make Targets
 ============
@@ -33,7 +33,7 @@ Make Variables
 ==============
 
 ..
-  If you edit the following sections, please also update the "helpmsg" text in src/cocotb_tools/config.py
+  If you edit the following sections, please also update the "helpmsg" text in python/cocotb_tools/config.py
 
 .. make:var:: GUI
 
@@ -44,7 +44,7 @@ Make Variables
       Set this to the desired value from :ref:`Supported Simulators <simulator-support>`.
 
       In the makefile flow, selects which simulator Makefile to use.
-      Attempts to include a simulator specific makefile from :file:`src/cocotb/share/makefiles/simulators/makefile.$(SIM)`
+      Attempts to include a simulator-specific makefile from :file:`python/cocotb_tools/makefiles/simulators/Makefile.$(SIM)`
 
       In the :ref:`Python Runner <howto-python-runner>` flow,
       selects the :ref:`Simulator Runner <api-runner-sim>` to use.
