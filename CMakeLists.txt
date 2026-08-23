@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
-# Prevent CMake from picking up GCC-style env flags when targeting MSVC
+# Prevent CMake from picking up GCC-style environment flags when targeting
+# MSVC. These values are intentionally established before project() enables
+# the compiler.
 if(WIN32)
     set(ENV{CFLAGS} "")
     set(ENV{CXXFLAGS} "")
@@ -13,342 +15,81 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS_MINSIZEREL "/MD /O1 /Ob1 /DNDEBUG" CACHE STRING "CXX min size release flags" FORCE)
 endif()
 
-project(cocotb LANGUAGES CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" COCOTB_VERSION LIMIT_COUNT 1)
+project(cocotb VERSION "${COCOTB_VERSION}" LANGUAGES CXX)
 
-if(MSVC)
-    message(STATUS "MSVC detected - using forced MSVC-compatible flags")
-    message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-endif()
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_SKIP_RPATH TRUE)
-
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
-
-if(WIN32)
-    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.pyd")
-else()
-    set(PYTHON_EXT_SUFFIX ".${Python_SOABI}.so")
-endif()
 
 if(WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-if(MSVC)
-    set(EXTRA_CXX_FLAGS "/permissive-" "/W4")
+set(COCOTB_PYTHON_DIR "${PROJECT_SOURCE_DIR}/python")
+set(COCOTB_PYTHON_PACKAGE_DIR "${COCOTB_PYTHON_DIR}/cocotb")
+set(COCOTB_INSTALL_LIBRARY_DIR "cocotb/libs")
+set(COCOTB_INSTALL_INCLUDE_DIR "cocotb/share/include")
+set(COCOTB_INSTALL_CMAKE_DIR "cocotb/share/cmake/cocotb")
+
+# Editable installs build native libraries directly into the source packages and
+# therefore do not need CMake install rules. Normal CMake and wheel builds
+# install artifacts.
+if(SKBUILD_STATE STREQUAL "editable")
+    set(COCOTB_INSTALL_ARTIFACTS FALSE)
 else()
-    set(BASE_WARNS
-        "-Wall" "-Wextra" "-Wcast-qual" "-Wwrite-strings" "-Wconversion"
-        "-Wno-missing-field-initializers" "-Werror=shadow"
-    )
-    set(CXX_WARNS ${BASE_WARNS} "-Wnon-virtual-dtor" "-Woverloaded-virtual")
-    set(EXTRA_CXX_FLAGS
-        "-std=c++11" "-fvisibility=hidden" "-fvisibility-inlines-hidden"
-        ${CXX_WARNS}
-    )
-    if(NOT WIN32)
-        list(APPEND EXTRA_CXX_FLAGS "-flto")
-    endif()
-
-    if(WIN32)
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--exclude-all-symbols")
-    else()
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
-        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
-        endif()
-    endif()
+    set(COCOTB_INSTALL_ARTIFACTS TRUE)
 endif()
 
-set(EXTRA_DEFINES "__STDC_FORMAT_MACROS")
+include(cmake/CocotbBuild.cmake)
 
-set(INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}/src/cocotb/share/include
-    ${CMAKE_SOURCE_DIR}/src/cocotb
-    ${Python_INCLUDE_DIRS}
-)
+add_subdirectory(cpp)
+add_subdirectory(python)
 
-set(SHARE_LIB_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/lib)
-set(COCOTB_DEF_DIR ${CMAKE_SOURCE_DIR}/src/cocotb/share/def)
-
-function(add_cocotb_library TARGET_NAME)
-    set(options "")
-    set(oneValueArgs "OUTPUT_NAME")
-    set(multiValueArgs "SOURCES" "LIBRARIES" "DEFINES")
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    add_library(${TARGET_NAME} SHARED ${ARG_SOURCES})
-
-    if(SKBUILD_STATE STREQUAL "editable")
-        set_target_properties(${TARGET_NAME} PROPERTIES
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb/libs
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb/libs
-        )
-    endif()
-
-    if(ARG_OUTPUT_NAME)
-        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
-    endif()
-
-    if(APPLE)
-        set_target_properties(${TARGET_NAME} PROPERTIES SUFFIX ".so")
-    endif()
-
-    target_include_directories(${TARGET_NAME} PRIVATE ${INCLUDE_DIRS})
-    target_compile_definitions(${TARGET_NAME} PRIVATE ${ARG_DEFINES} ${EXTRA_DEFINES})
-    target_compile_options(${TARGET_NAME} PRIVATE ${EXTRA_CXX_FLAGS})
-
-    if(ARG_LIBRARIES)
-        target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_LIBRARIES})
-    endif()
-
-    if(WIN32)
-        target_compile_definitions(${TARGET_NAME} PRIVATE WIN32)
-    endif()
-endfunction()
-
-set(GPI_LINK_LIBS "")
-if(UNIX)
-    list(APPEND GPI_LINK_LIBS dl)
-endif()
-
-add_cocotb_library(cocotb_bootstrap
-    SOURCES
-        ${SHARE_LIB_DIR}/gpi/dynload.cpp
-        ${SHARE_LIB_DIR}/gpi/bootstrapper.cpp
-    LIBRARIES ${GPI_LINK_LIBS}
-)
-
-add_cocotb_library(gpi
-    SOURCES
-        ${SHARE_LIB_DIR}/gpi/GpiCbHdl.cpp
-        ${SHARE_LIB_DIR}/gpi/GpiCommon.cpp
-        ${SHARE_LIB_DIR}/gpi/dynload.cpp
-        ${SHARE_LIB_DIR}/gpi/logging.cpp
-    DEFINES GPI_EXPORTS
-    LIBRARIES ${GPI_LINK_LIBS}
-)
-
-add_cocotb_library(simulator
-    SOURCES
-        ${SHARE_LIB_DIR}/pygpi/bind.cpp
-        ${SHARE_LIB_DIR}/pygpi/embed.cpp
-        ${SHARE_LIB_DIR}/pygpi/logging.cpp
-    DEFINES PYGPI_EXPORTS
-    LIBRARIES gpi ${Python_LIBRARIES}
-)
+include(CMakePackageConfigHelpers)
 
 if(SKBUILD_STATE STREQUAL "editable")
-    set_target_properties(simulator PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/cocotb
+    set(COCOTB_BUILD_TREE_CMAKE_DIR
+        "${PROJECT_SOURCE_DIR}/build/cmake/cocotb"
     )
-else()
-    set_target_properties(simulator PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/cocotb
+    file(MAKE_DIRECTORY "${COCOTB_BUILD_TREE_CMAKE_DIR}")
+    export(
+        TARGETS cocotb_bootstrap gpi
+        FILE "${COCOTB_BUILD_TREE_CMAKE_DIR}/cocotbTargets.cmake"
+        NAMESPACE cocotb::
+    )
+    configure_file(
+        cmake/cocotbBuildTreeConfig.cmake.in
+        "${COCOTB_BUILD_TREE_CMAKE_DIR}/cocotbConfig.cmake"
+        @ONLY
+    )
+    write_basic_package_version_file(
+        "${COCOTB_BUILD_TREE_CMAKE_DIR}/cocotbConfigVersion.cmake"
+        VERSION "${PROJECT_VERSION}"
+        COMPATIBILITY SameMajorVersion
     )
 endif()
 
-set_target_properties(simulator PROPERTIES
-    PREFIX ""
-    SUFFIX ${PYTHON_EXT_SUFFIX}
-)
-
-if(WIN32)
-    target_link_directories(simulator PRIVATE ${Python_LIBRARY_DIRS})
-endif()
-
-function(add_vpi_library SIM_NAME SIM_DEFINE)
-    set(options "")
-    set(oneValueArgs "")
-    set(multiValueArgs "EXTRA_LIBS" "EXTRA_LIB_DIRS")
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    string(TOLOWER ${SIM_NAME} SIM_LOWER)
-    set(TARGET_NAME gpi_impl_${SIM_LOWER}_vpi)
-
-    add_cocotb_library(${TARGET_NAME}
-        SOURCES
-            ${SHARE_LIB_DIR}/gpi/vpi/VpiImpl.cpp
-            ${SHARE_LIB_DIR}/gpi/vpi/VpiCbHdl.cpp
-            ${SHARE_LIB_DIR}/gpi/vpi/VpiObj.cpp
-            ${SHARE_LIB_DIR}/gpi/vpi/VpiIterator.cpp
-            ${SHARE_LIB_DIR}/gpi/vpi/VpiSignal.cpp
-        DEFINES COCOTBVPI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_${SIM_LOWER}_vpi_entry ${SIM_DEFINE}
-        LIBRARIES gpi ${ARG_EXTRA_LIBS}
+if(COCOTB_INSTALL_ARTIFACTS)
+    install(
+        EXPORT cocotbTargets
+        FILE cocotbTargets.cmake
+        NAMESPACE cocotb::
+        DESTINATION "${COCOTB_INSTALL_CMAKE_DIR}"
     )
 
-    if(WIN32)
-        target_link_directories(${TARGET_NAME} PRIVATE ${COCOTB_DEF_DIR})
-    endif()
-
-    if(ARG_EXTRA_LIB_DIRS)
-        target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
-    endif()
-
-    if(NOT WIN32)
-        if(APPLE)
-            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
-        else()
-            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
-        endif()
-    endif()
-endfunction()
-
-function(add_vhpi_library SIM_NAME SIM_DEFINE)
-    set(options "")
-    set(oneValueArgs "")
-    set(multiValueArgs "EXTRA_LIBS" "EXTRA_LIB_DIRS")
-    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    string(TOLOWER ${SIM_NAME} SIM_LOWER)
-    set(TARGET_NAME gpi_impl_${SIM_LOWER}_vhpi)
-
-    add_cocotb_library(${TARGET_NAME}
-        SOURCES
-            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiImpl.cpp
-            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiCbHdl.cpp
-            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiObj.cpp
-            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiIterator.cpp
-            ${SHARE_LIB_DIR}/gpi/vhpi/VhpiSignal.cpp
-        DEFINES COCOTBVHPI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_${SIM_LOWER}_vhpi_entry ${SIM_DEFINE}
-        LIBRARIES gpi ${ARG_EXTRA_LIBS}
+    configure_package_config_file(
+        cmake/cocotbConfig.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/cocotbConfig.cmake"
+        INSTALL_DESTINATION "${COCOTB_INSTALL_CMAKE_DIR}"
     )
-
-    if(WIN32)
-        target_link_directories(${TARGET_NAME} PRIVATE ${COCOTB_DEF_DIR})
-    endif()
-
-    if(ARG_EXTRA_LIB_DIRS)
-        target_link_directories(${TARGET_NAME} PRIVATE ${ARG_EXTRA_LIB_DIRS})
-    endif()
-
-    if(NOT WIN32)
-        if(APPLE)
-            target_link_options(${TARGET_NAME} PRIVATE -undefined dynamic_lookup)
-        else()
-            target_link_options(${TARGET_NAME} PRIVATE -Wl,--allow-shlib-undefined)
-        endif()
-    endif()
-endfunction()
-
-set(ICARUS_EXTRA_LIBS "")
-if(WIN32)
-    set(ICARUS_EXTRA_LIBS icarus)
-endif()
-add_vpi_library(ICARUS ICARUS EXTRA_LIBS ${ICARUS_EXTRA_LIBS})
-
-set(MODELSIM_EXTRA_LIBS "")
-if(WIN32)
-    set(MODELSIM_EXTRA_LIBS modelsim)
-endif()
-
-add_vpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
-add_vhpi_library(MODELSIM MODELSIM EXTRA_LIBS ${MODELSIM_EXTRA_LIBS})
-
-add_cocotb_library(gpi_impl_modelsim_fli
-    SOURCES
-        ${SHARE_LIB_DIR}/gpi/fli/FliImpl.cpp
-        ${SHARE_LIB_DIR}/gpi/fli/FliCbHdl.cpp
-        ${SHARE_LIB_DIR}/gpi/fli/FliObjHdl.cpp
-    DEFINES COCOTBFLI_EXPORTS GPI_IMPL_ENTRY=gpi_impl_modelsim_fli_entry
-    LIBRARIES gpi ${MODELSIM_EXTRA_LIBS}
-)
-
-if(WIN32)
-    target_link_directories(gpi_impl_modelsim_fli PRIVATE ${COCOTB_DEF_DIR})
-endif()
-
-if(NOT WIN32)
-    if(APPLE)
-        target_link_options(gpi_impl_modelsim_fli PRIVATE -undefined dynamic_lookup)
-    else()
-        target_link_options(gpi_impl_modelsim_fli PRIVATE -Wl,--allow-shlib-undefined)
-    endif()
-endif()
-
-set(GHDL_EXTRA_LIBS "")
-if(WIN32)
-    set(GHDL_EXTRA_LIBS ghdl)
-endif()
-add_vpi_library(GHDL GHDL EXTRA_LIBS ${GHDL_EXTRA_LIBS})
-
-if(UNIX)
-    add_vpi_library(IUS IUS)
-    add_vhpi_library(IUS IUS)
-    add_vpi_library(VCS VCS)
-    add_vpi_library(VERILATOR VERILATOR)
-    add_vpi_library(DSim DSim)
-endif()
-
-set(NVC_EXTRA_LIBS "")
-if(WIN32)
-    set(NVC_EXTRA_LIBS nvcvhpi)
-endif()
-add_vhpi_library(NVC NVC EXTRA_LIBS ${NVC_EXTRA_LIBS})
-
-set(ALDEC_EXTRA_LIBS "")
-if(WIN32)
-    set(ALDEC_EXTRA_LIBS aldec)
-endif()
-add_vpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
-add_vhpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
-
-if(WIN32)
-    if(MSVC)
-        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
-            add_custom_command(
-                OUTPUT ${COCOTB_DEF_DIR}/${SIM}.lib
-                COMMAND lib /def:${COCOTB_DEF_DIR}/${SIM}.def /out:${COCOTB_DEF_DIR}/${SIM}.lib /machine:$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,X64,X86>
-                DEPENDS ${COCOTB_DEF_DIR}/${SIM}.def
-                COMMENT "Generating import library for ${SIM}"
-            )
-            add_custom_target(${SIM}_import_lib ALL DEPENDS ${COCOTB_DEF_DIR}/${SIM}.lib)
-        endforeach()
-    else()
-        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
-            add_custom_command(
-                OUTPUT ${COCOTB_DEF_DIR}/lib${SIM}.a
-                COMMAND dlltool -d ${COCOTB_DEF_DIR}/${SIM}.def -l ${COCOTB_DEF_DIR}/lib${SIM}.a
-                DEPENDS ${COCOTB_DEF_DIR}/${SIM}.def
-                COMMENT "Generating import library for ${SIM}"
-            )
-            add_custom_target(${SIM}_import_lib ALL DEPENDS ${COCOTB_DEF_DIR}/lib${SIM}.a)
-        endforeach()
-    endif()
-endif()
-
-if(WIN32)
-    add_dependencies(gpi_impl_icarus_vpi icarus_import_lib)
-    add_dependencies(gpi_impl_modelsim_vpi modelsim_import_lib)
-    add_dependencies(gpi_impl_modelsim_vhpi modelsim_import_lib)
-    add_dependencies(gpi_impl_modelsim_fli modelsim_import_lib)
-    add_dependencies(gpi_impl_ghdl_vpi ghdl_import_lib)
-    add_dependencies(gpi_impl_nvc_vhpi nvcvhpi_import_lib)
-    add_dependencies(gpi_impl_aldec_vpi aldec_import_lib)
-    add_dependencies(gpi_impl_aldec_vhpi aldec_import_lib)
-endif()
-
-if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
-    install(TARGETS cocotb_bootstrap gpi DESTINATION cocotb/libs)
-
-    set(SIM_TARGETS
-        gpi_impl_icarus_vpi gpi_impl_modelsim_vpi gpi_impl_modelsim_vhpi
-        gpi_impl_modelsim_fli gpi_impl_ghdl_vpi gpi_impl_aldec_vpi
-        gpi_impl_aldec_vhpi gpi_impl_nvc_vhpi)
-
-    if(UNIX)
-        list(APPEND SIM_TARGETS
-            gpi_impl_ius_vpi gpi_impl_ius_vhpi gpi_impl_vcs_vpi
-            gpi_impl_verilator_vpi gpi_impl_dsim_vpi)
-    endif()
-
-    install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
-
-    install(TARGETS simulator
-        RUNTIME DESTINATION cocotb
-        LIBRARY DESTINATION cocotb)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/cocotbConfigVersion.cmake"
+        VERSION "${PROJECT_VERSION}"
+        COMPATIBILITY SameMajorVersion
+    )
+    install(
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/cocotbConfig.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/cocotbConfigVersion.cmake"
+        DESTINATION "${COCOTB_INSTALL_CMAKE_DIR}"
+    )
 endif()

@@ -599,7 +599,7 @@ def docs_preview(session: nox.Session) -> None:
         "--ignore", "*@*:*",
         # Also watch the cocotb source directory to rebuild the API docs on
         # changes to cocotb code.
-        "--watch", "src/cocotb",
+        "--watch", "python/cocotb",
         "./docs/source",
         str(outdir),
         *session.posargs,

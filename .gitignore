@@ -90,8 +90,8 @@ bpad_*.err
 .simvision/
 waves.shm/
 
-# Interface libraries built on setup
-src/cocotb/libs
+# Native artifacts built by editable installs
+python/cocotb/libs
 pip-wheel-metadata/
 
 # Mentor Modelsim/Questa
