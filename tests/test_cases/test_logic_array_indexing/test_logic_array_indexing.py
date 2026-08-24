@@ -8,7 +8,7 @@ import os
 from typing import Any
 
 import cocotb
-from cocotb.handle import LogicArrayObject, LogicObject
+from cocotb.handle import LogicArrayObject, LogicObject, PackedObject
 from cocotb.triggers import RisingEdge, Timer
 
 
@@ -29,7 +29,7 @@ SIM = cocotb.SIM_NAME.lower()
 )
 async def test_debug_array_verilog(dut: Any) -> None:
     inspect_signal(dut.test_a, "dut.test_a")
-    assert type(dut.test_a) is LogicArrayObject
+    assert type(dut.test_a) is PackedObject
     inspect_signal(dut.test_a[0], "dut.test_a[0]")
     assert type(dut.test_a[0]) is LogicObject
 

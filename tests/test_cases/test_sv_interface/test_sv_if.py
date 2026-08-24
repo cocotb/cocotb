@@ -60,9 +60,7 @@ async def test_sv_intf_arr_len(dut):
 
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
 @cocotb.test(
-    expect_error=IndexError
-    if cocotb.SIM_NAME.lower().startswith("riviera")
-    else AttributeError
+    expect_error=AttributeError
     if verilator_less_than_5024
     else AttributeError
     if "vcs" in SIM_NAME

@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 import cocotb
-from cocotb.handle import LogicArrayObject
+from cocotb.handle import LogicArrayObject, PackedObject
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
 from cocotb_tools.sim_versions import GhdlVersion, VerilatorVersion
@@ -54,9 +54,9 @@ async def test_int_verilog(
     assert len(handle) == width
     assert handle.is_signed is is_signed
 
-    # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
-    # Some simulators discover integer handles as LogicArrayObjects.
-    if isinstance(handle, LogicArrayObject):
+    # For backwards compatibility, LogicArray/PackedObjects always use (INT_MIN, UINT_MAX) for bounds.
+    # Some simulators discover integer handles as LogicArray/PackedObjects.
+    if isinstance(handle, (LogicArrayObject, PackedObject)):
         min_value = -(2 ** (width - 1))
         max_value = (2**width) - 1
 
@@ -139,9 +139,9 @@ async def test_integer_access_vhdl(
     assert handle.is_signed is is_signed
     assert len(handle) == width
 
-    # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
-    # Some simulators (GHDL) discover integer handles as LogicArrayObjects.
-    if isinstance(handle, LogicArrayObject):
+    # For backwards compatibility, LogicArray/PackedObjects always use (INT_MIN, UINT_MAX) for bounds.
+    # Some simulators (GHDL) discover integer handles as LogicArray/PackedObjects.
+    if isinstance(handle, (LogicArrayObject, PackedObject)):
 
         def check(actual: LogicArray, expected: int) -> bool:
             if expected >= 0:
@@ -162,9 +162,9 @@ async def test_integer_access_vhdl(
         await Timer(1)
         assert check(handle.value, exp_value)
 
-    # For backwards compatibility, LogicArrayObjects always use (INT_MIN, UINT_MAX) for bounds.
-    # Some simulators (GHDL) discover integer handles as LogicArrayObjects.
-    if isinstance(handle, LogicArrayObject):
+    # For backwards compatibility, LogicArray/PackedObjects always use (INT_MIN, UINT_MAX) for bounds.
+    # Some simulators (GHDL) discover integer handles as LogicArray/PackedObjects.
+    if isinstance(handle, (LogicArrayObject, PackedObject)):
         min_value = -(2 ** (width - 1))
         max_value = (2**width) - 1
     else:
