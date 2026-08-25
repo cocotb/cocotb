@@ -1075,16 +1075,17 @@ class ArrayObject(
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slicing is not supported")
-        if index in self._sub_handles:
+        try:
             return self._sub_handles[index]
+        except KeyError:
+            pass
         new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
+        if new_handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(
-            "ChildObjectT", _make_sim_object(new_handle, path)
-        )
-        return self._sub_handles[index]
+        value = cast("ChildObjectT", _make_sim_object(new_handle, path))
+        self._sub_handles[index] = value
+        return value
 
     def __iter__(self) -> Iterator[ChildObjectT]:
         for i in self.range:
@@ -1230,16 +1231,14 @@ class _SignednessObjectMixin(SimHandleBase):
 
     @cached_property
     def _min_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 0:
+        if not self.is_signed:
             return 0
         else:
             return -(2 ** (len(self) - 1))
 
     @cached_property
     def _max_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 1:
+        if self.is_signed:
             return (2 ** (len(self) - 1)) - 1
         else:
             return (2 ** len(self)) - 1
@@ -1256,7 +1255,13 @@ class _LogicArrayObjectBase(
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
-        self._sub_handles: dict[int, ChildObjectT] = {}
+
+    @cached_property
+    def _sub_handles(self) -> dict[int, ChildObjectT]:
+        # Here lazily creating this is meaningful, as with HierarchyArrayObject and ArrayObject,
+        # users are likely to index into the object, meaning the cache will be used.
+        # This does not hold for *every* LogicArrayObject (std_logic_vector or packed array).
+        return {}
 
     def _set_value(
         self,
@@ -1577,7 +1582,7 @@ class EnumObject(
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1694,7 +1699,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1817,7 +1822,6 @@ class FixedStringObject(StringObject):
         value: bytes,
         action: _GPISetAction,
     ) -> None:
-
         max_len = len(self)
 
         if len(value) > max_len:
@@ -1889,10 +1893,10 @@ def _make_sim_object(
         pass
 
     t = handle.get_type()
-    if t not in _type2cls:
+    if (cls := _type2cls.get(t)) is None:
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
-    obj = _type2cls[t](handle, path)
+    obj = cls(handle, path)
     _handle2obj[handle] = obj
     return obj
