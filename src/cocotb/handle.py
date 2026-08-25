@@ -1256,7 +1256,13 @@ class _LogicArrayObjectBase(
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
-        self._sub_handles: dict[int, ChildObjectT] = {}
+
+    @cached_property
+    def _sub_handles(self) -> dict[int, ChildObjectT]:
+        # Here lazily creating this is meaningful, as with HierarchyArrayObject and ArrayObject,
+        # users are likely to index into the object, meaning the cache will be used.
+        # This does not hold for *every* LogicArrayObject (std_logic_vector or packed array).
+        return {}
 
     def _set_value(
         self,
