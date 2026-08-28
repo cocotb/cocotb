@@ -713,7 +713,7 @@ dev = [
     { name = "clang-format" },
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
     { name = "gcovr", specifier = "==8.4" },
-    { name = "ipython" },
+    { name = "ipython", specifier = "<9.17" },
     { name = "mypy", specifier = ">=1.18,!=1.20.*" },
     { name = "nox" },
     { name = "nox-uv" },
@@ -726,7 +726,7 @@ dev = [
 ]
 dev-test = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.2" },
-    { name = "ipython" },
+    { name = "ipython", specifier = "<9.17" },
     { name = "pexpect" },
     { name = "psutil" },
     { name = "pytest", specifier = ">=8.4" },
@@ -780,14 +780,14 @@ release-build-wheel = [{ name = "cibuildwheel", marker = "python_full_version >=
 release-test = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "find-libpython" },
-    { name = "ipython" },
+    { name = "ipython", specifier = "<9.17" },
     { name = "pexpect" },
     { name = "psutil" },
     { name = "pytest", specifier = ">=6" },
     { name = "pytest", specifier = ">=8.4" },
 ]
 test-common = [
-    { name = "ipython" },
+    { name = "ipython", specifier = "<9.17" },
     { name = "pexpect" },
     { name = "psutil" },
     { name = "pytest", specifier = ">=8.4" },
