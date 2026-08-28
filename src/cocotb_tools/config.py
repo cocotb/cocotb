@@ -60,64 +60,42 @@ def _help_vars_text() -> str:
 
         cocotb
         ------
-        COCOTB_TOPLEVEL          Instance in the hierarchy to use as the DUT
-        COCOTB_RANDOM_SEED       Random seed, to recreate a previous test stimulus
-        COCOTB_ANSI_OUTPUT       Force cocotb to print or not print in color
-        COCOTB_REDUCED_LOG_FMT   Display log lines shorter
-        COCOTB_LOG_PREFIX        Set custom log prefix (f-string format)
-        COCOTB_ATTACH            Pause time value in seconds before the simulator start
-        COCOTB_ENABLE_PROFILING  Performance analysis of the Python portion of cocotb
-        COCOTB_LOG_LEVEL         Default logging level (default INFO)
-        COCOTB_RESOLVE_X         How to resolve X, Z, U, W, - on integer conversion
+        COCOTB_TOPLEVEL           Instance in the hierarchy to use as the DUT
+        COCOTB_RANDOM_SEED        Random seed, to recreate a previous test stimulus
+        COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
+        COCOTB_REDUCED_LOG_FMT    Display log lines shorter
+        COCOTB_ATTACH             Pause time value in seconds before the simulator start
+        COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+        COCOTB_LOG_LEVEL          Default logging level (default INFO)
+        COCOTB_RESOLVE_X          How to resolve X, Z, U, W, - on integer conversion
+        LIBPYTHON_LOC             Absolute path to libpython
 
         Regression Manager
         ------------------
-        COCOTB_PDB_ON_EXCEPTION  Drop into the Python debugger (pdb) on exception
-        COCOTB_TEST_MODULES      Module(s) to search for test functions (comma-separated)
-        COCOTB_TESTCASE          Test function(s) to run (Deprecated: Use COCOTB_TEST_FILTER)
-        COCOTB_TEST_FILTER       Regex used to match test function names
-        COCOTB_RESULTS_FILE      File name for xUnit XML tests results (default results.xml)
-        COCOTB_USER_COVERAGE     Collect Python user coverage (HDL for some simulators)
-        COVERAGE_RCFILE          Configuration for user code coverage
-        COCOTB_REWRITE_ASSERTION_FILES
-                                 Files to apply pytest assertion rewrites to (default *.py)
-        COCOTB_MAX_FAILURES      Maximum number of test failures before aborting the regression
-        COCOTB_LIST_TESTS        Prints all tests in the order they would be executed and exits
-        COCOTB_RANDOM_TEST_ORDER Enables randomizing the order of tests within each stage
-
-        Scheduler
-        ---------
-        COCOTB_SCHEDULER_DEBUG   Enable additional output of coroutine scheduler
-        COCOTB_TRUST_INERTIAL_WRITES
-                                 Trust inertial writes rather than mock them using scheduler
+        COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
+        COCOTB_TEST_MODULES       Module(s) to search for test functions (comma-separated)
+        COCOTB_TESTCASE           Test function(s) to run (comma-separated list)
+        COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+        COCOTB_USER_COVERAGE      Collect Python user coverage (HDL for some simulators)
+        COVERAGE_RCFILE           Configuration for user code coverage
 
         GPI
         ---
-        GPI_USERS         List of user libraries to load after GPI is initialized
-        GPI_EXTRA         Extra libraries to load as part of GPI initialization
-        GPI_LOG_LEVEL     Default logging level for "gpi" loggers (default INFO)
-        GPI_DEBUG         Enable GPI debug features, including TRACE log output
+        GPI_EXTRA                       Extra libraries to load at runtime (comma-separated)
 
-        PYGPI
-        -----
-        PYGPI_USERS       List of Python callables to start test environment
-        PYGPI_PYTHON_BIN  Python binary. Usually set automatically by test runner
-        PYGPI_DEBUG       Enable PyGPI debug features, including TRACE log output
+        Scheduler
+        ---------
+        COCOTB_SCHEDULER_DEBUG         Enable additional output of coroutine scheduler
+        COCOTB_TRUST_INERTIAL_WRITES   Trust inertial writes rather than mock them using scheduler
 
         For details, see {}"""
     ).format(doclink)
     return helpmsg
 
 
-def pygpi_entry_point() -> str:
-    import cocotb.simulator  # noqa: PLC0415
-
-    return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
-
-
-def lib_name_path(interface: str, simulator: str) -> Path:
+def lib_name(interface: str, simulator: str) -> str:
     """
-    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
+    Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
     """
 
     interface_name = interface.lower()
@@ -158,45 +136,27 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     else:
         library_name = simulator_name
 
-    if os.name == "nt":
+    if library_name == "icarus":
+        lib_ext = ""
+    elif os.name == "nt":
         lib_ext = ".dll"
     else:
         lib_ext = ".so"
 
     # check if compiled with msvc
-    if (libs_dir / "gpi.dll").is_file():
+    if (libs_dir / "cocotb.dll").is_file():
         lib_prefix = ""
     else:
         lib_prefix = "lib"
 
-    lib_name = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
-    return libs_dir / lib_name
+    return lib_prefix + "cocotb" + interface_name + "_" + library_name + lib_ext
 
 
-def lib_entry(interface: str, simulator: str) -> str:
-    """Return the interface library and, when required, its entry function.
-
-    The returned value is suitable for simulator options which accept either a
-    library path or a ``library:entry_function`` pair.  Simulators which can
-    discover the standard interface entry point receive only the library path.
+def lib_name_path(interface: str, simulator: str) -> Path:
     """
-
-    interface_name = interface.lower()
-    simulator_name = simulator.lower()
-    library = lib_name_path(interface_name, simulator_name).as_posix()
-
-    entry_functions = {
-        ("vpi", "cvc"): "vlog_startup_routines_bootstrap",
-        ("vpi", "ius"): "vlog_startup_routines_bootstrap",
-        ("vpi", "xcelium"): "vlog_startup_routines_bootstrap",
-        ("vhpi", "activehdl"): "vhpi_startup_routines_bootstrap",
-        ("vhpi", "riviera"): "vhpi_startup_routines_bootstrap",
-    }
-    entry_function = entry_functions.get((interface_name, simulator_name))
-
-    if entry_function is None:
-        return library
-    return f"{library}:{entry_function}"
+    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
+    """
+    return libs_dir / lib_name(interface, simulator)
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -221,7 +181,7 @@ def _get_parser() -> argparse.ArgumentParser:
     group.add_argument(
         "--help-vars",
         action="store_true",
-        help="Print help about supported environment variables",
+        help="Print help about supported Makefile variables",
     )
     group.add_argument(
         "--libpython",
@@ -234,14 +194,14 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Print the absolute path to the interface libraries location",
     )
     group.add_argument(
-        "--lib-name-path",
-        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
+        "--lib-name",
+        help="Print the name of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
-        "--lib-entry",
-        help="Print the interface library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
+        "--lib-name-path",
+        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
     )
@@ -249,11 +209,6 @@ def _get_parser() -> argparse.ArgumentParser:
         "--version",
         action="store_true",
         help="Print the version of cocotb",
-    )
-    group.add_argument(
-        "--pygpi-entry-point",
-        action="store_true",
-        help="Print the PYGPI entry point for use in GPI_USERS",
     )
 
     return parser
@@ -278,12 +233,10 @@ def main() -> None:
         print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
+    elif args.lib_name:
+        print(lib_name(*args.lib_name))
     elif args.lib_name_path:
         print(lib_name_path(*args.lib_name_path).as_posix())
-    elif args.lib_entry:
-        print(lib_entry(*args.lib_entry))
-    elif args.pygpi_entry_point:
-        print(pygpi_entry_point())
     elif args.version:
         print(_get_version())
 

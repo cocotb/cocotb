@@ -11,10 +11,10 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim, _rm_results
-_rm_results:
+.PHONY: sim
+sim:
 	$(RM) $(COCOTB_RESULTS_FILE)
-sim: _rm_results regression
+	"$(MAKE)" -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
@@ -55,11 +55,6 @@ define check_results
     @$(PYTHON_BIN) -m cocotb_tools.check_results $(COCOTB_RESULTS_FILE)
 endef
 
-# Find an executable or fail if it can't be found.
-define find_command
-    $(or $(shell :; command -v $(1) 2>/dev/null),$(error Unable to locate command '$(1)'))
-endef
-
 SIM_BUILD ?= sim_build
 export SIM_BUILD
 
@@ -82,11 +77,11 @@ ifeq ($(TOPLEVEL_LANG),)
 
 ifneq ($(VHDL_SOURCES),)
 ifeq ($(VERILOG_SOURCES),)
-    TOPLEVEL_LANG := vhdl
+	TOPLEVEL_LANG := vhdl
 endif
 else ifneq ($(VERILOG_SOURCES),)
 ifeq ($(VHDL_SOURCES),)
-    TOPLEVEL_LANG := verilog
+	TOPLEVEL_LANG := verilog
 endif
 endif
 
@@ -103,7 +98,6 @@ manually override the LIBPYTHON_LOC make variable with the absolute path to libp
 
 endef
 
-ifndef GPI_USERS
 ifndef LIBPYTHON_LOC
 
 # get the path to libpython and the return code from the script
@@ -112,14 +106,14 @@ FIND_LIBPYTHON_RES := $(shell $(PYTHON_BIN) -m cocotb_tools.config --libpython; 
 FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
 LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
 
-# complain if libpython isn't found
+# complain if libpython isn't found, and export otherwise
 ifneq ($(FIND_LIBPYTHON_RC),0)
     $(error $(find_libpython_errmsg))
 endif
+
 endif
-GPI_USERS := $(LIBPYTHON_LOC);$(shell $(PYTHON_BIN) -m cocotb_tools.config --pygpi-entry-point)
-endif
-export GPI_USERS
+
+export LIBPYTHON_LOC
 
 define check_vhdl_sources
 if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
@@ -145,23 +139,6 @@ else
 endif
 
 export COCOTB_TRUST_INERTIAL_WRITES
-
-# Common environment variables passed inline to simulator recipes.
-# Using inline assignment to avoid leaking values across
-# recursive make invocations. Uses = (lazy expansion) so that deprecate
-# calls and user variable overrides are evaluated at recipe time.
-COCOTB_ENV = \
-    COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
-    COCOTB_TESTCASE=$(call deprecate,TESTCASE,COCOTB_TESTCASE) \
-    $(if $(COCOTB_TEST_FILTER),COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER)) \
-    COCOTB_TOPLEVEL=$(firstword $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)) \
-    TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-    $(if $(COCOTB_RANDOM_SEED),COCOTB_RANDOM_SEED=$(COCOTB_RANDOM_SEED)) \
-    $(if $(COCOTB_LOG_LEVEL),COCOTB_LOG_LEVEL=$(COCOTB_LOG_LEVEL)) \
-    $(if $(COCOTB_SCHEDULER_DEBUG),COCOTB_SCHEDULER_DEBUG=$(COCOTB_SCHEDULER_DEBUG)) \
-    $(if $(GPI_DEBUG),GPI_DEBUG=$(GPI_DEBUG)) \
-    $(if $(PYGPI_DEBUG),PYGPI_DEBUG=$(PYGPI_DEBUG)) \
-    $(if $(GPI_LOG_LEVEL),GPI_LOG_LEVEL=$(GPI_LOG_LEVEL))
 
 
 # Universal
