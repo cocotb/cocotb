@@ -95,7 +95,14 @@ static void gpi_native_logger_vlog(void *, const char *name,
     fflush(stdout);
 }
 
+static bool gpi_native_logger_level_enabled(void *, const char *,
+                                            enum gpi_log_level level) {
+    return level >= current_native_logger_level;
+}
+
 static gpi_log_handler_ftype current_handler = gpi_native_logger_vlog;
+static gpi_log_level_enabled_handler_ftype current_log_level_enabled_handler =
+    gpi_native_logger_level_enabled;
 static void *current_userdata = nullptr;
 
 void gpi_log_(const char *name, enum gpi_log_level level, const char *pathname,
@@ -129,6 +136,11 @@ const char *gpi_log_level_to_str(enum gpi_log_level level) {
     return log_level_str;
 }
 
+bool gpi_log_level_enabled(const char *logger, enum gpi_log_level level) {
+    return (*current_log_level_enabled_handler)(current_userdata, logger,
+                                                level);
+}
+
 /*******************************************************************************
  * GPI Logger Public API
  *******************************************************************************/
@@ -139,14 +151,18 @@ extern "C" int gpi_native_logger_set_level(enum gpi_log_level level) {
     return old_level;
 }
 
-extern "C" void gpi_get_log_handler(gpi_log_handler_ftype *handler,
-                                    void **userdata) {
+extern "C" void gpi_get_log_handler(
+    gpi_log_handler_ftype *handler,
+    gpi_log_level_enabled_handler_ftype *log_level_enabled, void **userdata) {
     *handler = current_handler;
+    *log_level_enabled = current_log_level_enabled_handler;
     *userdata = current_userdata;
 }
 
-extern "C" void gpi_set_log_handler(gpi_log_handler_ftype handler,
-                                    void *userdata) {
+extern "C" void gpi_set_log_handler(
+    gpi_log_handler_ftype handler,
+    gpi_log_level_enabled_handler_ftype log_level_enabled, void *userdata) {
     current_handler = handler;
+    current_log_level_enabled_handler = log_level_enabled;
     current_userdata = userdata;
 }
