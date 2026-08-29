@@ -1223,23 +1223,18 @@ class _SignednessObjectMixin(SimHandleBase):
 
     @property
     def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
+        return self._handle.get_signed()
 
     @property
     def _min_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 0:
+        if not self.is_signed:
             return 0
         else:
             return -(2 ** (len(self) - 1))
 
     @property
     def _max_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 1:
+        if self.is_signed:
             return (2 ** (len(self) - 1)) - 1
         else:
             return (2 ** len(self)) - 1
@@ -1583,7 +1578,7 @@ class EnumObject(
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1700,7 +1695,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1823,7 +1818,6 @@ class FixedStringObject(StringObject):
         value: bytes,
         action: _GPISetAction,
     ) -> None:
-
         max_len = len(self)
 
         if len(value) > max_len:
