@@ -1,0 +1,44 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+ifneq ($(VHDL_SOURCES),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+
+else
+
+CMD_BIN := galaxsim
+
+ifdef GALAXSIM_BIN_DIR
+     CMD := $(shell :; command -v $(GALAXSIM)/$(CMD_BIN) 2>/dev/null)
+else
+     # auto-detect bin dirfro m system path
+     CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+     $(error "Unable to locate command >$(CMD_BIN)<")
+else
+     GALAXSIM := $(shell dirname $(CMD))
+     export GALAXSIM
+endif
+
+# Compilation phase
+$(SIM_BUILD)/xsim: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
+	cd $(SIM_BUILD)	&& TOPLEVEL=$(TOPLEVEL) \
+	$(CMD) -top $(TOPLEVEL) $(PLUSARGS) \
+	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	$(EXTRA_ARGS) -debug_access+wn+expr -load_vpi=$(shell cocotb-config --lib-name-path vpi galaxsim) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+
+# Execution phase
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/xsim $(CUSTOM_SIM_DEPS)
+	-@rm -f $(COCOTB_RESULTS_FILE)
+
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(SIM_CMD_PREFIX) $(SIM_BUILD)/xsim +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
+
+	$(call check_for_results_file)
+
+endif
