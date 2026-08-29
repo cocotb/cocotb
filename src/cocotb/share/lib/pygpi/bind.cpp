@@ -670,7 +670,13 @@ static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self,
 
 static PyObject *get_signed(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     int result = gpi_is_signed(self->hdl);
-    return PyLong_FromLong(result);
+    if (result == -1) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Simulator failed to get signedness of '%s'.",
+                     gpi_get_signal_fullname_str(self->hdl));
+        return nullptr;
+    }
+    return PyBool_FromLong(result);
 }
 
 static PyObject *is_running(PyObject *, PyObject *) {
@@ -1401,8 +1407,9 @@ static PyMethodDef sim_obj_methods[] = {
      PyDoc_STR("get_signed($self)\n"
                "--\n\n"
                "get_signed() -> bool\n"
-               "Return ``1`` if the object is a signed integer, ``0`` if "
-               "unsigned, and ``-1`` if unknown or not applicable.")},
+               "Return whether the object is a signed integer.\n"
+               "Raise RuntimeError if signedness is unknown or not "
+               "applicable.")},
     {"get_num_elems", (PyCFunction)get_num_elems, METH_NOARGS,
      PyDoc_STR("get_num_elems($self)\n"
                "--\n\n"

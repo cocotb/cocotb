@@ -1204,12 +1204,9 @@ class _SignednessObjectMixin(SimHandleBase):
     @abstractmethod
     def __len__(self) -> int: ...
 
-    @cached_property
+    @property
     def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
+        return self._handle.get_signed()
 
     @cached_property
     def _min_val(self) -> int:
