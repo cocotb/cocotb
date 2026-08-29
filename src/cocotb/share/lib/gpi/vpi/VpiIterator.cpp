@@ -248,12 +248,6 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl *>(m_impl);
     std::string fq_name = vpi_get_str(vpiFullName, obj);
     LOG_DEBUG("VPI: package found '%s' = '%s'", name.c_str(), fq_name.c_str());
-    // '::' may or may not be included in the package vpiFullName:
-    std::string package_delim = "::";
-    if (fq_name.compare(fq_name.length() - package_delim.length(),
-                        package_delim.length(), package_delim)) {
-        fq_name += "::";
-    }
     new_obj = new VpiObjHdl(vpi_impl, obj, GPI_PACKAGE);
     new_obj->initialise(name, fq_name);
     *hdl = new_obj;

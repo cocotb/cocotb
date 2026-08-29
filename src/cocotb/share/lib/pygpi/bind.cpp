@@ -646,6 +646,12 @@ static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
     return PyUnicode_FromString(result);
 }
 
+static PyObject *get_full_name_string(gpi_hdl_Object<gpi_sim_hdl> *self,
+                                      PyObject *) {
+    const char *result = gpi_get_signal_fullname_str(self->hdl);
+    return PyUnicode_FromString(result);
+}
+
 static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *) {
     gpi_objtype result = gpi_get_object_type(self->hdl);
     return PyLong_FromLong(result);
@@ -1371,6 +1377,11 @@ static PyMethodDef sim_obj_methods[] = {
                "--\n\n"
                "get_name_string() -> str\n"
                "Get the name of an object as a string.")},
+    {"get_full_name_string", (PyCFunction)get_full_name_string, METH_NOARGS,
+     PyDoc_STR("get_full_name_string($self)\n"
+               "--\n\n"
+               "get_full_name_string() -> str\n"
+               "Get the fully-qualified name of an object as a string.")},
     {"get_type_string", (PyCFunction)get_type_string, METH_NOARGS,
      PyDoc_STR("get_type_string($self)\n"
                "--\n\n"

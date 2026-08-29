@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import enum
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
 from functools import cached_property
 from logging import Logger
@@ -61,7 +61,7 @@ __all__ = (
 )
 
 
-class SimHandleBase(ABC):
+class SimHandleBase:
     """Base class for all simulation objects.
 
     All simulation objects are hashable and equatable by identity.
@@ -78,19 +78,20 @@ class SimHandleBase(ABC):
 
     __slots__ = (
         "__dict__",
-        "_handle",
-        "_path",
         "__weakref__",
+        "_handle",
     )
 
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
         self._handle = handle
-        self._path: str = self._name if path is None else path
+
+    @property
+    def _path(self) -> str:
         """The path to this handle, or its name if this is the root handle.
 
         :meta public:
         """
+        return self._handle.get_full_name_string()
 
     @property
     def _name(self) -> str:
@@ -230,9 +231,8 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
     __slots__ = ("_discovered", "_sub_handles")
 
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
+        super().__init__(handle)
         self._sub_handles: dict[KeyType, SimHandleBase] = {}
         self._discovered = False
 
@@ -282,15 +282,13 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
                 )
                 continue
 
-            # compute a full path using the key name
-            path = self._child_path(key)
-
             # attempt to create the child object
             try:
-                hdl = _make_sim_object(thing, path)
+                hdl = _make_sim_object(thing)
             except NotImplementedError:
-                self._log.exception(
-                    "Unable to construct a SimHandle object for %s", path
+                self._log.error(
+                    "Unable to construct a SimHandle object for %s",
+                    thing.get_full_name_string(),
                 )
                 continue
 
@@ -330,8 +328,8 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         if new_handle is None:
             return None
 
-        # if successful, construct and cache
-        sub_handle = _make_sim_object(new_handle, self._child_path(key))
+        # If successful, construct and cache the child.
+        sub_handle = _make_sim_object(new_handle)
         self._sub_handles[key] = sub_handle
 
         return sub_handle
@@ -348,17 +346,6 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         Returns:
             A raw simulator handle for the child object at the given key, or ``None``.
-        """
-
-    @abstractmethod
-    def _child_path(self, key: KeyType) -> str:
-        """Compute the path string of a child object at the given key.
-
-        Args:
-            key: The key of the child object.
-
-        Returns:
-            A path string of the child object at the a given key.
         """
 
     @abstractmethod
@@ -445,9 +432,6 @@ class HierarchyObject(_HierarchyObjectBase[str]):
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
     def __setattr__(self, name: str, value: object) -> None:
         # private attributes pass through directly
         if name.startswith("_"):
@@ -513,10 +497,6 @@ class HierarchyObject(_HierarchyObjectBase[str]):
             raise AttributeError(f"{self._path} contains no child object named {name}")
         return handle
 
-    def _child_path(self, key: str) -> str:
-        delimiter = "::" if self._type == "GPI_PACKAGE" else "."
-        return f"{self._path}{delimiter}{key}"
-
     def _sub_handle_key(self, name: str) -> str:
         return name
 
@@ -568,9 +548,6 @@ class HierarchyArrayObject(
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
     def _sub_handle_key(self, name: str) -> int:
         if name.endswith("]"):
             try:
@@ -578,9 +555,6 @@ class HierarchyArrayObject(
             except ValueError:
                 pass
         raise ValueError(f"Unable to match an index pattern: {name}")
-
-    def _child_path(self, key: int) -> str:
-        return f"{self._path}[{key}]"
 
     def _get_handle_by_key(
         self, key: int, discovery_method: GPIDiscovery
@@ -841,9 +815,6 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
     @property
     def value(self) -> ValueGetT:
         """Get or set the value of the simulation object.
@@ -1012,8 +983,8 @@ class ArrayObject(
 
     __slots__ = ("_sub_handles",)
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
+        super().__init__(handle)
         self._sub_handles: dict[int, ChildObjectT] = {}
 
     def get(self) -> Array[ElemValueT]:
@@ -1091,8 +1062,7 @@ class ArrayObject(
         new_handle = self._handle.get_handle_by_index(index)
         if new_handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = self._path + "[" + str(index) + "]"
-        value = cast("ChildObjectT", _make_sim_object(new_handle, path))
+        value = cast("ChildObjectT", _make_sim_object(new_handle))
         self._sub_handles[index] = value
         return value
 
@@ -1143,9 +1113,6 @@ class LogicObject(
     """
 
     __slots__ = ()
-
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
 
     def _set_value(
         self,
@@ -1268,10 +1235,6 @@ class _LogicArrayObjectBase(
     """Base class for logic array simulation objects."""
 
     __slots__ = ()
-
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
 
     @cached_property
     def _sub_handles(self) -> dict[int, ChildObjectT]:
@@ -1401,8 +1364,7 @@ class _LogicArrayObjectBase(
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = f"{self._path}[{index}]"
-        res = cast("ChildObjectT", _make_sim_object(handle, path))
+        res = cast("ChildObjectT", _make_sim_object(handle))
         self._sub_handles[index] = res
         return res
 
@@ -1442,9 +1404,6 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
 
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
     """A logic array simulation object.
@@ -1477,9 +1436,6 @@ class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
     """A floating point simulation object.
@@ -1491,9 +1447,6 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
     """
 
     __slots__ = ()
-
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
 
     def _set_value(
         self,
@@ -1559,9 +1512,6 @@ class EnumObject(
     """
 
     __slots__ = ()
-
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
 
     def _set_value(
         self,
@@ -1678,9 +1628,6 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
 
     __slots__ = ()
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-
     def _set_value(
         self,
         value: int,
@@ -1763,9 +1710,6 @@ class StringObject(
     """
 
     __slots__ = ()
-
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
 
     def _set_value(
         self,
@@ -1888,15 +1832,11 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
 }
 
 
-def _make_sim_object(
-    handle: cocotb.simulator.sim_obj, path: str | None = None
-) -> SimHandleBase:
+def _make_sim_object(handle: cocotb.simulator.sim_obj) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
 
     Args:
         handle: The GPI handle to the simulator object.
-        path: Path to this handle.
-
     Returns:
         An appropriate :class:`SimHandleBase` object.
 
@@ -1907,6 +1847,7 @@ def _make_sim_object(
     t = handle.get_type()
     if (cls := _type2cls.get(t)) is None:
         raise NotImplementedError(
-            f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
+            f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) "
+            f"(path={handle.get_full_name_string()})"
         )
-    return cls(handle, path)
+    return cls(handle)

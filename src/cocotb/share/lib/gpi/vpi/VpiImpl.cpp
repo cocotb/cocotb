@@ -789,7 +789,7 @@ bool VpiImpl::compare_generate_labels(const std::string &a,
 }
 
 const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
-    return (obj_hdl->get_type() == GPI_PACKAGE) ? "" : ".";
+    return (obj_hdl->get_type() == GPI_PACKAGE) ? "::" : ".";
 }
 
 static int startup_callback(void *) {
