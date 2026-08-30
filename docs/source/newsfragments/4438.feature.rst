@@ -1,1 +1,0 @@
-Added :class:`cocotb.Param` to tag test parameter values used in :class:`cocotb.parametrize` with a more readable and writeable name.
