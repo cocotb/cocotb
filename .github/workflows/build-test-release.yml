@@ -143,11 +143,12 @@ jobs:
         fi
 
   # A GitHub Release makes the tag show up on the repository's releases
-  # page, which the release notes point readers at.
+  # page, which the release notes point readers at. Only final releases
+  # are listed there, so release candidates don't get one.
   github_release:
     name: Publish GitHub Release
     needs: [deploy_pypi, check_final_release]
-    if: success()
+    if: success() && needs.check_final_release.outputs.final == 'true'
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -157,25 +158,21 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         TAG: ${{ github.ref_name }}
-        FINAL: ${{ needs.check_final_release.outputs.final }}
       run: |
         set -euo pipefail
 
-        prerelease=()
-        if [ "$FINAL" != "true" ]; then
-          prerelease=(--prerelease)
-        fi
-
         version="${TAG#v}"
-        notes=$(printf '%s\n\n%s\n' \
-          "Release notes: https://docs.cocotb.org/en/stable/release_notes.html" \
+        # Link the docs built for this exact tag rather than "stable",
+        # which moves on with every later release.
+        notes=$(printf '%s\n%s\n\n%s\n' \
+          "Release notes: https://docs.cocotb.org/en/${TAG}/release_notes.html" \
+          "PyPI release: https://pypi.org/project/cocotb/${version}" \
           "Install with \`pip install cocotb==${version}\`.")
 
         gh release create "$TAG" \
           --verify-tag \
-          --title "cocotb ${version}" \
-          --notes "$notes" \
-          "${prerelease[@]}"
+          --title "${version}" \
+          --notes "$notes"
 
   # Do the backport by calling "Release 3" as a reusable workflow, rather
   # than duplicating its steps here, so the manual and automatic paths
