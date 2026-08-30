@@ -1,1 +1,0 @@
-Added :class:`~cocotb.handles.FixedStringObject` to represent fixed-length strings in VHDL.

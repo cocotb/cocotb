@@ -1,1 +1,0 @@
-Added :ref:`environment variable type <env-types>` information to all documented environment variables.
