@@ -110,6 +110,14 @@ jobs:
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
       # Authentication to PyPi is done through OIDC ("Trusted Publishing").
+      with:
+        # Don't fail if a file is already on PyPI. Without this, a release
+        # can never be re-run: everything after the upload (the GitHub
+        # Release, the release notes backport) is gated on this job
+        # succeeding, so a hiccup in a later step would leave those undone
+        # with no way to complete them. Nothing is lost by allowing it,
+        # because PyPI never replaces an already published file anyway.
+        skip-existing: true
 
   # Patch releases only ever run towncrier on a stable/X.Y branch, but
   # master's release notes should always show the full history. Skip
