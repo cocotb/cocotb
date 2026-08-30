@@ -787,16 +787,11 @@ def backport_release_notes(session: nox.Session) -> None:
     it is named differently.
 
     Which newsfragments the release consumed is determined from the
-    commits between ``--since`` and ``--until``. By default ``--since`` is
-    whichever is more recent of: the previous tag reachable from
-    ``--until``, or where ``--until``'s branch forked from master. The
-    former is normally right for a patch release (e.g. finds v1.6.1 before
-    v1.6.2); the latter is needed for the first release of a new series,
-    where the "previous reachable tag" can walk past a sibling stable
-    branch's own later releases — those aren't ancestors — into shared
-    history from further back (e.g. finding v2.0.0 instead of v2.0.1,
-    because v2.0.1 was tagged only on stable/2.0, which diverged before
-    stable/2.1's fork point). Pass ``--since`` to override either way.
+    commits between ``--since`` and ``--until``. ``--since`` defaults to
+    the point where the release branch forked from master, which covers
+    every release made on the branch; fragments that an earlier one
+    consumed are already gone from master, so only this release's are
+    removed. Pass ``--since`` to narrow that down.
     """
     parser = argparse.ArgumentParser(prog="nox -s backport_release_notes --")
     parser.add_argument("--until", required=True)
@@ -846,15 +841,16 @@ def backport_release_notes(session: nox.Session) -> None:
 
     since = args.since
     if since is None:
-        # The previous release tag is normally the right boundary (patch
-        # releases: e.g. v1.6.1 before v1.6.2). But for the first release
-        # of a new series, "nearest ancestor tag" can walk straight past
-        # a sibling stable branch's later releases — they're not
-        # ancestors — into shared history from further back (e.g. finding
-        # v2.0.0 instead of v2.0.1, because v2.0.1 was tagged only on
-        # stable/2.0, which diverged from stable/2.1's fork point).
-        # Between that tag and where this branch actually forked from
-        # master, use whichever is more recent.
+        # Everything this branch consumed since it diverged from master.
+        #
+        # The previous release tag would be a tighter boundary, but it is
+        # the wrong one: a release candidate is tagged on the very notes
+        # the final release ships, so for vX.Y.Z the previous tag is
+        # vX.Y.ZrcN, which sits *after* the commit that consumed the
+        # newsfragments. Widening the range to the fork point costs
+        # nothing, because fragments an earlier release on this branch
+        # consumed were removed from master by that release's own
+        # backport, and only fragments still present here are deleted.
         #
         # In a CI checkout master is a local branch, but locally it can be
         # stale or missing entirely, so prefer the remote-tracking ref.
@@ -866,31 +862,12 @@ def backport_release_notes(session: nox.Session) -> None:
         ).returncode:
             master = "origin/master"
 
-        fork_point = subprocess.run(
+        since = subprocess.run(
             ["git", "merge-base", args.until, master],
             capture_output=True,
             text=True,
             check=True,
         ).stdout.strip()
-
-        describe = subprocess.run(
-            ["git", "describe", "--tags", "--abbrev=0", f"{args.until}^"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if describe.returncode == 0:
-            tag_ancestor = describe.stdout.strip()
-            fork_point_is_newer = (
-                subprocess.run(
-                    ["git", "merge-base", "--is-ancestor", tag_ancestor, fork_point],
-                    check=False,
-                ).returncode
-                == 0
-            )
-            since = fork_point if fork_point_is_newer else tag_ancestor
-        else:
-            since = fork_point
 
     session.log(f"Backporting the {version} release notes from {args.until}.")
 
