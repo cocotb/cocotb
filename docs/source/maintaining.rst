@@ -209,7 +209,10 @@ The actual work is done by the ``backport_release_notes`` nox session, which can
 
 It takes the finished section out of ``release_notes.rst`` as of the tag -- hand-edits included -- and inserts it into ``master``'s copy in version order, so that backporting a patch release of an older series after a newer series has been released puts it in the right place rather than at the top.
 The newsfragments to drop are those the release consumed between ``--since`` and the tag.
-``--since`` defaults to whichever is more recent of the previous tag reachable from ``--until`` and the point where the release branch forked from ``master``; pass it explicitly to override.
+``--since`` defaults to the point where the release branch forked from ``master``.
+That covers every release made on the branch, not just this one, but the fragments an earlier release consumed were already removed from ``master`` by its own backport, so only this release's are left to delete.
+The previous release tag would be a tighter boundary but the wrong one: a release candidate is tagged on the very notes the final release ships, so the tag before ``vX.Y.Z`` is ``vX.Y.ZrcN``, which comes *after* the commit that consumed the newsfragments.
+Pass ``--since`` to narrow it down.
 
 If the automatic backport PR needs to be regenerated, or a release from before this automation existed needs backporting, run the same "Release 3" workflow directly instead -- it also accepts ``since_ref``.
 
