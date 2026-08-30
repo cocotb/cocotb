@@ -1,1 +1,0 @@
-Fixed Verilator hanging when ``$fatal`` is triggered in simulations with waves/tracing enabled.
