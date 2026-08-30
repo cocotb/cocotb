@@ -1,1 +1,0 @@
-Support null-ranged arrays (including ``std_logic_vector`` and ``string``) in VHDL.

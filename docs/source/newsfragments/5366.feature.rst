@@ -1,1 +1,0 @@
-Added :envvar:`COCOTB_LIST_TESTS` environment variable to list tests without running them.
