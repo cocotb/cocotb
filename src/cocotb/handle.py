@@ -1202,6 +1202,14 @@ class LogicObject(
         return FallingEdge._make(self)
 
     def __len__(self) -> int:
+        return self.size
+
+    @property
+    def size(self) -> int:
+        """Return the number of bits in the simulation object.
+
+        .. versionadded:: 2.1
+        """
         return 1
 
     @deprecated(
@@ -1218,8 +1226,13 @@ class LogicObject(
 
 
 class _SignednessObjectMixin(SimHandleBase):
-    @abstractmethod
-    def __len__(self) -> int: ...
+    @property
+    def size(self) -> int:
+        """Return the number of bits in the simulation object.
+
+        .. versionadded:: 2.1
+        """
+        return self._handle.get_num_elems()
 
     @cached_property
     def is_signed(self) -> bool:
@@ -1234,15 +1247,15 @@ class _SignednessObjectMixin(SimHandleBase):
         if signed == 0:
             return 0
         else:
-            return -(2 ** (len(self) - 1))
+            return -(2 ** (self.size - 1))
 
     @cached_property
     def _max_val(self) -> int:
         signed = self._handle.get_signed()
         if signed == 1:
-            return (2 ** (len(self) - 1)) - 1
+            return (2 ** (self.size - 1)) - 1
         else:
-            return (2 ** len(self)) - 1
+            return (2**self.size) - 1
 
 
 class _LogicArrayObjectBase(
@@ -1267,17 +1280,17 @@ class _LogicArrayObjectBase(
         if isinstance(value, int):
             if not self._min_val <= value <= self._max_val:
                 raise ValueError(
-                    f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
+                    f"Int value ({value!r}) out of range for assignment of {self.size!r}-bit signal ({self._name!r})"
                 )
 
-            if len(self) <= 32:
+            if self.size <= 32:
                 return _schedule_write(
                     self, self._handle.set_signal_val_int, action, value
                 )
             else:
                 if value < 0:
-                    value += 1 << len(self)
-                value_ = f"{value:0{len(self)}b}"
+                    value += 1 << self.size
+                value_ = f"{value:0{self.size}b}"
 
         elif isinstance(value, str):
             value_ = value.replace("_", "")  # remove visual separators
@@ -1297,9 +1310,9 @@ class _LogicArrayObjectBase(
                 f"Unsupported type for value assignment: {type(value)} ({value!r})"
             )
 
-        if len(value_) != len(self):
+        if len(value_) != self.size:
             raise ValueError(
-                f"Cannot assign value of length {len(value_)} to handle of length {len(self)}"
+                f"Cannot assign value of length {len(value_)} to handle of length {self.size}"
             )
         _schedule_write(self, self._handle.set_signal_val_binstr, action, value_)
 
@@ -1364,7 +1377,7 @@ class _LogicArrayObjectBase(
     def __len__(self) -> int:
         # can't use `range` to get length because `range` is for outer-most dimension only
         # and this object needs to support multi-dimensional packed arrays.
-        return self._handle.get_num_elems()
+        return self.size
 
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
@@ -1384,18 +1397,18 @@ class _LogicArrayObjectBase(
     @cached_property
     def _min_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
-        return -(2 ** (len(self) - 1))
+        return -(2 ** (self.size - 1))
 
     @cached_property
     def _max_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
-        return (2 ** len(self)) - 1
+        return (2**self.size) - 1
 
     @cached_property
     def rising_edge(self) -> RisingEdge:
         """A trigger which fires whenever the value changes to a ``1``."""
-        if len(self) != 1:
-            raise TypeError(f"Can't get RisingEdge on {len(self)}-bit signal")
+        if self.size != 1:
+            raise TypeError(f"Can't get RisingEdge on {self.size}-bit signal")
         if self.is_const:
             raise TypeError("Can't get RisingEdge on immutable signal")
         return RisingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
@@ -1403,8 +1416,8 @@ class _LogicArrayObjectBase(
     @cached_property
     def falling_edge(self) -> FallingEdge:
         """A trigger which fires whenever the value changes to a ``0``."""
-        if len(self) != 1:
-            raise TypeError(f"Can't get FallingEdge on {len(self)}-bit signal")
+        if self.size != 1:
+            raise TypeError(f"Can't get FallingEdge on {self.size}-bit signal")
         if self.is_const:
             raise TypeError("Can't get FallingEdge on immutable signal")
         return FallingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
@@ -1555,7 +1568,7 @@ class EnumObject(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
-        if len(self) <= 32:
+        if self.size <= 32:
             # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
@@ -1563,7 +1576,7 @@ class EnumObject(
                 self,
                 self._handle.set_signal_val_binstr,
                 action,
-                format(value, f"0{len(self)}b"),
+                format(value, f"0{self.size}b"),
             )
 
     def get(self) -> int:
@@ -1571,14 +1584,14 @@ class EnumObject(
 
         See :class:`EnumObject` for details on what :class:`int` values correspond to which enumeration values.
         """
-        if len(self) <= 32:
+        if self.size <= 32:
             res = self._handle.get_signal_val_long()
         else:
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
-            res -= 1 << len(self)
+            res -= 1 << self.size
         elif self._handle.get_signed() == 0 and res < 0:
-            res += 1 << len(self)
+            res += 1 << self.size
         return res
 
     def set(
@@ -1608,7 +1621,7 @@ class EnumObject(
         return int(self.value)
 
     def __len__(self) -> int:
-        return self._handle.get_num_elems()
+        return self.size
 
 
 class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMixin):
@@ -1633,18 +1646,18 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         * ``natural``
         * ``positive``
 
-    You can obtain the bit-width of the integer using :func:`len`,
+    You can obtain the bit-width of the integer using :attr:`size`,
     and the signedness using the :attr:`is_signed` property.
 
     .. code-block:: python
 
-        width = len(dut.integer_object)
+        width = dut.integer_object.size
         is_signed = dut.integer_object.is_signed
 
     .. warning::
         Occasionally, type detection (especially in Verilog sources) will not be able to distinguish between an
         :class:`!IntegerObject`, :class:`!EnumObject`, or :class:`!LogicArrayObject`.
-        The other two types have the same :attr:`!is_signed` property and :func:`len` results as this type,
+        The other two types have the same :attr:`!is_signed` and :attr:`!size` properties as this type,
         so this should be un-observable except in edge cases.
 
     .. versionchanged:: 2.1
@@ -1671,13 +1684,13 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
-        if len(self) <= 32:
+        if self.size <= 32:
             # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             if value < 0:
-                value += 1 << len(self)
-            value_ = format(value, f"0{len(self)}b")
+                value += 1 << self.size
+            value_ = format(value, f"0{self.size}b")
 
             return _schedule_write(
                 self,
@@ -1688,14 +1701,14 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
 
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`."""
-        if len(self) <= 32:
+        if self.size <= 32:
             res = self._handle.get_signal_val_long()
         else:
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
-            res -= 1 << len(self)
+            res -= 1 << self.size
         elif self._handle.get_signed() == 0 and res < 0:
-            res += 1 << len(self)
+            res += 1 << self.size
         return res
 
     def set(
@@ -1723,7 +1736,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         return self.value
 
     def __len__(self) -> int:
-        return self._handle.get_num_elems()
+        return self.size
 
 
 class StringObject(

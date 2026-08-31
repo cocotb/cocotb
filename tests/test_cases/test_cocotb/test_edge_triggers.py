@@ -340,7 +340,7 @@ async def test_edge_on_vector(dut):
 
     cocotb.start_soon(wait_edge())
 
-    for val in range(1, 2 ** len(dut.stream_in_data) - 1):
+    for val in range(1, 2**dut.stream_in_data.size - 1):
         # produce an edge by setting a value != 0:
         dut.stream_in_data.value = val
         await RisingEdge(dut.clk)
@@ -354,7 +354,7 @@ async def test_edge_on_vector(dut):
     # but NVC and Verilator behave differently.
     await RisingEdge(dut.clk)
 
-    expected_count = 2 * ((2 ** len(dut.stream_in_data) - 1) - 1)
+    expected_count = 2 * ((2**dut.stream_in_data.size - 1) - 1)
 
     assert edge_cnt == expected_count
 
