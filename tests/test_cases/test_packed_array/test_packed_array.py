@@ -50,6 +50,12 @@ async def check_types(dut):
     assert isinstance(dut.i_packed[0], PackedObject)
     assert isinstance(dut.i_packed[0][0], LogicObject)
     assert len(dut.i_packed) == 32
+    assert dut.i_packed.size == 32
+    assert dut.i_packed[0].size == 4
+    assert dut.i_packed[0][0].size == 1
+    assert dut.i_enum_arr2d.size == 16
+    assert dut.i_union_arr2d.size == 128
+    assert dut.i_pkt_arr2d.size == 176
 
 
 @cocotb.test()
