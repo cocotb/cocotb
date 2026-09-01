@@ -44,7 +44,7 @@
 							"type": "shell",
 							// Run the docs_preview nox session with the virtual environment's Python
 							// (if it exists).
-							"command": "PATH=.venv/bin:$PATH nox -s docs_preview",
+							"command": "PATH=.venv/bin:$PATH nox -s docs_preview --no-venv",
 							"isBackground": true
 						}
 					]

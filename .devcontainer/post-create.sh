@@ -5,8 +5,9 @@ set -eo pipefail
 uv venv --allow-existing --prompt cocotb-devenv .venv
 . .venv/bin/activate
 
-# Install development dependencies and build cocotb.
-bear -- uv sync --dev
+# Install development dependencies (including the ones needed to build a
+# documentation preview) and build cocotb.
+bear -- uv sync --dev --group docs_preview
 
 # Install prerequisites and development tools.
 prek install --overwrite
