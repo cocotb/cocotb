@@ -1,1 +1,0 @@
-:class:`~cocotb.handle.LogicArrayObject` now supports indexing single elements.

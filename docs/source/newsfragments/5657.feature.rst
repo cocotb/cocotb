@@ -1,1 +1,0 @@
-In :class:`~cocotb.triggers.TaskManager`, :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`, ensure that all children are cancelled before the parent is cancelled.
