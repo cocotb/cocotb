@@ -1101,6 +1101,22 @@ static int add_module_types(PyObject *simulator) {
     return 0;
 }
 
+// Wrapper that calls a function and propagates potential python exceptions
+// that are not handled explicitly, instead of encapsulating them in a
+// SystemError when an exception occurs with a non-null return value.
+// This really only does anything for functions which can call back into
+// Python and don't handle exceptions explicitly, but this is the case for
+// most as logging does that.
+#define WRAP(method)                                    \
+    [](PyObject *obj, PyObject *args) -> PyObject * {   \
+        PyObject *ret = PyCFunction(method)(obj, args); \
+        if (ret && PyErr_Occurred()) {                  \
+            Py_DECREF(ret);                             \
+            return NULL;                                \
+        }                                               \
+        return ret;                                     \
+    }
+
 /* NOTE: in the following docstrings we are specifying the parameters twice, but
  * this is necessary. The first docstring before the long '--' line specifies
  * the __text_signature__ that is used by the help() function. And the second
@@ -1111,19 +1127,19 @@ static int add_module_types(PyObject *simulator) {
  */
 
 static PyMethodDef SimulatorMethods[] = {
-    {"get_root_handle", get_root_handle, METH_VARARGS,
+    {"get_root_handle", WRAP(get_root_handle), METH_VARARGS,
      PyDoc_STR("get_root_handle(name, /)\n"
                "--\n\n"
                "get_root_handle(name: str) -> cocotb.simulator.sim_obj\n"
                "Get the root handle.")},
-    {"package_iterate", package_iterate, METH_NOARGS,
+    {"package_iterate", WRAP(package_iterate), METH_NOARGS,
      PyDoc_STR("package_iterate(/)\n"
                "--\n\n"
                "package_iterate() -> cocotb.simulator.sim_obj_iterator\n"
                "Get an iterator handle to loop over all HDL packages.\n"
                "\n"
                ".. versionadded:: 2.0")},
-    {"root_iterate", root_iterate, METH_NOARGS,
+    {"root_iterate", WRAP(root_iterate), METH_NOARGS,
      PyDoc_STR("root_iterate(/)\n"
                "--\n\n"
                "root_iterate() -> cocotb.simulator.sim_obj_iterator\n"
@@ -1131,13 +1147,13 @@ static PyMethodDef SimulatorMethods[] = {
                "only when there are multiple tops.\n"
                "\n"
                ".. versionadded:: 2.1")},
-    {"register_timed_callback", register_timed_callback, METH_VARARGS,
+    {"register_timed_callback", WRAP(register_timed_callback), METH_VARARGS,
      PyDoc_STR("register_timed_callback(time, func, /, *args)\n"
                "--\n\n"
                "register_timed_callback(time: int, func: Callable[..., Any], "
                "*args: Any) -> cocotb.simulator.sim_callback\n"
                "Register a timed callback.")},
-    {"register_value_change_callback", register_value_change_callback,
+    {"register_value_change_callback", WRAP(register_value_change_callback),
      METH_VARARGS,
      PyDoc_STR("register_value_change_callback(signal, func, edge, /, *args)\n"
                "--\n\n"
@@ -1145,43 +1161,45 @@ static PyMethodDef SimulatorMethods[] = {
                "cocotb.simulator.sim_obj, func: Callable[..., Any], edge: "
                "int, *args: Any) -> cocotb.simulator.sim_callback\n"
                "Register a signal change callback.")},
-    {"register_readonly_callback", register_readonly_callback, METH_VARARGS,
+    {"register_readonly_callback", WRAP(register_readonly_callback),
+     METH_VARARGS,
      PyDoc_STR("register_readonly_callback(func, /, *args)\n"
                "--\n\n"
                "register_readonly_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the read-only phase.")},
-    {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS,
+    {"register_nextstep_callback", WRAP(register_nextstep_callback),
+     METH_VARARGS,
      PyDoc_STR("register_nextstep_callback(func, /, *args)\n"
                "--\n\n"
                "register_nextstep_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the cbNextSimTime callback.")},
-    {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS,
+    {"register_rwsynch_callback", WRAP(register_rwsynch_callback), METH_VARARGS,
      PyDoc_STR("register_rwsynch_callback(func, /, *args)\n"
                "--\n\n"
                "register_rwsynch_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the read-write phase.")},
-    {"stop_simulator", stop_simulator, METH_VARARGS,
+    {"stop_simulator", WRAP(stop_simulator), METH_VARARGS,
      PyDoc_STR("stop_simulator()\n"
                "--\n\n"
                "stop_simulator() -> None\n"
                "Instruct the attached simulator to stop. Users should not call "
                "this function.")},
-    {"set_gpi_log_level", set_gpi_log_level, METH_VARARGS,
+    {"set_gpi_log_level", WRAP(set_gpi_log_level), METH_VARARGS,
      PyDoc_STR("set_gpi_log_level(level, /)\n"
                "--\n\n"
                "set_gpi_log_level(level: int) -> None\n"
                "Set the log level of GPI logger.")},
-    {"is_running", is_running, METH_NOARGS,
+    {"is_running", WRAP(is_running), METH_NOARGS,
      PyDoc_STR("is_running()\n"
                "--\n\n"
                "is_running() -> bool\n"
                "Returns ``True`` if the caller is running within a simulator.\n"
                "\n"
                ".. versionadded:: 1.4")},
-    {"get_sim_time", get_sim_time, METH_NOARGS,
+    {"get_sim_time", WRAP(get_sim_time), METH_NOARGS,
      PyDoc_STR("get_sim_time()\n"
                "--\n\n"
                "get_sim_time() -> Tuple[int, int]\n"
@@ -1189,7 +1207,7 @@ static PyMethodDef SimulatorMethods[] = {
                "\n"
                "Time is represented as a tuple of 32-bit integers (``(low32, "
                "high32)``) comprising a single 64-bit integer.")},
-    {"get_precision", get_precision, METH_NOARGS,
+    {"get_precision", WRAP(get_precision), METH_NOARGS,
      PyDoc_STR("get_precision()\n"
                "--\n\n"
                "get_precision() -> int\n"
@@ -1197,22 +1215,22 @@ static PyMethodDef SimulatorMethods[] = {
                "\n"
                "For example, if ``-12`` is returned, the simulator's time "
                "precision is 10**-12 or 1 ps.")},
-    {"get_simulator_product", get_simulator_product, METH_NOARGS,
+    {"get_simulator_product", WRAP(get_simulator_product), METH_NOARGS,
      PyDoc_STR("get_simulator_product()\n"
                "--\n\n"
                "get_simulator_product() -> str\n"
                "Get the simulator's product string.")},
-    {"get_simulator_version", get_simulator_version, METH_NOARGS,
+    {"get_simulator_version", WRAP(get_simulator_version), METH_NOARGS,
      PyDoc_STR("get_simulator_version()\n"
                "--\n\n"
                "get_simulator_version() -> str\n"
                "Get the simulator's product version string.")},
-    {"get_simulator_args", get_argv, METH_NOARGS,
+    {"get_simulator_args", WRAP(get_argv), METH_NOARGS,
      PyDoc_STR("get_simulator_args()\n"
                "--\n\n"
                "get_simulator_args() -> list[str]\n"
                "Get the simulator's command line arguments.")},
-    {"clock_create", clock_create, METH_VARARGS,
+    {"clock_create", WRAP(clock_create), METH_VARARGS,
      PyDoc_STR("clock_create(signal, /)\n"
                "--\n\n"
                "clock_create(signal: cocotb.simulator.sim_obj"
@@ -1220,7 +1238,7 @@ static PyMethodDef SimulatorMethods[] = {
                "Create a clock driver on a signal.\n"
                "\n"
                ".. versionadded:: 2.0")},
-    {"initialize_logger", initialize_logger, METH_VARARGS,
+    {"initialize_logger", WRAP(initialize_logger), METH_VARARGS,
      PyDoc_STR("initialize_logger(log_func, /)\n"
                "--\n\n"
                "initialize_logger("
@@ -1228,7 +1246,7 @@ static PyMethodDef SimulatorMethods[] = {
                "get_logger: Callable[[str], Logger]"
                ") -> None\n"
                "Initialize the GPI logger with Python logging functions.")},
-    {"set_sim_event_callback", set_sim_event_callback, METH_VARARGS,
+    {"set_sim_event_callback", WRAP(set_sim_event_callback), METH_VARARGS,
      PyDoc_STR("set_sim_event_callback(sim_event_callback, /)\n"
                "--\n\n"
                "set_sim_event_callback(sim_event_callback: Callable[[], "
@@ -1299,59 +1317,59 @@ PyMODINIT_FUNC PyInit_simulator(void) {
  */
 
 static PyMethodDef sim_obj_methods[] = {
-    {"get_signal_val_long", (PyCFunction)get_signal_val_long, METH_NOARGS,
+    {"get_signal_val_long", WRAP(get_signal_val_long), METH_NOARGS,
      PyDoc_STR("get_signal_val_long($self)\n"
                "--\n\n"
                "get_signal_val_long() -> int\n"
                "Get the value of a signal as an integer.")},
-    {"get_signal_val_str", (PyCFunction)get_signal_val_str, METH_NOARGS,
+    {"get_signal_val_str", WRAP(get_signal_val_str), METH_NOARGS,
      PyDoc_STR("get_signal_val_str($self)\n"
                "--\n\n"
                "get_signal_val_str() -> bytes\n"
                "Get the value of a signal as a byte string.")},
-    {"get_signal_val_binstr", (PyCFunction)get_signal_val_binstr, METH_NOARGS,
+    {"get_signal_val_binstr", WRAP(get_signal_val_binstr), METH_NOARGS,
      PyDoc_STR("get_signal_val_binstr($self)\n"
                "--\n\n"
                "get_signal_val_binstr() -> str\n"
                "Get the value of a logic vector signal as a string of (``0``, "
                "``1``, ``X``, etc.), one element per character.")},
-    {"get_signal_val_real", (PyCFunction)get_signal_val_real, METH_NOARGS,
+    {"get_signal_val_real", WRAP(get_signal_val_real), METH_NOARGS,
      PyDoc_STR("get_signal_val_real($self)\n"
                "--\n\n"
                "get_signal_val_real() -> float\n"
                "Get the value of a signal as a float.")},
-    {"set_signal_val_int", (PyCFunction)set_signal_val_int, METH_VARARGS,
+    {"set_signal_val_int", WRAP(set_signal_val_int), METH_VARARGS,
      PyDoc_STR("set_signal_val_int($self, action, value, /)\n"
                "--\n\n"
                "set_signal_val_int(action: int, value: int) -> None\n"
                "Set the value of a signal using an int.")},
-    {"set_signal_val_str", (PyCFunction)set_signal_val_str, METH_VARARGS,
+    {"set_signal_val_str", WRAP(set_signal_val_str), METH_VARARGS,
      PyDoc_STR("set_signal_val_str($self, action, value, /)\n"
                "--\n\n"
                "set_signal_val_str(action: int, value: bytes) -> None\n"
                "Set the value of a signal using a user-encoded string.")},
-    {"set_signal_val_binstr", (PyCFunction)set_signal_val_binstr, METH_VARARGS,
+    {"set_signal_val_binstr", WRAP(set_signal_val_binstr), METH_VARARGS,
      PyDoc_STR("set_signal_val_binstr($self, action, value, /)\n"
                "--\n\n"
                "set_signal_val_binstr(action: int, value: str) -> None\n"
                "Set the value of a logic vector signal using a string of "
                "(``0``, ``1``, ``X``, etc.), one element per character.")},
-    {"set_signal_val_real", (PyCFunction)set_signal_val_real, METH_VARARGS,
+    {"set_signal_val_real", WRAP(set_signal_val_real), METH_VARARGS,
      PyDoc_STR("set_signal_val_real($self, action, value, /)\n"
                "--\n\n"
                "set_signal_val_real(action: int, value: float) -> None\n"
                "Set the value of a signal using a float.")},
-    {"get_definition_name", (PyCFunction)get_definition_name, METH_NOARGS,
+    {"get_definition_name", WRAP(get_definition_name), METH_NOARGS,
      PyDoc_STR("get_definition_name($self)\n"
                "--\n\n"
                "get_definition_name() -> str\n"
                "Get the name of a GPI object's definition.")},
-    {"get_definition_file", (PyCFunction)get_definition_file, METH_NOARGS,
+    {"get_definition_file", WRAP(get_definition_file), METH_NOARGS,
      PyDoc_STR("get_definition_file($self)\n"
                "--\n\n"
                "get_definition_file() -> str\n"
                "Get the file that sources the object's definition.")},
-    {"get_handle_by_name", (PyCFunction)get_handle_by_name, METH_VARARGS,
+    {"get_handle_by_name", WRAP(get_handle_by_name), METH_VARARGS,
      PyDoc_STR(
          "get_handle_by_name($self, name, discovery_method/)\n"
          "--\n\n"
@@ -1361,43 +1379,43 @@ static PyMethodDef sim_obj_methods[] = {
          "Get a handle to a child object by name.\n"
          "Specify *discovery_method* to determine the signal discovery "
          "strategy. :data:`~cocotb.handle.GPIDiscovery.AUTO` by default.")},
-    {"get_handle_by_index", (PyCFunction)get_handle_by_index, METH_VARARGS,
+    {"get_handle_by_index", WRAP(get_handle_by_index), METH_VARARGS,
      PyDoc_STR("get_handle_by_index($self, index, /)\n"
                "--\n\n"
                "get_handle_by_index(index: int) -> cocotb.simulator.sim_obj\n"
                "Get a handle to a child object by index.")},
-    {"get_name_string", (PyCFunction)get_name_string, METH_NOARGS,
+    {"get_name_string", WRAP(get_name_string), METH_NOARGS,
      PyDoc_STR("get_name_string($self)\n"
                "--\n\n"
                "get_name_string() -> str\n"
                "Get the name of an object as a string.")},
-    {"get_type_string", (PyCFunction)get_type_string, METH_NOARGS,
+    {"get_type_string", WRAP(get_type_string), METH_NOARGS,
      PyDoc_STR("get_type_string($self)\n"
                "--\n\n"
                "get_type_string() -> str\n"
                "Get the GPI type of an object as a string.")},
-    {"get_type", (PyCFunction)get_type, METH_NOARGS,
+    {"get_type", WRAP(get_type), METH_NOARGS,
      PyDoc_STR("get_type($self)\n"
                "--\n\n"
                "get_type() -> int\n"
                "Get the GPI type of an object as an enum.")},
-    {"get_const", (PyCFunction)get_const, METH_NOARGS,
+    {"get_const", WRAP(get_const), METH_NOARGS,
      PyDoc_STR("get_const($self)\n"
                "--\n\n"
                "get_const() -> bool\n"
                "Return ``True`` if the object is a constant.")},
-    {"get_signed", (PyCFunction)get_signed, METH_NOARGS,
+    {"get_signed", WRAP(get_signed), METH_NOARGS,
      PyDoc_STR("get_signed($self)\n"
                "--\n\n"
                "get_signed() -> bool\n"
                "Return ``1`` if the object is a signed integer, ``0`` if "
                "unsigned, and ``-1`` if unknown or not applicable.")},
-    {"get_num_elems", (PyCFunction)get_num_elems, METH_NOARGS,
+    {"get_num_elems", WRAP(get_num_elems), METH_NOARGS,
      PyDoc_STR("get_num_elems($self)\n"
                "--\n\n"
                "get_num_elems() -> int\n"
                "Get the number of elements contained in the handle.")},
-    {"get_range", (PyCFunction)get_range, METH_NOARGS,
+    {"get_range", WRAP(get_range), METH_NOARGS,
      PyDoc_STR("get_range($self)\n"
                "--\n\n"
                "get_range() -> Tuple[int, int, int]\n"
@@ -1405,12 +1423,12 @@ static PyMethodDef sim_obj_methods[] = {
                "The first two elements of the tuple specify the left and right "
                "bounds, while the third specifies the direction (``1`` for "
                "ascending, ``-1`` for descending, and ``0`` for undefined).")},
-    {"get_indexable", (PyCFunction)get_indexable, METH_NOARGS,
+    {"get_indexable", WRAP(get_indexable), METH_NOARGS,
      PyDoc_STR("get_indexable($self)\n"
                "--\n\n"
                "get_indexable() -> bool\n"
                "Return ``True`` if indexable.")},
-    {"iterate", (PyCFunction)iterate, METH_VARARGS,
+    {"iterate", WRAP(iterate), METH_VARARGS,
      PyDoc_STR(
          "iterate($self, mode, /)\n"
          "--\n\n"
@@ -1446,7 +1464,7 @@ PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
 }();
 
 static PyMethodDef sim_callback_methods[] = {
-    {"deregister", (PyCFunction)deregister, METH_NOARGS,
+    {"deregister", WRAP((PyCFunction)deregister), METH_NOARGS,
      PyDoc_STR("deregister($self)\n"
                "--\n\n"
                "deregister() -> None\n"
@@ -1465,7 +1483,7 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
 }();
 
 static PyMethodDef cpp_clock_methods[] = {
-    {"start", (PyCFunction)clock_start, METH_VARARGS,
+    {"start", WRAP(clock_start), METH_VARARGS,
      PyDoc_STR(
          "start($self, period_steps, high_steps, start_high)\n"
          "--\n\n"
@@ -1487,7 +1505,7 @@ static PyMethodDef cpp_clock_methods[] = {
          "than one time step, or *high_steps* is greater than *period_steps*.\n"
          "    RuntimeError: If the clock was already started, or the "
          "GPI callback could not be registered.")},
-    {"stop", (PyCFunction)clk_stop, METH_NOARGS,
+    {"stop", WRAP(clk_stop), METH_NOARGS,
      PyDoc_STR("stop($self)\n"
                "--\n\n"
                "stop() -> None\n"

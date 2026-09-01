@@ -1,1 +1,0 @@
-Set the Linux SONAME of ``libgpi.so`` to support downstream libraries that depend on libgpi.

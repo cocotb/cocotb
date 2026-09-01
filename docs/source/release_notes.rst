@@ -11,6 +11,120 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 2.1.0 (2026-08-30)
+=========================
+
+Features
+--------
+
+- Added :class:`cocotb.Param` to tag test parameter values used in :class:`cocotb.parametrize` with a more readable and writeable name. (:pr:`4438`)
+- Support null-ranged arrays (including ``std_logic_vector`` and ``string``) in VHDL. (:pr:`4519`)
+- Added :deco:`cocotb.xfail` to mark a test as expected to fail with an optional reason and expected exception type. (:pr:`5007`)
+- Added :deco:`cocotb.skipif` to mark a test as conditionally skipped, with an optional reason string. (:pr:`5007`)
+- Made :deco:`cocotb.test` and :deco:`cocotb.parametrize` stackable. Applying the decorator multiple times to the same test will combine the values of each decoration into a single test generation. (:pr:`5007`)
+- Added support for Python 3.14. (:pr:`5057`)
+- Added ``cwd`` argument to :meth:`Runner.build() <cocotb_tools.runner.Runner.build>`. (:pr:`5076`)
+- Added the experimental :ref:`Pytest Plugin <pytest-plugin>` that enables using pytest as the regression manager for running cocotb tests. (:pr:`5090`)
+- Added :envvar:`COCOTB_RANDOM_TEST_ORDER` environment variables to enable randomized ordering of cocotb tests within each stage. (:pr:`5106`)
+- Added support for SAIF tracing when using Verilator>=5.042 as the simulator.  This is enabled by adding ``--trace-saif`` to :make:var:`EXTRA_ARGS` (when using Makefiles) or to ``build_args`` (when using the runner). (:pr:`5114`)
+- Added :envvar:`GPI_DEBUG` and :envvar:`PYGPI_DEBUG` environment variables to enable additional debug features, including TRACE log messages. (:pr:`5131`)
+- Added :class:`cocotb.triggers.TaskManager` for managing multiple concurrent tasks with automatic cleanup on completion or error. (:pr:`5163`)
+- Added :func:`cocotb.triggers.wait` for waiting on multiple awaitables concurrently with a configurable return condition. (:pr:`5165`)
+- Added :func:`cocotb.triggers.gather` to wait for multiple awaitables concurrently and collect all results. (:pr:`5165`)
+- Added :func:`cocotb.triggers.select` to wait for multiple awaitables concurrently and return the first one to complete. (:pr:`5165`)
+- :class:`~cocotb.handle.LogicArrayObject` now supports indexing single elements. (:pr:`5179`)
+- Added support for ``pre_cmd`` argument to :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` for Aldec Riviera-Pro. (:pr:`5181`)
+- Added support for ``gui`` argument to :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` for Aldec Riviera-Pro. (:pr:`5182`)
+- :func:`~cocotb.triggers.with_timeout` now supports being passed any :term:`awaitable`. (:pr:`5205`)
+- Generated log and waveform files from simulators will be attached in created JUnit XML tests results file. (:pr:`5219`)
+- Added the :envvar:`COCOTB_RESULTS_ATTACHMENTS` environment variable that allows to attach files as attachments in generated reports like :ref:`junit`. (:pr:`5219`)
+- Added the :envvar:`COCOTB_RESULTS_RELATIVE_TO` environment variable as a hint for :ref:`junit` how to convert absolute paths to relative ones. (:pr:`5219`)
+- Added support for using underscores (``_``) as visual separators in :class:`str` values used to set the value of :class:`~cocotb.handle.LogicArrayObject` to enhance readability of long bitstrings, e.g. ``dut.signal.value = "1010_1101"``. (:pr:`5220`)
+- Added visual separator support to :class:`~cocotb.types.LogicArray` string construction. This allows underscores (``_``) to be used to improve readability of long bitstrings, e.g. ``"1010_1101"``. (:pr:`5220`)
+- Added the *on_overflow* parameter to :meth:`LogicArray.from_unsigned() <cocotb.types.LogicArray.from_unsigned>` and :meth:`LogicArray.from_signed() <cocotb.types.LogicArray.from_signed>` to allow the user to decide how to handle values which are too large to fit in *range*. (:pr:`5222`)
+- Added support for constructing :class:`~cocotb.types.LogicArray` from a negative integer. This assumes two's complement representation. (:pr:`5293`)
+- Added support for comparing :class:`~cocotb.types.LogicArray` with negative integers. This assumes two's complement representation. (:pr:`5293`)
+- Added support for terminating a regression early when the number of test failures reaches :envvar:`COCOTB_MAX_FAILURES`. (:pr:`5309`)
+- Added support for :class:`pytest.RaisesExc` and :class:`pytest.RaisesGroup` as ``raises`` argument to :func:`cocotb.xfail`. (:pr:`5357`)
+- Added :envvar:`COCOTB_LIST_TESTS` environment variable to list tests without running them. (:pr:`5366`)
+- Added :data:`cocotb.tops` to expose a dictionary containing all top-level design units. (:pr:`5371`)
+- Added support for :func:`pytest.skip` and :func:`pytest.xfail` for ending the test early. (:pr:`5380`)
+- Added :func:`cocotb.end_test` to end the test immediately from any :class:`!Task` without forcing a pass. (:pr:`5392`)
+- Added public variable :data:`cocotb_tools.runner.SUPPORTED_RUNNERS`, allowing external libraries to register additional simulators for the ``get_runner()`` function. (:pr:`5415`)
+- Added ability to specify a particular architecture for a toplevel entity when using NVC. (:pr:`5450`)
+- Added :class:`~cocotb.handles.FixedStringObject` to represent fixed-length strings in VHDL. (:pr:`5457`)
+- Added support for :class:`~cocotb.triggers.RisingEdge` and :class:`~cocotb.triggers.FallingEdge` for instances of :class:`~cocotb.handle.LogicArrayObject` with only one bit. (:pr:`5483`)
+- Added support for :envvar:`SIM_CMD_PREFIX` and :envvar:`SIM_CMD_SUFFIX` environment variables to the :ref:`Python Runners <howto-python-runner>`. (:pr:`5506`)
+- Added the ``cocotb-config --lib-entry`` option and :func:`cocotb_tools.config.lib_entry` to return a simulator interface library together with an explicit entry function when required. (:pr:`5521`)
+- Added the :func:`~cocotb_tools.runner.as_vhdl_literal` and :func:`~cocotb_tools.runner.as_sv_literal` functions to explicitly convert Python values to VHDL or SystemVerilog literal strings. (:pr:`5534`)
+- Added :mod:`cocotb.preview` and the :envvar:`COCOTB_PREVIEW` environment variable to allow users to opt in to previews of upcoming cocotb behavior. (:pr:`5640`)
+- Added support for passing *any* :class:`~collections.abc.Awaitable` to :func:`cocotb.create_task`, :func:`cocotb.start_soon`, and :func:`cocotb.start`. This wraps the :term:`awaitable` in a waiter :term:`coroutine`. (:pr:`5653`)
+- In :class:`~cocotb.triggers.TaskManager`, :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, and :func:`~cocotb.triggers.wait`, ensure that all children are cancelled before the parent is cancelled. (:pr:`5657`)
+- Added ``--coverage-per-instance`` runtime option to the Verilator harness and corresponding ``VERILATOR_COVERAGE_PER_INSTANCE`` Makefile variable to opt in to per-instance HDL coverage recording. (:pr:`5687`)
+- Added the :class:`cocotb_tools.runner.QuestaQIS` Python Runner for the Questa QIS/Qrun flow, selectable with ``get_runner("questa-qisqrun")``. (:pr:`5688`)
+
+
+Bugfixes
+--------
+
+- Improve VsimSA simulator support (adds Active-HDL support and updates Riviera-Pro support). (:pr:`5041`)
+- Generated JUnit XML tests results file is now compatible with `Jenkins xUnit schema version 2 <https://github.com/jenkinsci/xunit-plugin/blob/xunit-2.4.0/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd>`_. (:pr:`5219`)
+- :func:`cocotb.logging.default_config` no longer overwrites root handlers, but configures formatting on whatever handlers are already registered. (:pr:`5248`)
+- Fixed bug where :envvar:`COCOTB_RESOLVE_X` when set ``"random"`` would resolve all non-``0``/``1`` values in a vector to the same value. (:pr:`5306`)
+- Fixed Verilator hanging when ``$fatal`` is triggered in simulations with waves/tracing enabled. (:pr:`5423`)
+- Fixed use-after-free in ``VpiSignalObjHdl::register_value_change_callback`` error handling code which caused VCS to segfault. (:pr:`5439`)
+- Fixed a segmentation fault on Icarus Verilog when VPI callbacks fired after the Python interpreter was finalized during simulator shutdown. (:pr:`5440`)
+- Fixed memory leak of one-shot callback on VCS/Xcelium. (:pr:`5447`)
+- Fixed race between currently scheduled Tasks and waiter Task start-up in :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine`. (:pr:`5594`)
+- Fixed :class:`~cocotb.types.LogicArray` equality against list and tuple values containing unsupported object types. (:pr:`5596`)
+- Fixed a performance regression where the time to remove a completed :class:`~cocotb.task.Task` scaled linearly with the number of concurrently running tasks. (:pr:`5603`)
+- Set the Linux SONAME of ``libgpi.so`` to support downstream libraries that depend on libgpi. (:pr:`5636`)
+- :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` now only return after all child awaitables have finished, including via cancellation, to ensure any stateful clean-up code was hit before continuing. (:pr:`5645`)
+- Fixed viewer invocation during test runs. (:pr:`5712`)
+
+
+Improved Documentation
+----------------------
+
+- Added a how-to guide on separating cocotb's log output from the simulator's own output, :ref:`separating-logs`. (:pr:`2835`)
+
+
+Deprecations and Removals
+-------------------------
+
+- Dropped support for MacOS 13 (Ventura). (:pr:`4986`)
+- Removed Windows and Linux 32-bit release builds. (:pr:`4986`)
+- Support for Python 3.6, 3.7, and 3.8 was removed. (:pr:`4987`)
+- Deprecated passing :class:`~cocotb.task.Task`\ s to :class:`~cocotb.triggers.First` and :class:`~cocotb.triggers.Combine` in favor of passing coroutines directly to :func:`~cocotb.triggers.select` and :func:`~cocotb.triggers.gather`, respectively. (:pr:`5206`)
+- Removed support for undocumented ``COCOTB_RESULT_TESTSUITE`` environment variable. Name of test suite will be based on name of the cocotb test module. (:pr:`5219`)
+- Removed support for undocumented ``COCOTB_RESULT_TESTPACKAGE`` environment variable. The XML attribute ``package`` is invalid in JUnit XML. (:pr:`5219`)
+- Deprecated :func:`cocotb.pass_test`. Instead, use :func:`cocotb.skip` to skip a test or use :func:`cocotb.end_test` to end a test while respecting expected failures. (:pr:`5395`)
+- Removed the ``--lib-name`` option from the :ref:`cocotb-config <cocotb-config>` script. (:pr:`5516`)
+- Removed the :func:`!cocotb_tools.config.lib_name` function. (:pr:`5516`)
+
+
+Changes
+-------
+
+- Reimplemented the scheduler. Exact scheduling order may have changed. (:pr:`4717`)
+- Changed :meth:`Task.cancel() <cocotb.task.Task.cancel>` to throw :exc:`RuntimeError` if attempting to cancel the currently running task. (:pr:`5162`)
+- The ``LIBPYTHON_LOC`` environment variable was removed from the GPI. Instead, ``libpython`` should be included in :envvar:`GPI_USERS`. Support remains in Makefiles (:make:var:`LIBPYTHON_LOC`) and Python Runner (:envvar:`LIBPYTHON_LOC`) for backwards-compatibility. In this case the value of :envvar:`!LIBPYTHON_LOC` is included in the generated :envvar:`!GPI_USERS` if and only if :envvar:`!GPI_USERS` is not already defined. (:pr:`5207`)
+- Tests reported in generated JUnit XML tests results file will be grouped into test suites by cocotb test module. (:pr:`5219`)
+- Added :ref:`environment variable type <env-types>` information to all documented environment variables. (:pr:`5232`)
+- Entry points listed in :envvar:`PYGPI_USERS` are no longer passed the ``argv`` object. If you need access to command-line arguments, use :func:`cocotb.simulator.get_simulator_args` instead. (:pr:`5258`)
+- Changed input value checking on :class:`~cocotb.handle.IntegerObject` and :class:`~cocotb.handle.EnumObject` to reflect the size and signedness of the underlying HDL type. Previously, both classes would accept negative values even if the underlying type was unsigned, and had a hardcoded and incorrect limit on the size of the value size that didn't reflect the size of the underlying HDL type. (:pr:`5263`)
+- Split the random number generator (RNG) for the :envvar:`COCOTB_RESOLVE_X` ``"random"`` mode from the global Python RNG, so that switching from one :envvar:`!COCOTB_RESOLVE_X` mode to another would not affect the random number sequence of the rest of the testbench. (:pr:`5306`)
+- :mod:`pytest` is no longer an optional dependency, but is required. (:pr:`5363`)
+- The :ref:`Makefile <building>` target ``sim`` no longer recursively calls ``make``. This makes it possible to use ``+=`` with Make variables without the right hand side being added twice. (:pr:`5382`)
+- Changed the extension on the Icarus GPI implementation library from ``.vpl`` to the normal extension for shared libraries on the platform (e.g. ``.so`` or ``.dll``). (:pr:`5516`)
+- Removed implicit conversion of ``defines`` in :meth:`Runner.build <cocotb_tools.runner.Runner.build>` to literals. If users need to convert Python objects to literals for use in ``defines`` or ``parameters``, they must explicitly call the new :func:`~cocotb_tools.runner.as_vhdl_literal` or :func:`~cocotb_tools.runner.as_sv_literal` functions. (:pr:`5534`)
+- Makefile simulator recipes now use a shared ``COCOTB_ENV`` variable defined in ``Makefile.inc``. (:pr:`5565`)
+- Tests not included in a regression when using :envvar:`COCOTB_TEST_FILTER` no longer appear in ``results.xml``. (:pr:`5616`)
+- :class:`~cocotb.triggers.Combine` now propagates :exc:`~asyncio.CancelledError`\ s raised by any of its children instead of ignoring them. (:pr:`5624`)
+- JUnit XML (``results.xml``) files are no longer pretty-printed to reduce file size and improve serialization performance. Use external tools like `xmllint <https://xmllint.com/>`_ if you need to format these files. (:pr:`5628`)
+- Verilator now exits with a non-zero status code if any ``$error`` or assertion fired during the simulation. (:pr:`5699`)
+
+
 cocotb 2.0.1 (2025-11-15)
 =========================
 
