@@ -311,8 +311,13 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiGenScope:
         case vpiGenScopeArray: {
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
+            const bool normalized_index_name =
+                !name.empty() && name.front() == '[' &&
+                hdl_name.length() >= name.length() &&
+                hdl_name.compare(hdl_name.length() - name.length(),
+                                 name.length(), name) == 0;
 
-            if (hdl_name != name) {
+            if (hdl_name != name && !normalized_index_name) {
                 LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
                           fq_name.c_str(), hdl_name.c_str(), name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
@@ -603,7 +608,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     snprintf(buff, 14, "[%d]", index);
 
     std::string idx = buff;
-    std::string name = parent->get_name() + idx;
+    std::string name = '[' + std::to_string(index) + ']';
     std::string fq_name = parent->get_fullname() + idx;
     GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
@@ -784,7 +789,7 @@ bool VpiImpl::compare_generate_labels(const std::string &a,
 }
 
 const char *VpiImpl::get_type_delimiter(GpiObjHdl *obj_hdl) {
-    return (obj_hdl->get_type() == GPI_PACKAGE) ? "" : ".";
+    return (obj_hdl->get_type() == GPI_PACKAGE) ? "::" : ".";
 }
 
 static int startup_callback(void *) {

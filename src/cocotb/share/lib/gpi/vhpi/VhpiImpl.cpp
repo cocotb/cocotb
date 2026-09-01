@@ -425,6 +425,19 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiBlockStmtK:
         case vhpiCompInstStmtK: {
             std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
+            const std::size_t index_begin = hdl_name.rfind(GEN_IDX_SEP_LHS);
+            const std::size_t suffix_length = sizeof(GEN_IDX_SEP_RHS) - 1;
+            const bool normalized_index_name =
+                name.length() >= 2 && name.front() == '[' &&
+                name.back() == ']' && index_begin != std::string::npos &&
+                hdl_name.length() >= suffix_length &&
+                hdl_name.compare(hdl_name.length() - suffix_length,
+                                 suffix_length, GEN_IDX_SEP_RHS) == 0 &&
+                name.substr(1, name.length() - 2) ==
+                    hdl_name.substr(index_begin + sizeof(GEN_IDX_SEP_LHS) - 1,
+                                    hdl_name.length() - index_begin -
+                                        sizeof(GEN_IDX_SEP_LHS) -
+                                        sizeof(GEN_IDX_SEP_RHS) + 2);
 
             if (base_type == vhpiRootInstK && !compare_names(hdl_name, name)) {
                 vhpiHandleT arch = vhpi_handle(vhpiDesignUnit, new_hdl);
@@ -438,7 +451,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 }
             }
 
-            if (!compare_names(name, hdl_name)) {
+            if (!compare_names(name, hdl_name) && !normalized_index_name) {
                 LOG_DEBUG("VHPI: Found pseudo-region %s", fq_name.c_str());
                 gpi_type = GPI_GENARRAY;
             } else {
@@ -623,12 +636,14 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
     return new_obj;
 }
 
+static std::vector<char> writable;
+
 GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
     std::string name = parent->get_name();
     std::string fq_name = parent->get_fullname();
     vhpiHandleT new_hdl = NULL;
-    char buff[14];  // needs to be large enough to hold -2^31 to 2^31-1 in
+    char buff[32];  // needs to be large enough to hold -2^31 to 2^31-1 in
                     // string form ('(''-'10+'')'\0')
 
     gpi_objtype obj_type = parent->get_type();
@@ -642,13 +657,13 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         snprintf(buff, sizeof(buff), "%d", index);
 
         std::string idx_str = buff;
-        name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
+        name = '[' + idx_str + ']';
         fq_name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
 
-        std::vector<char> writable(fq_name.begin(), fq_name.end());
+        writable.assign(fq_name.begin(), fq_name.end());
         writable.push_back('\0');
 
-        new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+        new_hdl = vhpi_handle_by_name(writable.data(), NULL);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
                obj_type == GPI_ARRAY || obj_type == GPI_FIXED_STRING) {
         LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,

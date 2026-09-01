@@ -54,5 +54,9 @@ bool GpiHdl::is_this_impl(GpiImplInterface *impl) {
 int GpiObjHdl::initialise(const std::string &name, const std::string &fq_name) {
     m_name = name;
     m_fullname = fq_name;
+    if (m_type == GPI_PACKAGE && m_fullname.size() >= 2 &&
+        m_fullname.compare(m_fullname.size() - 2, 2, "::") == 0) {
+        m_fullname.resize(m_fullname.size() - 2);
+    }
     return 0;
 }

@@ -310,6 +310,12 @@ GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl);
  */
 GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl);
 
+/** Get signal object's fully-qualified name.
+ * @param sig_hdl   Signal object handle.
+ * @return          Fully-qualified object name.
+ */
+GPI_EXPORT const char *gpi_get_signal_fullname_str(gpi_sim_hdl sig_hdl);
+
 /** Get signal object type as a string.
  * @param sig_hdl   Signal object handle.
  * @return          Object type as a string.

@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import enum
 import logging
-import re
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
 from functools import cached_property
 from logging import Logger
@@ -62,7 +61,7 @@ __all__ = (
 )
 
 
-class SimHandleBase(ABC):
+class SimHandleBase:
     """Base class for all simulation objects.
 
     All simulation objects are hashable and equatable by identity.
@@ -77,16 +76,24 @@ class SimHandleBase(ABC):
         ``get_definition_name()`` and ``get_definition_file()`` were removed in favor of :meth:`_def_name` and :meth:`_def_file`, respectively.
     """
 
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+    __slots__ = (
+        "__dict__",
+        "__weakref__",
+        "_handle",
+    )
+
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
         self._handle = handle
-        self._path: str = self._name if path is None else path
+
+    @property
+    def _path(self) -> str:
         """The path to this handle, or its name if this is the root handle.
 
         :meta public:
         """
+        return self._handle.get_full_name_string()
 
-    @cached_property
+    @property
     def _name(self) -> str:
         """The name of an object.
 
@@ -94,7 +101,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_name_string()
 
-    @cached_property
+    @property
     def _type(self) -> str:
         """The type of an object as a string.
 
@@ -106,7 +113,7 @@ class SimHandleBase(ABC):
     def _log(self) -> Logger:
         return logging.getLogger(f"cocotb.{self._name}")
 
-    @cached_property
+    @property
     def _def_name(self) -> str:
         """The name of a GPI object's definition.
 
@@ -118,7 +125,7 @@ class SimHandleBase(ABC):
         """
         return self._handle.get_definition_name()
 
-    @cached_property
+    @property
     def _def_file(self) -> str:
         """The name of the file that sources the object's definition.
 
@@ -159,6 +166,8 @@ class SimHandleBase(ABC):
 
 class _RangeableObjectMixin(SimHandleBase):
     """Base class for simulation objects that have a range."""
+
+    __slots__ = ()
 
     @cached_property
     def range(self) -> Range:
@@ -220,9 +229,10 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
     See :class:`HierarchyObject` and :class:`HierarchyArrayObject` for examples.
     """
 
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ("_discovered", "_sub_handles")
+
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
+        super().__init__(handle)
         self._sub_handles: dict[KeyType, SimHandleBase] = {}
         self._discovered = False
 
@@ -272,15 +282,13 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
                 )
                 continue
 
-            # compute a full path using the key name
-            path = self._child_path(key)
-
             # attempt to create the child object
             try:
-                hdl = _make_sim_object(thing, path)
+                hdl = _make_sim_object(thing)
             except NotImplementedError:
-                self._log.exception(
-                    "Unable to construct a SimHandle object for %s", path
+                self._log.error(
+                    "Unable to construct a SimHandle object for %s",
+                    thing.get_full_name_string(),
                 )
                 continue
 
@@ -320,8 +328,8 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         if new_handle is None:
             return None
 
-        # if successful, construct and cache
-        sub_handle = _make_sim_object(new_handle, self._child_path(key))
+        # If successful, construct and cache the child.
+        sub_handle = _make_sim_object(new_handle)
         self._sub_handles[key] = sub_handle
 
         return sub_handle
@@ -338,17 +346,6 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
 
         Returns:
             A raw simulator handle for the child object at the given key, or ``None``.
-        """
-
-    @abstractmethod
-    def _child_path(self, key: KeyType) -> str:
-        """Compute the path string of a child object at the given key.
-
-        Args:
-            key: The key of the child object.
-
-        Returns:
-            A path string of the child object at the a given key.
         """
 
     @abstractmethod
@@ -433,8 +430,7 @@ class HierarchyObject(_HierarchyObjectBase[str]):
         assert len(dut.some_module) == total
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def __setattr__(self, name: str, value: object) -> None:
         # private attributes pass through directly
@@ -501,10 +497,6 @@ class HierarchyObject(_HierarchyObjectBase[str]):
             raise AttributeError(f"{self._path} contains no child object named {name}")
         return handle
 
-    def _child_path(self, key: str) -> str:
-        delimiter = "::" if self._type == "GPI_PACKAGE" else "."
-        return f"{self._path}{delimiter}{key}"
-
     def _sub_handle_key(self, name: str) -> str:
         return name
 
@@ -551,34 +543,18 @@ class HierarchyArrayObject(
             dut.gen_pipe_stages[idx].reg.value = 0
 
         # make sure we have all the pipe stages
-        assert len(dut.gen_pipe_stage) == len(dut.gen_pipe_stages.range)
+        assert len(dut.gen_pipe_stages) == len(dut.gen_pipe_stages.range)
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _sub_handle_key(self, name: str) -> int:
-        # This is slightly hacky, but we need to extract the index from the name
-        # See also GEN_IDX_SEP_* in VhpiImpl.h for the VHPI separators.
-        #
-        # FLI and VHPI:       _name(X) where X is the index
-        # VHPI(ALDEC):        _name__X where X is the index
-        # VPI:                _name[X] where X is the index
-        result = re.match(rf"{re.escape(self._name)}__(?P<index>\d+)$", name)
-        if not result:
-            result = re.match(
-                rf"{re.escape(self._name)}\((?P<index>\d+)\)$", name, re.IGNORECASE
-            )
-        if not result:
-            result = re.match(rf"{re.escape(self._name)}\[(?P<index>\d+)\]$", name)
-
-        if result:
-            return int(result.group("index"))
-        else:
-            raise ValueError(f"Unable to match an index pattern: {name}")
-
-    def _child_path(self, key: int) -> str:
-        return f"{self._path}[{key}]"
+        if name.endswith("]"):
+            try:
+                return int(name[name.rfind("[") + 1 : -1])
+            except ValueError:
+                pass
+        raise ValueError(f"Unable to match an index pattern: {name}")
 
     def _get_handle_by_key(
         self, key: int, discovery_method: GPIDiscovery
@@ -837,6 +813,8 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
     Inherits from :class:`SimHandleBase`.
     """
 
+    __slots__ = ()
+
     @property
     def value(self) -> ValueGetT:
         """Get or set the value of the simulation object.
@@ -939,7 +917,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
             value = _OldImmediate(value)
         self.value = value
 
-    @cached_property
+    @property
     def is_const(self) -> bool:
         """``True`` if the simulator object is immutable, e.g. a Verilog parameter or VHDL constant or generic."""
         return self._handle.get_const()
@@ -1003,8 +981,10 @@ class ArrayObject(
             dut.array_object[child_idx]
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ("_sub_handles",)
+
+    def __init__(self, handle: cocotb.simulator.sim_obj) -> None:
+        super().__init__(handle)
         self._sub_handles: dict[int, ChildObjectT] = {}
 
     def get(self) -> Array[ElemValueT]:
@@ -1075,16 +1055,16 @@ class ArrayObject(
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slicing is not supported")
-        if index in self._sub_handles:
+        try:
             return self._sub_handles[index]
+        except KeyError:
+            pass
         new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
+        if new_handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(
-            "ChildObjectT", _make_sim_object(new_handle, path)
-        )
-        return self._sub_handles[index]
+        value = cast("ChildObjectT", _make_sim_object(new_handle))
+        self._sub_handles[index] = value
+        return value
 
     def __iter__(self) -> Iterator[ChildObjectT]:
         for i in self.range:
@@ -1096,6 +1076,8 @@ class _NonIndexableValueObjectBase(ValueObjectBase[ValueGetT, ValueSetT]):
 
     NonArrayValueObjects support :meth:`value_change` triggers.
     """
+
+    __slots__ = ()
 
     @cached_property
     def value_change(self) -> ValueChange:
@@ -1130,8 +1112,7 @@ class LogicObject(
         * ``bit``
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _set_value(
         self,
@@ -1218,28 +1199,25 @@ class LogicObject(
 
 
 class _SignednessObjectMixin(SimHandleBase):
+    __slots__ = ()
+
     @abstractmethod
     def __len__(self) -> int: ...
 
-    @cached_property
+    @property
     def is_signed(self) -> bool:
-        signed = self._handle.get_signed()
-        if signed == -1:
-            raise RuntimeError(f"Simulator failed to get signedness of {self._path!r}.")
-        return bool(signed)
+        return self._handle.get_signed()
 
     @cached_property
     def _min_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 0:
+        if not self.is_signed:
             return 0
         else:
             return -(2 ** (len(self) - 1))
 
     @cached_property
     def _max_val(self) -> int:
-        signed = self._handle.get_signed()
-        if signed == 1:
+        if self.is_signed:
             return (2 ** (len(self) - 1)) - 1
         else:
             return (2 ** len(self)) - 1
@@ -1253,10 +1231,14 @@ class _LogicArrayObjectBase(
 ):
     """Base class for logic array simulation objects."""
 
-    @abstractmethod
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
-        self._sub_handles: dict[int, ChildObjectT] = {}
+    __slots__ = ()
+
+    @cached_property
+    def _sub_handles(self) -> dict[int, ChildObjectT]:
+        # Here lazily creating this is meaningful, as with HierarchyArrayObject and ArrayObject,
+        # users are likely to index into the object, meaning the cache will be used.
+        # This does not hold for *every* LogicArrayObject (std_logic_vector or packed array).
+        return {}
 
     def _set_value(
         self,
@@ -1265,19 +1247,22 @@ class _LogicArrayObjectBase(
     ) -> None:
         value_: str
         if isinstance(value, int):
-            if not self._min_val <= value <= self._max_val:
+            width = len(self)
+            min_val = -(2 ** (width - 1))
+            max_val = (2**width) - 1
+            if not min_val <= value <= max_val:
                 raise ValueError(
-                    f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
+                    f"Int value ({value!r}) out of range for assignment of {width!r}-bit signal ({self._name!r})"
                 )
 
-            if len(self) <= 32:
+            if width <= 32:
                 return _schedule_write(
                     self, self._handle.set_signal_val_int, action, value
                 )
             else:
                 if value < 0:
-                    value += 1 << len(self)
-                value_ = f"{value:0{len(self)}b}"
+                    value += 1 << width
+                value_ = f"{value:0{width}b}"
 
         elif isinstance(value, str):
             value_ = value.replace("_", "")  # remove visual separators
@@ -1376,20 +1361,9 @@ class _LogicArrayObjectBase(
         handle = self._handle.get_handle_by_index(index)
         if handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
-        path = f"{self._path}[{index}]"
-        res = cast("ChildObjectT", _make_sim_object(handle, path))
+        res = cast("ChildObjectT", _make_sim_object(handle))
         self._sub_handles[index] = res
         return res
-
-    @cached_property
-    def _min_val(self) -> int:
-        # Backwards compatibility. Always wrap negative values.
-        return -(2 ** (len(self) - 1))
-
-    @cached_property
-    def _max_val(self) -> int:
-        # Backwards compatibility. Always wrap negative values.
-        return (2 ** len(self)) - 1
 
     @cached_property
     def rising_edge(self) -> RisingEdge:
@@ -1425,8 +1399,7 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
         bit_0 = dut.my_vec[0]
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
 
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
@@ -1458,8 +1431,7 @@ class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
         Verilog packed objects no longer map to this type, but :class:`PackedObject`.
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1471,8 +1443,7 @@ class RealObject(_NonIndexableValueObjectBase[float, float]):
     They are assumed to be IEEE 754 double precision floating point types.
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _set_value(
         self,
@@ -1537,8 +1508,7 @@ class EnumObject(
         There is currently no support for getting the enumeration names or values.
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _set_value(
         self,
@@ -1577,7 +1547,7 @@ class EnumObject(
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1653,8 +1623,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         This may cause changes in behavior, but in the direction of better correctness.
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _set_value(
         self,
@@ -1694,7 +1663,7 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
             res = int(self._handle.get_signal_val_binstr(), 2)
         if res > self._max_val:
             res -= 1 << len(self)
-        elif self._handle.get_signed() == 0 and res < 0:
+        elif res < 0 and not self.is_signed:
             res += 1 << len(self)
         return res
 
@@ -1737,8 +1706,7 @@ class StringObject(
     This type is used when a ``string`` (VHDL or Verilog) simulation object is seen.
     """
 
-    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
-        super().__init__(handle, path)
+    __slots__ = ()
 
     def _set_value(
         self,
@@ -1812,12 +1780,13 @@ class FixedStringObject(StringObject):
     This is because in VHDL string are fixed-length unlike Verilog string
     """
 
+    __slots__ = ()
+
     def _set_value(
         self,
         value: bytes,
         action: _GPISetAction,
     ) -> None:
-
         max_len = len(self)
 
         if len(value) > max_len:
@@ -1843,11 +1812,6 @@ _ConcreteHandleTypes = Union[
 ]
 
 
-_handle2obj: dict[
-    cocotb.simulator.sim_obj,
-    _ConcreteHandleTypes,
-] = {}
-
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
@@ -1865,15 +1829,11 @@ _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
 }
 
 
-def _make_sim_object(
-    handle: cocotb.simulator.sim_obj, path: str | None = None
-) -> SimHandleBase:
+def _make_sim_object(handle: cocotb.simulator.sim_obj) -> SimHandleBase:
     """Factory function to create the correct type of `SimHandle` object.
 
     Args:
         handle: The GPI handle to the simulator object.
-        path: Path to this handle.
-
     Returns:
         An appropriate :class:`SimHandleBase` object.
 
@@ -1881,18 +1841,10 @@ def _make_sim_object(
         NotImplementedError: If no matching object for GPI type could be found.
     """
 
-    # Enforce singletons since it's possible to retrieve handles avoiding
-    # the hierarchy by getting driver/load information
-    try:
-        return _handle2obj[handle]
-    except KeyError:
-        pass
-
     t = handle.get_type()
-    if t not in _type2cls:
+    if (cls := _type2cls.get(t)) is None:
         raise NotImplementedError(
-            f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
+            f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) "
+            f"(path={handle.get_full_name_string()})"
         )
-    obj = _type2cls[t](handle, path)
-    _handle2obj[handle] = obj
-    return obj
+    return cls(handle)
