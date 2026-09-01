@@ -51,7 +51,7 @@ Make Variables
 
 .. make:var:: WAVES
 
-      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO, Mentor Graphics Questa, and Icarus Verilog simulators.
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO, Mentor Graphics Questa, Icarus Verilog, and Blue Pearl Solutions BPSim simulators.
       To get wave traces in Verilator see :ref:`sim-verilator-waveforms`.
 
 .. make:var:: TOPLEVEL_LANG

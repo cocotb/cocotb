@@ -3,6 +3,8 @@ AXI
 Aldec
 Altera
 Avalon
+BPSim
+BluePearl
 Cosimulation
 Deprecations
 FLI
