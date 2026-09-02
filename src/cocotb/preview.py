@@ -18,6 +18,11 @@ class Feature(DocStrEnum):
     .. versionadded:: 2.1
     """
 
+    HANDLE_LEN = (
+        "handle_len",
+        "Make len() return the number of elements in simulation objects",
+    )
+
     XFAIL_IN_RESULTS = (
         "xfail_in_results",
         "Use the XFAIL status in the terminal results summary for xfailed tests",

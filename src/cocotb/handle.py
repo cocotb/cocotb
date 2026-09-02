@@ -22,6 +22,7 @@ from typing import (
     cast,
 )
 
+import cocotb.preview
 import cocotb.simulator
 from cocotb._base_triggers import TriggerCallback
 from cocotb._deprecation import deprecated
@@ -1202,6 +1203,8 @@ class LogicObject(
         return FallingEdge._make(self)
 
     def __len__(self) -> int:
+        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN):
+            raise TypeError(f"object of type '{type(self).__name__}' has no len()")
         return self.size
 
     @property
@@ -1375,8 +1378,8 @@ class _LogicArrayObjectBase(
         return str(self.value)
 
     def __len__(self) -> int:
-        # can't use `range` to get length because `range` is for outer-most dimension only
-        # and this object needs to support multi-dimensional packed arrays.
+        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN):
+            return len(self.range)
         return self.size
 
     def __getitem__(self, index: int) -> ChildObjectT:
@@ -1440,6 +1443,14 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
+
+    def __len__(self) -> int:
+        if (
+            cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN)
+            and not self._handle.get_indexable()
+        ):
+            raise TypeError(f"object of type '{type(self).__name__}' has no len()")
+        return super().__len__()
 
 
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
@@ -1621,6 +1632,8 @@ class EnumObject(
         return int(self.value)
 
     def __len__(self) -> int:
+        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN):
+            raise TypeError(f"object of type '{type(self).__name__}' has no len()")
         return self.size
 
 
@@ -1736,6 +1749,8 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
         return self.value
 
     def __len__(self) -> int:
+        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN):
+            raise TypeError(f"object of type '{type(self).__name__}' has no len()")
         return self.size
 
 
