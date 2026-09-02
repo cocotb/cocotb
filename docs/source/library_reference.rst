@@ -831,7 +831,7 @@ Simulator Objects
     This allows cocotb to avoid a VPI callback into Python to apply writes.
 
     .. note::
-        This flag is enabled by default for the GHDL, NVC and Verilator simulators.
+        This flag is enabled by default for the GHDL, NVC, RyuSim and Verilator simulators.
         More simulators may enable this flag by default in the future as they are gradually updated to properly apply inertial writes according to the respective standard.
 
     .. note::

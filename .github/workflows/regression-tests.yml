@@ -249,6 +249,22 @@ jobs:
         make -j $(sysctl -n hw.logicalcpu)
         sudo make install
 
+    - name: Set up RyuSim (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ryusim'
+      run: |
+        # RyuSim's release binary needs libstdc++ providing GLIBCXX_3.4.31/3.4.32,
+        # and its generated C++ uses <chrono> consteval that requires Clang >= 18 to
+        # compile. ubuntu-22.04 ships neither (libstdc++-12, Clang 14), so install
+        # libstdc++-13 and Clang 18. (ubuntu-24.04 already has both; this is a no-op.)
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test || true
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends cmake libstdc++-13-dev
+        wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
+        sudo ln -sf /usr/bin/clang-18 /usr/bin/clang
+        sudo ln -sf /usr/bin/clang++-18 /usr/bin/clang++
+        curl -fsSL https://ryusim.seiraiyu.com/install.sh | bash -s -- --version ${{matrix.sim-version}}
+        echo "$HOME/.ryusim/bin" >> "$GITHUB_PATH"
+
       # Windows Testing
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')

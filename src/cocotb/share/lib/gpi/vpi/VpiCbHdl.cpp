@@ -106,10 +106,10 @@ int VpiCbHdl::remove() {
     auto it = std::find(cb_queue.begin(), cb_queue.end(), this);
     if (it != cb_queue.end()) {
         cb_queue.erase(it);
-        // In Verilator some callbacks are recurring, so we *should* try to
-        // remove by falling through to the code below. Other sims don't like
-        // removing callbacks that have already fired.
-#ifndef VERILATOR
+        // In Verilator and RyuSim some callbacks are recurring, so we
+        // *should* try to remove by falling through to the code below.
+        // Other sims don't like removing callbacks that have already fired.
+#if !defined(VERILATOR) && !defined(RYUSIM)
         // It's already fired, we shouldn't try to vpi_remove_cb() it now.
         delete this;
         return 0;
@@ -142,11 +142,11 @@ int VpiCbHdl::run() {
     }
     // LCOV_EXCL_STOP
 
-// Verilator seems to think some callbacks are recurring that Icarus and other
+// Verilator and RyuSim treat some callbacks as recurring that Icarus and other
 // sims do not. So we remove all callbacks here after firing because Verilator
-// doesn't seem to mind (other sims do).
-#ifdef VERILATOR
-    // Remove recurring callback once fired for Verilator using vpi_remove_cb
+// and RyuSim don't mind (other sims do).
+#if defined(VERILATOR) || defined(RYUSIM)
+    // Remove recurring callback once fired
     auto err = vpi_remove_cb(get_handle<vpiHandle>());
     // LCOV_EXCL_START
     if (!err) {
