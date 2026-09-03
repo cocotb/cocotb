@@ -218,13 +218,13 @@ clean::
 
 # BPSim
 clean::
-    @$(RM) -rf bpsim.*
-    @$(RM) -rf pgsim.*
-    @$(RM) -rf *.db
-    @$(RM) -rf *.env
-    @$(RM) -rf *.log
-    @$(RM) -rf file.vcd
-    @$(RM) -rf sim_build
+	@$(RM) -rf bpsim.*
+	@$(RM) -rf pgsim.*
+	@$(RM) -rf *.db
+	@$(RM) -rf *.env
+	@$(RM) -rf *.log
+	@$(RM) -rf file.vcd
+	@$(RM) -rf sim_build
 	
 
 else
