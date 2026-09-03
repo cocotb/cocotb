@@ -216,6 +216,17 @@ clean::
 	@$(RM) -rf metrics.db
 	@$(RM) -rf file.vcd
 
+# BPSim
+clean::
+    @$(RM) -rf bpsim.*
+    @$(RM) -rf pgsim.*
+    @$(RM) -rf *.db
+    @$(RM) -rf *.env
+    @$(RM) -rf *.log
+    @$(RM) -rf file.vcd
+    @$(RM) -rf sim_build
+	
+
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED
