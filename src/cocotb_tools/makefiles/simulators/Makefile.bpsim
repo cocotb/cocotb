@@ -259,7 +259,7 @@ endif
 #------------------------------------------------------------------------------------
 	$(file > $(SIM_BUILD)/GenImage.log, $(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS))
 	$(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS)
-
+GPI_USERS ?= $(shell cocotb-config --libpython);$(shell cocotb-config --pygpi-entry-point)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 	COCOTB_TEST_MODULES=$(call deprecate,MODULE,COCOTB_TEST_MODULES) \
@@ -267,6 +267,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	COCOTB_TEST_FILTER=$(COCOTB_TEST_FILTER) \
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) \
+	GPI_USERS="$(GPI_USERS)" \
 	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS)
 	$(call check_results)
