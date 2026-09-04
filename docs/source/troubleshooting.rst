@@ -120,6 +120,69 @@ accessible via a TCP socket:
       telnet 127.0.0.1 4000
 
 
+.. _troubleshooting-attaching-debugger-python-debugpy:
+
+Python (using ``debugpy`` with an IDE)
+--------------------------------------
+
+`debugpy <https://github.com/microsoft/debugpy>`__ is Microsoft's reference debug
+adapter for Python and integrates with most modern IDEs (VS Code, PyCharm,
+Neovim DAP, etc.). It is typically a smoother alternative to ``remote_pdb``
+for interactive debugging of cocotb tests, especially when running headless
+commercial simulators where ``stdin`` is unavailable.
+
+1. Install ``debugpy``:
+
+   .. code:: shell
+
+      pip install debugpy
+
+2. In your test code, request ``debugpy`` to listen and pause until an IDE
+   attaches:
+
+   .. code:: python
+
+      import debugpy
+
+      listen_host, listen_port = debugpy.listen(("localhost", 5678))
+      cocotb.log.info(f"Waiting for debugger attach on {listen_host}:{listen_port}")
+      debugpy.wait_for_client()
+      breakpoint()  # execution stops here once attached
+
+3. Configure the IDE to attach to ``localhost:5678``. For Visual Studio Code,
+   add an entry to ``.vscode/launch.json``:
+
+   .. code:: json
+
+      {
+          "version": "0.2.0",
+          "configurations": [
+              {
+                  "name": "Python: attach cocotb",
+                  "type": "python",
+                  "request": "attach",
+                  "host": "localhost",
+                  "port": 5678
+              }
+          ]
+      }
+
+4. Start the simulation. After the "Waiting for debugger attach" log line
+   appears, launch the IDE's *attach* configuration. Execution resumes and
+   stops at ``breakpoint()``, with full IDE debugger support (breakpoints,
+   variable inspection, step over/into).
+
+.. note::
+
+   When running cocotb through the :ref:`Python Runner <howto-python-runner>`
+   flow under ``pytest``, the IDE can launch the runner and the embedded
+   simulator interpreter under a single debug session by forwarding the
+   ``debugpy`` adapter port through environment variables and calling
+   :func:`debugpy.connect` inside the test wrapper. See the worked example in
+   `discussion #2652 <https://github.com/cocotb/cocotb/discussions/2652>`__
+   (contributions from ``@marlonjames`` and ``@Jetsama``) for details.
+
+
 Embedding an IPython shell
 ==========================
 
