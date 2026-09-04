@@ -16,6 +16,9 @@ async def test_sv_if(dut):
     assert hasattr(dut.sv_if_i, "a")
     assert hasattr(dut.sv_if_i, "b")
     assert hasattr(dut.sv_if_i, "c")
+    assert hasattr(dut.child_inst.sv_if, "a")
+    assert hasattr(dut.child_inst.sv_if, "b")
+    assert hasattr(dut.child_inst.sv_if, "c")
 
 
 SIM_NAME = cocotb.SIM_NAME.lower()
