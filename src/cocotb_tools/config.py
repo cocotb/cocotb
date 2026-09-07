@@ -142,6 +142,7 @@ def lib_name_path(interface: str, simulator: str) -> Path:
         "cvc",
         "nvc",
         "dsim",
+        "ryusim",
     ]
     if simulator not in supported_sims:
         raise ValueError(
