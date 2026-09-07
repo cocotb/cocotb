@@ -71,6 +71,10 @@ async def check_len_semantics(dut):
         cocotb.preview.enable(feature)
         assert len(dut.i_packed) == 8
         assert len(dut.i_packed[0]) == 4
+        packed_struct = dut.i_pkt_arr2d[0][0]
+        assert isinstance(packed_struct, PackedObject)
+        with pytest.raises(TypeError, match="has no len"):
+            len(packed_struct)
         with pytest.raises(TypeError, match="has no len"):
             len(dut.i_bit)
     finally:
