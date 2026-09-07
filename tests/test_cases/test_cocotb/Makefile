@@ -28,6 +28,7 @@ COCOTB_TEST_MODULES := "\
 	test_ci,\
 	test_waiters,\
 	test_task_manager,\
+	test_wait_soon,\
 	"
 
 # test_timing_triggers.py requires a 1ps time precision.

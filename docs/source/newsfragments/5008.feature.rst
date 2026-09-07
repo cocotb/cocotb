@@ -1,0 +1,1 @@
+Modified :func:`~cocotb.triggers.with_timeout` to be used as a decorator with :func:`cocotb.test` and :func:`~cocotb.triggers.TaskManager.fork`.
