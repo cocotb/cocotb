@@ -83,6 +83,9 @@ int VhpiCbHdl::arm() {
     }
     // LCOV_EXCL_STOP
 
+    LOG_TRACE("VHPI: Registered callback %p for reason %s", new_hdl,
+              VhpiImpl::reason_to_string(cb_data.reason));
+
     m_obj_hdl = new_hdl;
     return 0;
 }
