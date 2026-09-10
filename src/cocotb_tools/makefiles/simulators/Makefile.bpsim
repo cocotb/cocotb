@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-CMD_BIN := bpsim
+CMD_BIN := bpsim -nc
 VHDL_COMP_BIN := bpvhcom
 V_COMP_BIN := bpvlcom
 
@@ -41,18 +41,18 @@ endif
 #------------------------------------------------------------------------------------
 #------------- Setting Flag for Verilog/VHDL Precompiled Librares -------------------
 #------------------------------------------------------------------------------------
-ifneq ($(filter PRECOMPILED_LIB_LOC_%,$(.VARIABLES)),)
+ifneq ($(filter PATH_PRECOMPILED_LIB_%,$(.VARIABLES)),)
     PRECOMPILED_LIBS := 1
 endif
 
 #------------------------------------------------------------------------------------
 #------------- Setting Flag for Verilog/VHDL Library Compile ------------------------
 #------------------------------------------------------------------------------------
-ifneq ($(filter VERILOG_LIB_SOURCES_%,$(.VARIABLES)),)
+ifneq ($(filter VERILOG_SOURCES_%,$(.VARIABLES)),)
     VERILOG_LIB_COMPILE := 1
 endif
 
-ifneq ($(filter VHDL_LIB_SOURCES_%,$(.VARIABLES)),)
+ifneq ($(filter VHDL_SOURCES_%,$(.VARIABLES)),)
     VHDL_LIB_COMPILE := 1
 endif
 
@@ -61,51 +61,69 @@ endif
 #------------------------------------------------------------------------------------
 LIB_SEARCH_ARGS  = $(foreach LIB, $(VHDL_LIB_ORDER),    -L $(LIB))
 LIB_SEARCH_ARGS += $(foreach LIB, $(VERILOG_LIB_ORDER), -L $(LIB))
-LIB_SEARCH_ARGS += $(foreach LIB, $(PRECOMPILED_LIB_ORDER), -L $(LIB))
+LIB_SEARCH_ARGS += $(foreach LIB, $(PRECOMPILED_LIB_LIST), -L $(LIB))
 
 #------------------------------------------------------------------------------------
 #-------------- Setting Flag for Verilog/VHDL Design Compile ------------------------
 #------------------------------------------------------------------------------------
-ifneq ($(filter VERILOG_SOURCES_%,$(.VARIABLES)),)
+ifneq ($(VERILOG_SOURCES),)
     VERILOG_DESIGN_COMPILE := 1
 endif
 
-ifneq ($(filter VHDL_SOURCES_%,$(.VARIABLES)),)
+ifneq ($(VHDL_SOURCES),)
     VHDL_DESIGN_COMPILE := 1
 endif
 
+#------------------------------------------------------------------------------------
+#-------------- Setting Flag for Verilog/VHDL Global Signal ------------------------
+#------------------------------------------------------------------------------------
+ifneq ($(VERILOG_GLOBAL_SIGNAL_SOURCE),)
+    VERILOG_GLBL_SIG_COMPILE := 1
+endif
+
+
+#====================================================================================
 WORK = work.
-BPSIM_WORK = bpsim_work
+ifdef TOPLEVEL_LIBRARY
+    BPSIM_WORK = $(TOPLEVEL_LIBRARY)
+else
+    BPSIM_WORK = bpsim_work
+endif
+
 
 TOPMODULE_ARG = -top $(WORK)$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+ifneq ($(VERILOG_GLOBAL_SIGNAL_SOURCE),)
+  VER_GLBL_SIG_ARG = -top $(WORK)$(VERILOG_GLOBAL_SIGNAL_NAME)
+endif
 
-# FP COMMON_ARGS = -nc -l bpsim.log -work $(SIM_BUILD)
-# FP COMMON_ARGS = -nc -l bpsim.log -work $(SIM_BUILD)/$(BPSIM_WORK)
 COMMON_ARGS = -nc -l bpsim.log
 
-# FP BPSIM_ARGS = $(COMMON_ARGS) -pli_lib $(shell cocotb-config --lib-name-path vpi bpsim) -lib work +acc+rwcbfsWF
 BPSIM_ARGS = $(COMMON_ARGS) -work $(SIM_BUILD)/$(BPSIM_WORK) -pli_lib $(shell cocotb-config --lib-name-path vpi bpsim) -lib work +acc+rwcbfsWF
 
-COMP_ARGS = $(COMMON_ARGS) $(SV) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+VER_COMP_ARGS = $(COMMON_ARGS) $(SV) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
-# FP GENIMAGE_ARGS = $(COMMON_ARGS) -genimage image $(LIB_SEARCH_ARGS) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+ifdef VERILOG_INCLUDE_DIRS
+    VER_COMP_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+ifdef VERILOG_SEARCH_DIRS
+    VER_SEARCH_ARGS = $(addprefix -y , $(VERILOG_SEARCH_DIRS))
+    VER_COMP_ARGS  += $(VER_SEARCH_ARGS) +libext+.v+.sv 
+endif
 GENIMAGE_ARGS = $(COMMON_ARGS) -work $(SIM_BUILD)/$(BPSIM_WORK) -genimage image $(LIB_SEARCH_ARGS) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
 RUN_ARGS = $(BPSIM_ARGS) -image image $(LIB_SEARCH_ARGS) $(WAVE_ARG)
 VHDL_COMP_ARGS = $(COMMON_ARGS) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
-# Args for compiling named Verilog libraries: omit -work from COMMON_ARGS to avoid duplicates
-VERILOG_LIB_COMP_ARGS = -nc -l bpsim.log $(SV) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
-
 #------------------------------------------------------------------------------------
 #-------- Macro definitions for Verilog/VHDL Precompiled Libraries existence checks --
 #------------------------------------------------------------------------------------
 define CheckPreCompiledLibs
-	$(foreach LIB, $(PRECOMPILED_LIB_ORDER), \
-		$(if $(PRECOMPILED_LIB_LOC_$(LIB)),,$(error PRECOMPILED_LIB_LOC_$(LIB)` is empty or undefined, but '$(LIB)' is present in PRECOMPILED_LIB_ORDER)))
-	$(foreach LIB_VAR, $(filter PRECOMPILED_LIB_ORDER_%, $(.VARIABLES)), \
-		$(eval _VLIB := $(patsubst PRECOMPILED_LIB_ORDER_%,%,$(LIB_VAR))) \
-		$(if $(filter $(_VLIB), $(PRECOMPILED_LIB_ORDER)),,$(error $(_VLIB) has PRECOMPILED_LIB_LOC set but is not listed in PRECOMPILED_LIB_ORDER)))
+	$(foreach LIB, $(PRECOMPILED_LIB_LIST), \
+		$(if $(PATH_PRECOMPILED_LIB_$(LIB)),,$(error PATH_PRECOMPILED_LIB_$(LIB)` is empty or undefined, but '$(LIB)' is present in PRECOMPILED_LIB_LIST)))
+	$(foreach LIB_VAR, $(filter PRECOMPILED_LIB_LIST_%, $(.VARIABLES)), \
+		$(eval _VLIB := $(patsubst PRECOMPILED_LIB_LIST_%,%,$(LIB_VAR))) \
+		$(if $(filter $(_VLIB), $(PRECOMPILED_LIB_LIST)),,$(error $(_VLIB) has PATH_PRECOMPILED_LIB set but is not listed in PRECOMPILED_LIB_LIST)))
 endef
 
 #------------------------------------------------------------------------------------
@@ -113,18 +131,24 @@ endef
 #------------------------------------------------------------------------------------
 define CheckVerilogLibSources
 	$(foreach LIB, $(VERILOG_LIB_ORDER), \
-		$(if $(VERILOG_LIB_SOURCES_$(LIB)),,$(error VERILOG_LIB_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VERILOG_LIB_ORDER)))
-	$(foreach SOURCES_VAR, $(filter VERILOG_LIB_SOURCES_%, $(.VARIABLES)), \
-		$(eval _VLIB := $(patsubst VERILOG_LIB_SOURCES_%,%,$(SOURCES_VAR))) \
-		$(if $(filter $(_VLIB), $(VERILOG_LIB_ORDER)),,$(error $(_VLIB) has VERILOG_LIB_SOURCES set but is not listed in VERILOG_LIB_ORDER)))
+		$(if $(VERILOG_SOURCES_$(LIB)),,$(error VERILOG_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VERILOG_LIB_ORDER)))
+	$(foreach SOURCES_VAR, $(filter VERILOG_SOURCES_%, $(.VARIABLES)), \
+		$(eval _VLIB := $(patsubst VERILOG_SOURCES_%,%,$(SOURCES_VAR))) \
+		$(if $(filter $(_VLIB), $(VERILOG_LIB_ORDER)),,$(error $(_VLIB) has VERILOG_SOURCES set but is not listed in VERILOG_LIB_ORDER)))
 endef
 
 define CheckVhdLibSources
 	$(foreach LIB, $(VHDL_LIB_ORDER), \
-		$(if $(VHDL_LIB_SOURCES_$(LIB)),,$(error VHDL_LIB_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VHDL_LIB_ORDER)))
-	$(foreach SOURCES_VAR, $(filter VHDL_LIB_SOURCES_%, $(.VARIABLES)), \
-		$(eval _VLIB := $(patsubst VHDL_LIB_SOURCES_%,%,$(SOURCES_VAR))) \
-		$(if $(filter $(_VLIB), $(VHDL_LIB_ORDER)),,$(error $(_VLIB) has VHDL_LIB_SOURCES set but is not listed in VHDL_LIB_ORDER)))
+		$(if $(VHDL_SOURCES_$(LIB)),,$(error VHDL_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VHDL_LIB_ORDER)))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
+		$(eval _VLIB := $(patsubst VHDL_SOURCES_%,%,$(SOURCES_VAR))) \
+		$(if $(filter $(_VLIB), $(VHDL_LIB_ORDER)),,$(error $(_VLIB) has VHDL_SOURCES set but is not listed in VHDL_LIB_ORDER)))
+endef
+#------------------------------------------------------------------------------------
+#--------  Map precompiled external libraries  --------------------------------------
+#------------------------------------------------------------------------------------
+define MapPreCompiledLibs
+	$(SIM_CMD_PREFIX) bplib -nc -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(PATH_PRECOMPILED_LIB_$(LIB))/$(LIB)
 endef
 #------------------------------------------------------------------------------------
 #-------- Macro definitions for Verilog/VHDL Libraries Compile and Mapping ----------
@@ -133,17 +157,17 @@ endef
 # Usage: $(foreach LIB, $(VHDL_LIB_ORDER), $(vhdl_CompileVhdLibs))
 #
 define CompileVerLibs
-	$(SIM_CMD_PREFIX) $(V_COMP) $(VERILOG_LIB_COMP_ARGS) -lib $(LIB) -work $(SIM_BUILD)/$(LIB) $(EXTRA_ARGS) $(VERILOG_LIB_SOURCES_$(LIB))
+	$(SIM_CMD_PREFIX) $(V_COMP) -lib $(LIB) -work $(SIM_BUILD)/$(LIB) $(EXTRA_ARGS) $(VERILOG_SOURCES_$(LIB)) $(VER_COMP_ARGS)
 endef
 
 define MapVerLibs
-	$(SIM_CMD_PREFIX) bplib -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
+	$(SIM_CMD_PREFIX) bplib -nc -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
 endef
 
 define CompileVhdLibs
-#        $(SIM_CMD_PREFIX) bplib -work $(SIM_BUILD)/$(1) 
+#        $(SIM_CMD_PREFIX) bplib -nc -work $(SIM_BUILD)/$(1) 
         $(foreach DEP,$(VHDL_LIB_DEPENDENCY_$(1)),$(call MapVhdDepLibs,$(1),$(DEP));)
-	$(SIM_CMD_PREFIX) $(VHDL_COMP) $(VHDL_COMP_ARGS) -lib $(1) -work $(SIM_BUILD)/$(1) $(EXTRA_ARGS) $(VHDL_LIB_SOURCES_$(1))
+	$(SIM_CMD_PREFIX) $(VHDL_COMP) $(VHDL_COMP_ARGS) -lib $(1) -work $(SIM_BUILD)/$(1) $(EXTRA_ARGS) $(VHDL_SOURCES_$(1))
 endef
 
 define MapVhdDepLibs
@@ -151,72 +175,52 @@ define MapVhdDepLibs
 endef
 
 define MapVhdLibs
-	$(SIM_CMD_PREFIX) bplib -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
+	$(SIM_CMD_PREFIX) bplib -nc -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
 endef
 #----------------------------------------------------------------------------------------------------
-# FP define CompileVhdLibs
-# FP 	$(SIM_CMD_PREFIX) $(VHDL_COMP) $(VHDL_COMP_ARGS) -lib $(LIB) -work $(SIM_BUILD)/$(LIB) $(EXTRA_ARGS) $(VHDL_SOURCES_$(LIB))
-# FP endef
-#
-# Map a compiled VHDL library into the bpsim workspace so it can be found at elaboration.
-# Usage: $(foreach LIB, $(VHDL_LIB_ORDER), $(MapVhdLibs))
-# FP define MapVhdLibs
-# FP 	$(SIM_CMD_PREFIX) bplib -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
-# FP endef
-#
-# Compile a named Verilog library from VERILOG_SOURCES_$(LIB) into $(SIM_BUILD)/$(LIB).
-# Usage: $(foreach LIB, $(VERILOG_LIB_ORDER), $(CompileVerLibs))
-# FP define CompileVerLibs
-# FP 	$(SIM_CMD_PREFIX) $(V_COMP) $(VERILOG_LIB_COMP_ARGS) -lib $(LIB) -work $(SIM_BUILD)/$(LIB) $(EXTRA_ARGS) $(VERILOG_SOURCES_$(LIB))
-# FP endef
-
-# Map a compiled Verilog library into the bpsim workspace so it can be found at elaboration.
-# Usage: $(foreach LIB, $(VERILOG_LIB_ORDER), $(MapVerLibs))
-# FP define MapVerLibs
-# FP 	$(SIM_CMD_PREFIX) bplib -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib $(LIB) $(SIM_BUILD)/$(LIB)
-# FP endef
 
 $(SIM_BUILD)/image.so: $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 
 #------------------------------------------------------------------------------------
-#--------------------------- Check VHDL_LIB_SOURCES_*  ------------------------------
+#------------------------------ Check PreCompiledLibs  ------------------------------
+#------------------------------------------------------------------------------------
+# Make sure all libs in VHDL_SOURCES_* are mentioned in VHDL_LIB_ORDER and vice versa
+ifneq ($(PRECOMPILED_LIBS),)
+	$(foreach LIB, $(PRECOMPILED_LIB_LIST), $(CheckPreCompiledLibs))
+endif
+
+#------------------------------------------------------------------------------------
+#---------------------- Mapping Precompiled Libraries to work area ------------------
+#------------------------------------------------------------------------------------
+	$(foreach LIB, $(PRECOMPILED_LIB_LIST), $(MapPreCompiledLibs);)
+	
+#------------------------------------------------------------------------------------
+#---------------------- VHDL IEEE Libraries to work area ----------------------------
+#------------------------------------------------------------------------------------
+	$(SIM_CMD_PREFIX) bplib -nc -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib ieee $(STD_LIBS)/ieee08
+
+#------------------------------------------------------------------------------------
+#--------------------------- Check VHDL_SOURCES_*  ------------------------------
 #------------------------------------------------------------------------------------
 # Make sure all libs in VHDL_SOURCES_* are mentioned in VHDL_LIB_ORDER and vice versa
 ifneq ($(VHDL_LIB_COMPILE),)
-	@echo "---------------------FP1 --B4 CheckVhdlLibSources"
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(CheckVhdLibSources))
-	@echo "---------------------FP2 -- Aft CheckVhdlLibSources"
 endif
 
 #------------------------------------------------------------------------------------------
-#--------------------------- Check VERILOG_LIB_SOURCES_*  ---------------------------------
+#--------------------------- Check VERILOG_SOURCES_*  ---------------------------------
 #------------------------------------------------------------------------------------------
 # Make sure all libs in VERILOG_SOURCES_* are mentioned in VERILOG_LIB_ORDER and vice versa
 ifneq ($(VERILOG_LIB_COMPILE),)
 	$(foreach LIB, $(VERILOG_LIB_ORDER), $(CheckVerilogLibSources))
 endif
-#
-#
-# -- FP to check if these lines are now needed ?
-#
-	@echo "FP -- after check vhdl sources"
-# FP	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
-#FP	# Make sure all libs in VERILOG_SOURCES_* are mentioned in VERILOG_LIB_ORDER and vice versa
-#FP	$(foreach LIB, $(VERILOG_LIB_ORDER), \
-#FP		$(if $(VERILOG_SOURCES_$(LIB)),,$(error VERILOG_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VERILOG_LIB_ORDER)))
-#FP	$(foreach SOURCES_VAR, $(filter VERILOG_SOURCES_%, $(.VARIABLES)), \
-#FP		$(eval _VLIB := $(patsubst VERILOG_SOURCES_%,%,$(SOURCES_VAR))) \
-#FP		$(if $(filter $(_VLIB), $(VERILOG_LIB_ORDER)),,$(error $(_VLIB) has VERILOG_SOURCES set but is not listed in VERILOG_LIB_ORDER)))
-#FP	# Compile VHDL libraries in dependency order, then map each into the workspace
 
 #------------------------------------------------------------------------------------
 #---------------------- Compiling and Mapping Vhdl Libraries ------------------------
 #------------------------------------------------------------------------------------
 ifneq ($(VHDL_LIB_COMPILE),)
 	$(file > $(SIM_BUILD)/CompileVhdLibs.log, $(foreach LIB,$(VHDL_LIB_ORDER),$(call CompileVhdLibs,$(LIB))))
-	@echo "---------------------FP -- before"
 	$(foreach LIB,$(VHDL_LIB_ORDER),$(call CompileVhdLibs,$(LIB));)
-	@echo "FP -- after"
 
 endif
 #------------------------------------------------------------------------------------
@@ -228,7 +232,6 @@ endif
 #------------------- Compiling and Mapping Verilog Libraries ------------------------
 #------------------------------------------------------------------------------------
 ifneq ($(VERILOG_LIB_COMPILE),)
-	@echo "FP1 -- befire check vhdl lib compile"
 	$(file > $(SIM_BUILD)/CompileVerLibs.log, $(foreach LIB, $(VERILOG_LIB_ORDER), $(CompileVerLibs)))
 	$(foreach LIB, $(VERILOG_LIB_ORDER), $(CompileVerLibs);)
 endif
@@ -238,27 +241,25 @@ endif
 ifneq ($(VERILOG_LIB_COMPILE),)
 	$(file > $(SIM_BUILD)/MapVerLibs.log, $(foreach LIB, $(VERILOG_LIB_ORDER), $(MapVerLibs)))
 	$(foreach LIB, $(VERILOG_LIB_ORDER), $(MapVerLibs);)
-# FP	bplib -work $(SIM_BUILD)/$(BPSIM_WORK) map -lib my_vlib $(SIM_BUILD)/my_vlib
-	@echo "FP -- afer ver lib map"
 endif
 
 ifneq ($(VHDL_SOURCES),)
-	@echo "FP -- Befire VHDL_COMP"
 	$(SIM_CMD_PREFIX) $(VHDL_COMP) $(VHDL_COMP_ARGS) -work $(SIM_BUILD)/$(BPSIM_WORK) $(EXTRA_ARGS) $(VHDL_SOURCES)
-	@echo "FP -- After VHDL_COMP"
-#FP 	$(SIM_CMD_PREFIX) bplib map -lib work $(SIM_BUILD)/$(BPSIM_WORK)
-#	No need for mapping since there is no vhdl lib created for just vhdl sources 
-#	@echo "FP -- After bplib map"
 endif
-	@echo "FP -- before VL_COMP"
-# FP	$(SIM_CMD_PREFIX) $(V_COMP) $(COMP_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
-	$(SIM_CMD_PREFIX) $(V_COMP) $(COMP_ARGS) -work $(SIM_BUILD)/$(BPSIM_WORK) $(EXTRA_ARGS) $(VERILOG_SOURCES)
-	@echo "FP -- After VL_COMP"
+
+ifneq ($(VERILOG_SOURCES),)
+	$(SIM_CMD_PREFIX) $(V_COMP) -work $(SIM_BUILD)/$(BPSIM_WORK) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(VER_COMP_ARGS)
+endif
+
+ifneq ($(VERILOG_GLOBAL_SIGNAL_SOURCE),)
+	$(SIM_CMD_PREFIX) $(V_COMP) -work $(SIM_BUILD)/$(BPSIM_WORK) $(EXTRA_ARGS) $(VERILOG_GLOBAL_SIGNAL_SOURCE) $(VER_COMP_ARGS)
+endif
 #------------------------------------------------------------------------------------
 #----------------------- generate image file image.so   -----------------------------
 #------------------------------------------------------------------------------------
-	$(file > $(SIM_BUILD)/GenImage.log, $(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS))
-	$(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS)
+	$(file > $(SIM_BUILD)/GenImage.log, $(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(VER_GLBL_SIG_ARG) $(EXTRA_ARGS))
+	$(SIM_CMD_PREFIX) $(CMD) $(GENIMAGE_ARGS) $(TOPMODULE_ARG) $(VER_GLBL_SIG_ARG) $(EXTRA_ARGS)
+
 GPI_USERS ?= $(shell cocotb-config --libpython);$(shell cocotb-config --pygpi-entry-point)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
@@ -269,7 +270,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
 	GPI_EXTRA=$(GPI_EXTRA) \
 	GPI_USERS="$(GPI_USERS)" \
 	TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS)
+	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(VER_GLBL_SIG_ARG) $(EXTRA_ARGS)
 	$(call check_results)
 
 #------------------------------------------------------------------------------------
