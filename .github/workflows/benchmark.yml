@@ -69,6 +69,8 @@ jobs:
         sudo make install
 
     - name: Run benchmark
+      env:
+        COCOTB_PREVIEW: "1"
       run: |
         pip install pytest pytest-benchmark
         pip install .
