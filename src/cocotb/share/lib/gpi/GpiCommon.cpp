@@ -13,14 +13,14 @@
 #include <utility>
 #include <vector>
 
+#include "../intrusive_deque.hpp"
+#include "./dynload.hpp"
 #include "./gpi_priv.hpp"
 #include "./logging.hpp"
 
 using namespace std;
 
 static vector<GpiImplInterface *> registered_impls;
-static vector<std::pair<int (*)(void *), void *>> start_of_sim_time_cbs;
-static vector<std::pair<void (*)(void *), void *>> end_of_sim_time_cbs;
 static vector<std::pair<void (*)(void *), void *>> finalize_cbs;
 
 class GpiHandleStore {
@@ -81,7 +81,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
     for (iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
         if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("GPI: %s support already registered, check GPI_EXTRA",
+            LOG_WARN("GPI: %s support already registered, check GPI_IMPL",
                      func_tbl->get_name_c());
             return -1;
         }
@@ -92,52 +92,24 @@ int gpi_register_impl(GpiImplInterface *func_tbl) {
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }
 
-void gpi_start_of_sim_time() {
-    for (auto &cb_info : start_of_sim_time_cbs) {
-        // start_of_sime_time should never fail, this should be moved to
-        // gpi_load_users, as should the (argc,argv)
-        LOG_TRACE("[ GPI Start Sim ] => User Start callback");
-        int error = cb_info.first(cb_info.second);
-        LOG_TRACE("User Start callback => [ GPI Start Sim ]");
-        if (error) {
-            gpi_end_of_sim_time();
-        }
-    }
-}
-
-void gpi_end_of_sim_time() {
-    for (auto &cb_info : end_of_sim_time_cbs) {
-        LOG_TRACE("[ GPI End Sim ] => User End callback");
-        cb_info.first(cb_info.second);
-        LOG_TRACE("User End callback => [ GPI End Sim ]");
-    }
-    // always request simulation termination at end_of_sim_time
-    gpi_finish();
-}
-
-void gpi_finish() {
-    if (!gpi_finalizing) {
-        registered_impls[0]->sim_end();
-        gpi_finalizing = true;
-    }
-}
+void gpi_finish() { gpi_finalizing = true; }
 
 void gpi_finalize(void) {
-    CLEAR_STORE();
     for (auto it = finalize_cbs.rbegin(); it != finalize_cbs.rend(); it++) {
         LOG_TRACE("[ GPI Finalize ] => User Finalize callback");
         it->first(it->second);
         LOG_TRACE("User Finalize callback => [ GPI Finalize ]");
     }
-}
-
-void gpi_check_cleanup(void) {
-    if (gpi_finalizing) {
-        gpi_finalize();
-    }
+    CLEAR_STORE();
 }
 
 bool gpi_is_finalizing(void) { return gpi_finalizing; }
+
+void gpi_end_sim() {
+    // Only called if a user called gpi_finish() before the end of sim time
+    // callback fired.
+    registered_impls[0]->sim_end();
+}
 
 static void gpi_load_libs(std::vector<std::string> to_load) {
     std::vector<std::string>::iterator iter;
@@ -149,7 +121,7 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
             ':');  // find from right since path could contain colons (Windows)
         if (idx == std::string::npos) {
             // no colon in the string
-            printf("cocotb: Error parsing GPI_EXTRA %s\n", arg.c_str());
+            printf("cocotb: Error parsing GPI_IMPL %s\n", arg.c_str());
             exit(1);
         }
 
@@ -165,13 +137,10 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
 
         void *entry_point = utils_dyn_sym(lib_handle, func_name.c_str());
         if (!entry_point) {
-            char const *fmt =
+            printf(
                 "cocotb: Unable to find entry point %s for shared library "
-                "%s\n%s";
-            char const *msg =
-                "        Perhaps you meant to use `,` instead of `:` to "
-                "separate library names, as this changed in cocotb 1.4?\n";
-            printf(fmt, func_name.c_str(), lib_name.c_str(), msg);
+                "%s\n",
+                func_name.c_str(), lib_name.c_str());
             exit(1);
         }
 
@@ -182,75 +151,11 @@ static void gpi_load_libs(std::vector<std::string> to_load) {
     }
 }
 
-static int gpi_load_users() {
-    auto users = getenv("GPI_USERS");
-    if (!users) {
-        LOG_ERROR("No GPI_USERS specified, exiting...");
-        return -1;
-    }
-    // I would have loved to use istringstream and getline, but it causes a
-    // compilation issue when compiling with newer GCCs against C++11.
-    std::string users_str = users;
-    std::string::size_type start_idx = 0;
-    bool done = false;
-    while (!done) {
-        auto next_delim = users_str.find(';', start_idx);
-        if (next_delim == std::string::npos) {
-            done = true;
-            next_delim = users_str.length();
-        }
-        auto user = users_str.substr(start_idx, next_delim - start_idx);
-        start_idx = next_delim + 1;
-
-        auto split_idx = user.rfind(',');
-
-        std::string lib_name;
-        std::string func_name;
-        if (split_idx == std::string::npos) {
-            lib_name = std::move(user);
-        } else {
-            lib_name = user.substr(0, split_idx);
-            func_name = user.substr(split_idx + 1, std::string::npos);
-        }
-
-        void *lib_handle = utils_dyn_open(lib_name.c_str());
-        if (!lib_handle) {
-            LOG_ERROR("Error loading library '%s'", lib_name.c_str());
-            gpi_finish();
-            return -1;
-        }
-
-        if (split_idx != std::string::npos) {
-            void *func_handle = utils_dyn_sym(lib_handle, func_name.c_str());
-            if (!func_handle) {
-                LOG_ERROR(
-                    "Error getting entry func '%s' from loaded library '%s'",
-                    func_name.c_str(), lib_name.c_str());
-                gpi_finish();
-                return -1;
-            }
-
-            LOG_INFO("Running entry func '%s' from loaded library '%s'",
-                     func_name.c_str(), lib_name.c_str());
-
-            auto entry_func = (void (*)(void))func_handle;
-            LOG_TRACE("[ GPI Init ] => User Init (%s:%s)", lib_name.c_str(),
-                      func_name.c_str());
-            entry_func();
-            LOG_TRACE("User Init => [ GPI Init ]");
-        } else {
-            LOG_INFO("Loaded entry library: '%s'", lib_name.c_str());
-        }
-    }
-
-    return 0;
-}
-
 void gpi_entry_point() {
     LOG_TRACE("=> [ GPI Init ]");
 
     /* Lets look at what other libs we were asked to load too */
-    char *lib_env = getenv("GPI_EXTRA");
+    char *lib_env = getenv("GPI_IMPL");
 
     if (lib_env) {
         std::string lib_list = lib_env;
@@ -269,11 +174,6 @@ void gpi_entry_point() {
         }
 
         gpi_load_libs(to_load);
-    }
-
-    // Load users
-    if (gpi_load_users()) {
-        return;
     }
 
     gpi_print_registered_impl();
@@ -307,6 +207,16 @@ GPI_EXPORT void gpi_init_logging_and_debug() {
             // LCOV_EXCL_STOP
         }
     }
+}
+
+int gpi_initialize() {
+    gpi_init_logging_and_debug();
+    gpi_entry_point();
+
+    // Some simulators load their interface library during compilation or
+    // elaboration. In that case no implementation is registered so we exit
+    // gracefully.
+    return gpi_has_registered_impl() ? 0 : 1;
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low) {
@@ -744,14 +654,111 @@ const char *GpiImplInterface::get_name_c() { return m_name.c_str(); }
 
 const string &GpiImplInterface::get_name_s() { return m_name; }
 
-int gpi_register_start_of_sim_time_callback(int (*cb)(void *), void *cb_data) {
-    start_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
-    return 0;
+class InternalCbHdl : public GpiCbHdl, public detail::IntrusiveDequeNode {
+  public:
+    InternalCbHdl(int (*cb_func)(void *), void *cb_data) noexcept
+        : m_cb_func(cb_func), m_cb_data(cb_data) {}
+
+    ~InternalCbHdl() noexcept override { deque_remove(); }
+
+    int remove() override {
+        deque_remove();
+        delete this;
+        return 0;
+    }
+
+    int run() {
+        int error = m_cb_func(m_cb_data);
+        delete this;
+        return error;
+    }
+
+    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept override {
+        this->m_cb_func = cb_func;
+        this->m_cb_data = cb_data;
+    }
+
+    void get_cb_info(int (**cb_func)(void *),
+                     void **cb_data) const noexcept override {
+        if (cb_func) {
+            *cb_func = m_cb_func;
+        }
+        if (cb_data) {
+            *cb_data = m_cb_data;
+        }
+    }
+
+  private:
+    int (*m_cb_func)(void *);
+    void *m_cb_data;
+};
+
+static detail::IntrusiveDeque<InternalCbHdl> start_of_sim_time_cbs;
+static GpiCbHdl *start_of_sim_time_underlying_cb_hdl = nullptr;
+
+static int run_startup_callbacks(void *) {
+    int error = 0;
+    while (auto cb = start_of_sim_time_cbs.pop_front()) {
+        LOG_TRACE("[ GPI Start of Sim ] => User Start of Sim callback");
+        error |= cb->run();
+        LOG_TRACE("User Start of Sim callback => [ GPI Start of Sim ]");
+    }
+    start_of_sim_time_underlying_cb_hdl = nullptr;
+    return error;
 }
 
-int gpi_register_end_of_sim_time_callback(void (*cb)(void *), void *cb_data) {
-    end_of_sim_time_cbs.push_back(std::make_pair(cb, cb_data));
-    return 0;
+gpi_cb_hdl gpi_register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                   void *cb_data) {
+    if (!start_of_sim_time_underlying_cb_hdl) {
+        // It should not matter which implementation we use for this so just
+        // pick the first one
+        GpiCbHdl *cb_hdl =
+            registered_impls[0]->register_start_of_sim_time_callback(
+                run_startup_callbacks, nullptr);
+        if (!cb_hdl) {
+            LOG_ERROR("Failed to register a start of sim time callback");
+            return nullptr;
+        }
+        start_of_sim_time_underlying_cb_hdl = cb_hdl;
+    }
+    auto cb_hdl = new InternalCbHdl(cb_func, cb_data);
+    start_of_sim_time_cbs.push_back(cb_hdl);
+    return cb_hdl;
+}
+
+static detail::IntrusiveDeque<InternalCbHdl> end_of_sim_time_cbs;
+static GpiCbHdl *end_of_sim_time_underlying_cb_hdl = nullptr;
+
+static int run_end_of_sim_callbacks(void *) {
+    int error = 0;
+    while (auto cb = end_of_sim_time_cbs.pop_front()) {
+        LOG_TRACE("[ GPI End of Sim ] => User End of Sim callback");
+        error |= cb->run();
+        LOG_TRACE("User End of Sim callback => [ GPI End of Sim ]");
+    }
+    end_of_sim_time_underlying_cb_hdl = nullptr;
+    return error;
+}
+
+void gpi_end_of_sim_time() { run_end_of_sim_callbacks(nullptr); }
+
+gpi_cb_hdl gpi_register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                 void *cb_data) {
+    if (!end_of_sim_time_underlying_cb_hdl) {
+        // It should not matter which implementation we use for this so just
+        // pick the first one
+        GpiCbHdl *cb_hdl =
+            registered_impls[0]->register_end_of_sim_time_callback(
+                run_end_of_sim_callbacks, nullptr);
+        if (!cb_hdl) {
+            LOG_ERROR("Failed to register an end of sim time callback");
+            return nullptr;
+        }
+        end_of_sim_time_underlying_cb_hdl = cb_hdl;
+    }
+    auto cb_hdl = new InternalCbHdl(cb_func, cb_data);
+    end_of_sim_time_cbs.push_back(cb_hdl);
+    return cb_hdl;
 }
 
 int gpi_register_finalize_callback(void (*cb)(void *), void *cb_data) {

@@ -186,6 +186,8 @@ int handle_gpi_callback(void *user_data) {
         }
         // Clear error so re-entering Python doesn't fail.
         PyErr_Clear();
+        // Mark the simulator for finalization.
+        gpi_finish();
         return -1;
     }
 
@@ -435,6 +437,91 @@ static PyObject *register_value_change_callback(
         (gpi_function_t)handle_gpi_callback, cb_data, sig_hdl, edge);
 
     // Check success
+    PyObject *rv = gpi_hdl_New(hdl);
+
+    return rv;
+}
+
+static PyObject *register_start_of_sim_time_callback(PyObject *,
+                                                     PyObject *args) {
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
+    Py_ssize_t numargs = PyTuple_Size(args);
+
+    if (numargs < 1) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Attempt to register start of sim time callback "
+                        "without enough arguments!\n");
+        return NULL;
+    }
+
+    // Extract the callback function
+    PyObject *function = PyTuple_GetItem(args, 0);  // borrow reference
+    if (!PyCallable_Check(function)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "Attempt to register start of sim time without supplying a "
+            "callback!\n");
+        return NULL;
+    }
+
+    // Remaining args for function
+    PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);  // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
+    DEFER(Py_DECREF(fArgs));
+
+    PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
+
+    gpi_cb_hdl hdl = gpi_register_start_of_sim_time_callback(
+        (gpi_function_t)handle_gpi_callback, cb_data);
+
+    PyObject *rv = gpi_hdl_New(hdl);
+
+    return rv;
+}
+
+static PyObject *register_end_of_sim_time_callback(PyObject *, PyObject *args) {
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
+    Py_ssize_t numargs = PyTuple_Size(args);
+
+    if (numargs < 1) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Attempt to register end of sim time callback "
+                        "without enough arguments!\n");
+        return NULL;
+    }
+
+    // Extract the callback function
+    PyObject *function = PyTuple_GetItem(args, 0);  // borrow reference
+    if (!PyCallable_Check(function)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "Attempt to register end of sim time without supplying a "
+            "callback!\n");
+        return NULL;
+    }
+
+    // Remaining args for function
+    PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);  // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
+    DEFER(Py_DECREF(fArgs));
+
+    PythonCallback *cb_data = new PythonCallback(function, fArgs, NULL);
+
+    gpi_cb_hdl hdl = gpi_register_end_of_sim_time_callback(
+        (gpi_function_t)handle_gpi_callback, cb_data);
+
     PyObject *rv = gpi_hdl_New(hdl);
 
     return rv;
@@ -831,23 +918,6 @@ static PyObject *initialize_logger(PyObject *, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *set_sim_event_callback(PyObject *, PyObject *args) {
-    if (pEventFn) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Simulator event callback already set!");
-        return NULL;
-    }
-
-    PyObject *sim_event_callback;
-    if (!PyArg_ParseTuple(args, "O", &sim_event_callback)) {
-        PyErr_Print();
-        Py_RETURN_NONE;
-    }
-    Py_INCREF(sim_event_callback);
-    pEventFn = sim_event_callback;
-    Py_RETURN_NONE;
-}
-
 class GpiClock {
   public:
     GpiClock(GpiObjHdl *clk_sig) : clk_signal(clk_sig) {}
@@ -1181,6 +1251,20 @@ static PyMethodDef SimulatorMethods[] = {
                "register_rwsynch_callback(func: Callable[..., Any], *args: "
                "Any) -> cocotb.simulator.sim_callback\n"
                "Register a callback for the read-write phase.")},
+    {"register_start_of_sim_time_callback",
+     WRAP(register_start_of_sim_time_callback), METH_VARARGS,
+     PyDoc_STR("register_start_of_sim_time_callback(func, /, *args)\n"
+               "--\n\n"
+               "register_start_of_sim_time_callback(func: Callable[..., Any], "
+               "*args: Any) -> cocotb.simulator.sim_callback\n"
+               "Register a callback for the start of simulation.")},
+    {"register_end_of_sim_time_callback",
+     WRAP(register_end_of_sim_time_callback), METH_VARARGS,
+     PyDoc_STR("register_end_of_sim_time_callback(func, /, *args)\n"
+               "--\n\n"
+               "register_end_of_sim_time_callback(func: Callable[..., Any], "
+               "*args: Any) -> cocotb.simulator.sim_callback\n"
+               "Register a callback for the end of simulation.")},
     {"stop_simulator", WRAP(stop_simulator), METH_VARARGS,
      PyDoc_STR("stop_simulator()\n"
                "--\n\n"
@@ -1246,12 +1330,6 @@ static PyMethodDef SimulatorMethods[] = {
                "get_logger: Callable[[str], Logger]"
                ") -> None\n"
                "Initialize the GPI logger with Python logging functions.")},
-    {"set_sim_event_callback", WRAP(set_sim_event_callback), METH_VARARGS,
-     PyDoc_STR("set_sim_event_callback(sim_event_callback, /)\n"
-               "--\n\n"
-               "set_sim_event_callback(sim_event_callback: Callable[[], "
-               "object]) -> None\n"
-               "Set the callback for simulator events.")},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 

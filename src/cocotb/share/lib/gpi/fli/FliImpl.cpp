@@ -18,7 +18,6 @@
 #include "_vendor/tcl/tcl.h"
 
 void FliImpl::sim_end() {
-    m_sim_finish_cb->remove();
     if (mti_NowUpper() == 0 && mti_Now() == 0 && mti_Delta() == 0) {
         mti_Quit();
     } else {
@@ -651,6 +650,34 @@ GpiCbHdl *FliImpl::register_nexttime_callback(int (*cb_func)(void *),
     return cb_hdl;
 }
 
+GpiCbHdl *FliImpl::register_start_of_sim_time_callback(int (*cb_func)(void *),
+                                                       void *cb_data) {
+    auto cb_hdl = new FliStartupCbHdl(this);
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
+
+GpiCbHdl *FliImpl::register_end_of_sim_time_callback(int (*cb_func)(void *),
+                                                     void *cb_data) {
+    auto cb_hdl = new FliShutdownCbHdl(this);
+    int err = cb_hdl->arm();
+    // LCOV_EXCL_START
+    if (err) {
+        delete cb_hdl;
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    cb_hdl->set_cb_info(cb_func, cb_data);
+    return cb_hdl;
+}
+
 GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl,
                                      gpi_iterator_sel type) {
     GpiIterator *new_iter = NULL;
@@ -1105,68 +1132,12 @@ void FliIterator::populate_handle_list(FliIterator::OneToMany childType) {
     }
 }
 
-static int startup_callback(void *) {
-    LOG_TRACE("GPI => [ GPI (FLI startup) ]");
-    gpi_start_of_sim_time();
-    LOG_TRACE("[ GPI (FLI startup) ] => GPI");
-    return 0;
-}
-
-static int shutdown_callback(void *) {
-    LOG_TRACE("GPI => [ GPI (FLI shutdown) ]");
-    gpi_end_of_sim_time();
-    LOG_TRACE("[ GPI (FLI shutdown) ] => GPI");
-    return 0;
-}
-
-void FliImpl::main() noexcept {
-    auto startup_cb = new FliStartupCbHdl(this);
-    auto err = startup_cb->arm();
-    // LCOV_EXCL_START
-    if (err) {
-        LOG_CRITICAL(
-            "FLI: Unable to register startup callback! Simulation will end.");
-        delete startup_cb;
-        exit(1);
-    }
-    // LCOV_EXCL_STOP
-    startup_cb->set_cb_info(startup_callback, nullptr);
-
-    auto shutdown_cb = new FliShutdownCbHdl(this);
-    err = shutdown_cb->arm();
-    // LCOV_EXCL_START
-    if (err) {
-        LOG_CRITICAL(
-            "FLI: Unable to register shutdown callback! Simulation will end.");
-        startup_cb->remove();
-        delete shutdown_cb;
-        exit(1);
-    }
-    // LCOV_EXCL_STOP
-    shutdown_cb->set_cb_info(shutdown_callback, nullptr);
-    m_sim_finish_cb = shutdown_cb;
-
-    gpi_register_impl(this);
-    gpi_entry_point();
-}
-
-// This is run by GPI when requested for mixed-language simulations
+// Loaded by GPI via GPI_IMPL.
 static void register_impl() {
     LOG_TRACE("GPI Init => [ FLI (register_impl) ]");
     auto fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
     LOG_TRACE("[ FLI (register_impl) ] => GPI Init");
-}
-
-extern "C" {
-// This is run by the simulator at startup when this is the main GPI entrypoint
-COCOTBFLI_EXPORT void cocotb_init() {
-    gpi_init_logging_and_debug();
-    LOG_TRACE("Sim => [ FLI (cocotb_init) ]");
-    auto fli_table = new FliImpl("FLI");
-    fli_table->main();
-    LOG_TRACE("[ FLI (cocotb_init) ] => Sim");
-}
 }
 
 GPI_ENTRY_POINT(cocotbfli, register_impl);
