@@ -15,7 +15,6 @@ if sys.version_info >= (3, 10):
 
 ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 
-
 _randomResolveRng = Random()
 
 _01lookup = ("0", "1")
@@ -37,7 +36,7 @@ _rnd_table = _random_resolve_table()
 
 _resolve_tables: dict[str, dict[int, int]] = {
     "error": {},
-    "weak": str.maketrans("LHW", "01X"),
+    "weak": str.maketrans("LH", "01"),
     "zeros": str.maketrans("LHUXZW-", "0100000"),
     "ones": str.maketrans("LHUXZW-", "0111111"),
 }
@@ -63,6 +62,10 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
         resolve_table = _resolve_tables[resolver]
 
         def resolve_func(value: str) -> str:
+            if resolver == "weak" and any(char in value for char in "WUXZ-"):
+                raise ValueError("Cannot resolve unknown values with 'weak' resolver")
+            if resolver == "error" and any(char in value for char in "LHWUXZ-"):
+                raise ValueError("Cannot resolve unknown values with 'error' resolver")
             return value.translate(resolve_table)
 
     return resolve_func
