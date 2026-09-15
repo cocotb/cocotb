@@ -366,7 +366,7 @@ def with_timeout(*args: Any, **kwargs: Any) -> Any:
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
     .. versionchanged:: 2.2
-        Allow this function to be used as a decorator
+        Allow this function to be used as a decorator.
 
     """
 
