@@ -12,7 +12,8 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Awaitable, Generator
 from decimal import Decimal
-from typing import Any, TypeVar, cast, overload
+from functools import wraps
+from typing import Any, Callable, TypeVar, cast, overload
 
 import cocotb.handle
 from cocotb._base_triggers import NullTrigger, Trigger
@@ -293,12 +294,24 @@ class SimTimeoutError(TimeoutError):
     """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
-async def with_timeout(
+@overload
+def with_timeout(
     trigger: Awaitable[T],
     timeout_time: float | Decimal,
     timeout_unit: TimeUnit = "step",
     round_mode: RoundMode | None = None,
-) -> T:
+) -> Awaitable[T]: ...
+
+
+@overload
+def with_timeout(
+    timeout_time: float | Decimal,
+    timeout_unit: TimeUnit = "step",
+    round_mode: RoundMode | None = None,
+) -> Callable[[Callable[..., Awaitable[T]]], Callable[..., Awaitable[T]]]: ...
+
+
+def with_timeout(*args: Any, **kwargs: Any) -> Any:
     r"""Wait on any awaitable, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
@@ -352,11 +365,70 @@ async def with_timeout(
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
 
+    .. versionchanged:: 2.2
+        Allow this function to be used as a decorator.
+
     """
-    i, res = await select(
-        Timer(timeout_time, timeout_unit, round_mode=round_mode), trigger
-    )
-    if i == 0:
-        raise SimTimeoutError
+
+    def get_argument(index: int, name: str, default: Any = None) -> Any:
+        if len(args) > index:
+            return args[index]
+        return kwargs.pop(name, default)
+
+    trigger_is_keyword = "trigger" in kwargs
+    if trigger_is_keyword:
+        trigger = kwargs.pop("trigger")
+        if args:
+            timeout_time = get_argument(0, "timeout_time")
+            timeout_unit = get_argument(1, "timeout_unit", "step")
+            round_mode = get_argument(2, "round_mode")
+        else:
+            timeout_time = kwargs.pop("timeout_time")
+            timeout_unit = kwargs.pop("timeout_unit", "step")
+            round_mode = kwargs.pop("round_mode", None)
+    elif args:
+        trigger_or_timeout = args[0]
     else:
-        return cast("T", res)
+        trigger_or_timeout = kwargs.pop("timeout_time")
+
+    if not trigger_is_keyword and isinstance(trigger_or_timeout, (int, float, Decimal)):
+        # decorator form
+        timeout = trigger_or_timeout
+        timeout_unit = get_argument(1, "timeout_unit", "step")
+        round_mode = get_argument(2, "round_mode")
+
+        def decorator(
+            func: Callable[..., Awaitable[T]],
+        ) -> Callable[..., Awaitable[T]]:
+            @wraps(func)
+            async def wrapped(*args: Any, **kwargs: Any) -> T:
+                return await with_timeout(
+                    func(*args, **kwargs),
+                    timeout,
+                    timeout_unit,
+                    round_mode,
+                )
+
+            return wrapped
+
+        return decorator
+
+    if not trigger_is_keyword:
+        trigger = trigger_or_timeout
+        timeout_time = get_argument(1, "timeout_time")
+        timeout_unit = get_argument(2, "timeout_unit", "step")
+        round_mode = get_argument(3, "round_mode")
+
+    # direct/awaitable form
+    async def run() -> T:
+        assert timeout_time is not None
+        i, res = await select(
+            Timer(timeout_time, timeout_unit, round_mode=round_mode),
+            trigger,
+        )
+        if i == 0:
+            raise SimTimeoutError
+        else:
+            return cast("T", res)
+
+    return run()
