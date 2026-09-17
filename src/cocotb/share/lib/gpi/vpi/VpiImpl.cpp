@@ -438,7 +438,8 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
         if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
                 auto rgn_type = vpi_get(vpiType, rgn);
-                if (rgn_type == vpiGenScope || rgn_type == vpiModule) {
+                if (rgn_type == vpiGenScope || rgn_type == vpiModule ||
+                    rgn_type == vpiInterface) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
                     if (VpiImpl::compare_generate_labels(rgn_name, name)) {
                         new_hdl = parent_hdl;
