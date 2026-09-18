@@ -197,6 +197,45 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         return NULL;
     }
 
+    // resolve via reference if possible
+    std::string resolved_name = name;
+    std::string resolved_fq_name = fq_name;
+    vpiHandle resolved_hdl = NULL;
+    if (type == vpiRefObj) {
+        vpiHandle actual_hdl = vpi_handle(vpiActual, new_hdl);
+        if (actual_hdl == NULL) {
+            LOG_WARN("VPI: Could not resolve vpiActual for vpiRefObj %s",
+                     fq_name.c_str());
+            return NULL;
+        }
+
+        if (vpi_get(vpiType, actual_hdl) == vpiModport) {
+            vpiHandle iface_hdl = vpi_handle(vpiInterface, actual_hdl);
+            if (iface_hdl == NULL) {
+                LOG_WARN("VPI: Could not resolve vpiInterface for modport %s",
+                         fq_name.c_str());
+                vpi_free_object(actual_hdl);
+                return NULL;
+            }
+            vpi_free_object(actual_hdl);
+            actual_hdl = iface_hdl;
+        }
+
+        resolved_hdl = actual_hdl;
+        new_hdl = actual_hdl;
+        type = vpi_get(vpiType, new_hdl);
+
+        if (const char *actual_name = vpi_get_str(vpiName, new_hdl)) {
+            resolved_name = actual_name;
+        }
+        if (const char *full_name = vpi_get_str(vpiFullName, new_hdl)) {
+            resolved_fq_name = full_name;
+        }
+        LOG_DEBUG("VPI: Resolved vpiRefObj %s to %s(%d) at %s", fq_name.c_str(),
+                  vpi_get_str(vpiType, new_hdl), type,
+                  resolved_fq_name.c_str());
+    }
+
     /* What sort of instance is this ?*/
     switch (type) {
         case vpiNet:
@@ -312,9 +351,10 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiGenScopeArray: {
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
 
-            if (hdl_name != name) {
+            if (hdl_name != resolved_name) {
                 LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
-                          fq_name.c_str(), hdl_name.c_str(), name.c_str());
+                          fq_name.c_str(), hdl_name.c_str(),
+                          resolved_name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
             } else {
                 new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
@@ -335,10 +375,12 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 LOG_WARN("VPI: Simulator does not know this type (%d) via VPI",
                          type);
             }
+            if (resolved_hdl) vpi_free_object(resolved_hdl);
             return NULL;
     }
 
-    new_obj->initialise(name, fq_name);
+    new_obj->initialise(resolved_name, resolved_fq_name);
+    new_obj->set_is_resolved_reference(resolved_hdl != NULL);
 
     LOG_DEBUG("VPI: Created GPI object from type %s(%d)",
               vpi_get_str(vpiType, new_hdl), type);
@@ -427,6 +469,11 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
      *
      *     genblk1 is not found directly, but if genblk1[n] is found,
      *     genblk1 must exist, so create the pseudo-region object for it.
+     *
+     * The same applies to arrays of interface instances and to arrays of
+     * interface references (interface array ports, vpiRefObj), which
+     * Verilator exposes only as individual elements: bus[n] is found, but
+     * bus itself is not.
      */
     if (new_hdl == NULL) {
         LOG_DEBUG(
@@ -439,7 +486,7 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
                 auto rgn_type = vpi_get(vpiType, rgn);
                 if (rgn_type == vpiGenScope || rgn_type == vpiModule ||
-                    rgn_type == vpiInterface) {
+                    rgn_type == vpiInterface || rgn_type == vpiRefObj) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
                     if (VpiImpl::compare_generate_labels(rgn_name, name)) {
                         new_hdl = parent_hdl;

@@ -91,8 +91,14 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     virtual int initialise(const std::string &name,
                            const std::string &full_name);
 
+    bool is_resolved_reference() const { return m_is_resolved_reference; }
+    void set_is_resolved_reference(bool resolved) {
+        m_is_resolved_reference = resolved;
+    }
+
   protected:
     int m_num_elems = 0;
+    bool m_is_resolved_reference = false;
     bool m_indexable = false;
     int m_range_left = -1;
     int m_range_right = -1;
