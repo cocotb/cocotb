@@ -1817,7 +1817,6 @@ class FixedStringObject(StringObject):
         value: bytes,
         action: _GPISetAction,
     ) -> None:
-
         max_len = len(self)
 
         if len(value) > max_len:
@@ -1893,6 +1892,8 @@ def _make_sim_object(
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
+    if path is not None and (concrete_path := handle.get_concrete_path()) is not None:
+        path = concrete_path
     obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
     return obj

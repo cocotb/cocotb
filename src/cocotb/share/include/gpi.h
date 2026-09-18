@@ -310,6 +310,13 @@ GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl);
  */
 GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl);
 
+/** Get the concrete full path of an object.
+ * @param obj_hdl   Object handle.
+ * @return          Concrete full path, or NULL if the object has no path
+ *                  other than the one used to reach it.
+ */
+GPI_EXPORT const char *gpi_get_concrete_path_str(gpi_sim_hdl obj_hdl);
+
 /** Get signal object type as a string.
  * @param sig_hdl   Signal object handle.
  * @return          Object type as a string.
