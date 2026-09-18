@@ -29,7 +29,8 @@ ifeq (, $(CMD))
 endif
 
 ifdef WAVES
-    WAVE_ARG := -waves $(WAVES)
+#    WAVE_ARG := -waves $(WAVES)
+WAVE_ARG := -waves $(SIM_BUILD)/$(COCOTB_TOPLEVEL).vcd
 else
     WAVE_ARG :=
 endif

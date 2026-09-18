@@ -647,8 +647,8 @@ Reported Issues for this Simulator
 
 .. _sim-bpsim:
 
-Blue Pearl Solutions BPSim
-==========================
+Blue Pearl AI Solutions BPSim
+=============================
 
 In order to use this simulator, set :make:var:`SIM` to ``bpsim``:
 
@@ -658,15 +658,19 @@ In order to use this simulator, set :make:var:`SIM` to ``bpsim``:
     # or
     SIM=bpsim [...] pytest [...]
 
+cocotb supports Verilog toplevels with BPSim; VHDL designs will require a toplevel Verilog wrapper
+
+Python Runner support currently is only for Verilog based desings
+
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.BPSim`.
 
+ 
 .. note::
 
     A working installation of BPSim is required.
 
-cocotb only supports Verilog toplevels with BPSim; VHDL designs are not supported.
-Only :term:`VPI` is implemented for this simulator.
+
 
 .. note::
 
@@ -678,13 +682,13 @@ Waveforms
 ---------
 
 BPSim can produce waveform traces in the VCD format.
-To enable VCD tracing, set :make:var:`WAVES` to ``1``.
+To enable VCD file generation, set :make:var:`WAVES` to ``1``.
 
 .. code-block:: bash
 
-    make SIM=bpsim WAVES=1
+    make SIM=bpsim WAVES= 1
 
-The wave file will be named :file:`file.vcd`.
+A VCD file named :file:`<TopLevelModuleName>.vcd` will be generated under "sim_build" directory.
 
 .. _sim-bpsim-issues:
 
