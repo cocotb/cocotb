@@ -1,6 +1,7 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
-
+#SIM ?= bpsim
+# SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
 ifeq ($(TOPLEVEL_LANG),verilog)
@@ -11,5 +12,6 @@ endif
 
 COCOTB_TEST_MODULES = test_dff
 COCOTB_TOPLEVEL = dff
+MODULE = test_dff 
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
