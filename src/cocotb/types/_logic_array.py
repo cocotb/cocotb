@@ -16,6 +16,7 @@ from typing import (
 )
 
 from cocotb._deprecation import deprecated
+from cocotb.preview import Feature, is_enabled
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT
@@ -962,10 +963,26 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __invert__(self) -> LogicArray:
         return LogicArray(~v for v in self)
 
-    def __bool__(self) -> bool:
-        if len(self) == 0:
-            return False
-        return bool(self.to_unsigned())
+    if is_enabled(Feature.STRICT_RESOLVE):
+
+        def __bool__(self) -> bool:
+            if len(self) == 0:
+                return False
+            return bool(self.to_unsigned())
+
+    elif RESOLVE_X is None:
+
+        def __bool__(self) -> bool:
+            if len(self) == 0:
+                return False
+            return bool(int(self))
+
+    else:
+
+        def __bool__(self) -> bool:
+            if len(self) == 0:
+                return False
+            return any(bool(bit) for bit in self)
 
     def resolve(self, resolver: ResolverLiteral) -> LogicArray:
         """Resolves non-0/1 values to 0/1.

@@ -8,7 +8,6 @@ import copy
 import pytest
 
 from cocotb.types import Logic, LogicArray, Range
-from cocotb.types._resolve import set_default_resolve_method
 
 
 def test_logic_array_str_construction():
@@ -171,7 +170,6 @@ def test_logic_array_bytes_conversion():
 
 def test_logic_array_properties():
     assert LogicArray("01").is_resolvable
-    set_default_resolve_method("weak")
     assert not LogicArray("1X1").is_resolvable
 
 
@@ -483,15 +481,12 @@ def test_bool_cast():
 
 
 def test_resolve():
-    assert LogicArray("01LH").resolve("weak") == LogicArray("0101")
+    assert LogicArray("UX01ZWLH-").resolve("weak") == LogicArray("UX01ZX01-")
     assert LogicArray("UX01ZWLH-").resolve("zeros") == LogicArray("000100010")
     assert LogicArray("UX01ZWLH-").resolve("ones") == LogicArray("110111011")
     assert LogicArray("01LH").resolve("random") == LogicArray("0101")
     array = LogicArray("UXZW-").resolve("random")
     assert all(elem in (Logic("0"), Logic("1")) for elem in array)
-
-    with pytest.raises(ValueError):
-        LogicArray("01X").resolve("weak")
 
 
 def test_copy() -> None:

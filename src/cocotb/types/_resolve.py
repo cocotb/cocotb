@@ -8,6 +8,7 @@ from functools import cache
 from random import Random
 from typing import Callable, Final, Literal, cast
 
+from cocotb.preview import Feature, is_enabled
 from cocotb_tools import _env
 
 if sys.version_info >= (3, 10):
@@ -15,8 +16,6 @@ if sys.version_info >= (3, 10):
 
 ResolverLiteral: TypeAlias = Literal["weak", "zeros", "ones", "random"]
 
-# global resolver, default to "weak" for backwards compatibility of is_resolvable/resolve.
-_resolve_method: ResolverLiteral = "weak"
 
 _randomResolveRng = Random()
 
@@ -39,7 +38,7 @@ _rnd_table = _random_resolve_table()
 
 _resolve_tables: dict[str, dict[int, int]] = {
     "error": {},
-    "weak": str.maketrans("LH", "01"),
+    "weak": str.maketrans("LHW", "01X"),
     "zeros": str.maketrans("LHUXZW-", "0100000"),
     "ones": str.maketrans("LHUXZW-", "0111111"),
 }
@@ -48,19 +47,6 @@ _VALID_RESOLVERS = ("error", "weak", "zeros", "ones", "random")
 _VALID_RESOLVERS_ERR_MSG = (
     "Valid values are 'error', 'weak', 'zeros', 'ones', or 'random'"
 )
-
-
-def get_default_resolve_method() -> ResolverLiteral:
-    """Returns the global default resolver method."""
-    return _resolve_method
-
-
-def set_default_resolve_method(resolver: ResolverLiteral) -> None:
-    if resolver not in _VALID_RESOLVERS:
-        raise ValueError(f"Invalid resolver: {resolver!r}. {_VALID_RESOLVERS_ERR_MSG}")
-    """Sets the global default resolver method."""
-    global _resolve_method
-    _resolve_method = resolver
 
 
 @cache
@@ -78,10 +64,15 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
         resolve_table = _resolve_tables[resolver]
 
         def resolve_func(value: str) -> str:
-            if resolver == "weak" and any(char in value for char in "WUXZ-"):
-                raise ValueError("Cannot resolve unknown values with 'weak' resolver")
-            if resolver == "error" and any(char in value for char in "LHWUXZ-"):
-                raise ValueError("Cannot resolve unknown values with 'error' resolver")
+            if is_enabled(Feature.STRICT_RESOLVE):
+                if resolver == "weak" and any(char in value for char in "WUXZ-"):
+                    raise ValueError(
+                        "Cannot resolve unknown values('WUXZ-') with 'weak' resolver"
+                    )
+                if resolver == "error" and any(char in value for char in "LHWUXZ-"):
+                    raise ValueError(
+                        "Cannot resolve unknown values('LHWUXZ-') with 'error' resolver"
+                    )
             return value.translate(resolve_table)
 
     return resolve_func
@@ -100,7 +91,6 @@ def _init() -> Callable[[str], str] | None:
 
     # get resolver
     try:
-        set_default_resolve_method(cast("ResolverLiteral", resolver))
         return get_str_resolver(cast("ResolverLiteral", resolver))
     except ValueError:
         raise ValueError(
