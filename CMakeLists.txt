@@ -491,7 +491,7 @@ if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     if(UNIX)
         list(APPEND SIM_TARGETS
             cocotbvpi_ius cocotbvhpi_ius cocotbvpi_vcs
-            cocotbvpi_verilator cocotbvpi_dsim)
+            cocotbvpi_verilator cocotbvpi_dsim  cocotbvpi_bpsim) 
     endif()
 
     install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
