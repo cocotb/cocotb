@@ -415,6 +415,7 @@ if(UNIX)
     add_vpi_library(VCS VCS)
     add_vpi_library(VERILATOR VERILATOR)
     add_vpi_library(DSim DSim)
+    add_vpi_library(BPSim BPSim)
 endif()
 
 set(NVC_EXTRA_LIBS "")
