@@ -8,6 +8,13 @@ from collections.abc import Iterator, Sequence
 from functools import cache
 from typing import Any, overload
 
+from cocotb._py_compat import StrEnum
+
+
+class Direction(StrEnum):
+    TO = "to"
+    DOWNTO = "downto"
+
 
 class Range(Sequence[int]):
     r"""
@@ -69,10 +76,10 @@ class Range(Sequence[int]):
     """
 
     @overload
-    def __init__(self, left: int, direction: int) -> None: ...
+    def __init__(self, left: int, direction: int, /) -> None: ...
 
     @overload
-    def __init__(self, left: int, direction: str, right: int) -> None: ...
+    def __init__(self, left: int, direction: str | Direction, right: int) -> None: ...
 
     @overload
     def __init__(self, left: int, *, right: int) -> None: ...
@@ -89,7 +96,7 @@ class Range(Sequence[int]):
         if isinstance(direction, int) and right is None:
             step = _guess_step(left, direction)
             stop = direction + step
-        elif isinstance(direction, str) and isinstance(right, int):
+        elif isinstance(direction, (str, Direction)) and isinstance(right, int):
             step = _direction_to_step(direction)
             stop = right + step
         elif direction is None and isinstance(right, int):
@@ -190,11 +197,11 @@ def _guess_step(left: int, right: int) -> int:
 
 
 @cache
-def _direction_to_step(direction: str) -> int:
+def _direction_to_step(direction: str | Direction) -> int:
     direction = direction.lower()
-    if direction == "to":
+    if direction == Direction.TO:
         return 1
-    elif direction == "downto":
+    elif direction == Direction.DOWNTO:
         return -1
     raise ValueError("direction must be 'to' or 'downto'")
 

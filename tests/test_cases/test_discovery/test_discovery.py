@@ -119,11 +119,7 @@ async def test_scoped_params(dut):
 
 
 @verilog_test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else (),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
     expect_fail=SIM_NAME.startswith("riviera"),
 )
 async def test_intf_array(dut):

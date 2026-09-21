@@ -76,7 +76,7 @@ jobs:
         fetch-depth: 2
 
     - name: Setup ccache
-      uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
+      uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
       if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
       with:
         key: ${{ matrix.os }}-${{matrix.cc || 'gcc'}}
@@ -125,7 +125,7 @@ jobs:
       run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
 
     - name: Install uv
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
 
     - name: Install Python testing dependencies
       run: |
@@ -296,7 +296,7 @@ jobs:
 
     - name: Upload to codecov
       if: inputs.collect_coverage
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+      uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4  # v7.1.0
       env:
         # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
         CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
