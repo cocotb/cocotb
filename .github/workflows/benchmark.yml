@@ -28,6 +28,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
+      with:
+        key: ubuntu-22.04-gcc
+    - name: Setup ccache path
+      run: |
+        echo "/usr/lib/ccache" >> $GITHUB_PATH
+
     - name: Set up Python ${{matrix.python-version}}
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
       with:
@@ -36,6 +44,16 @@ jobs:
     - name: Install Icarus Verilog
       run: |
         sudo apt-get install -y --no-install-recommends iverilog
+
+    - name: Set up Verilator
+      run: |
+        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
+        git clone --depth 1 --branch v5.048 https://github.com/verilator/verilator.git
+        cd verilator
+        autoconf
+        ./configure
+        make -j $(nproc)
+        sudo make install
 
     - name: Set up NVC (Ubuntu)
       run: |
@@ -64,7 +82,7 @@ jobs:
       id: generate_token
       uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
       with:
-        app-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+        client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
         private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
         owner: ${{ github.repository_owner }}
         repositories: cocotb-benchmark-results

@@ -1,6 +1,12 @@
 [build-system]
-requires = ["setuptools>=77,<84", "wheel", "setuptools-git-versioning>=3.0,<4"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "scikit-build-core>=0.3.3",
+    "find_libpython",
+    "setuptools>=77",
+    "wheel",
+    "setuptools-git-versioning>=3.0,<4",
+]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "cocotb"
@@ -63,8 +69,24 @@ count_commits_from_version_file = true
 dev_template = "{tag}.dev{ccount}+r{sha}"
 dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
 
+[tool.scikit-build]
+experimental = true
+cmake.source-dir = "."
+cmake.version = ">=3.18"
+build-dir = "build/{wheel_tag}"
+cmake.args = []
+build.verbose = false
+wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
+
+[tool.scikit-build.metadata.version]
+provider = "setuptools_git_versioning.scikit_metadata"
+
 [tool.towncrier]
     package = "cocotb"
+    # Set explicitly so that towncrier doesn't have to import cocotb to work
+    # out the project name — that would mean building the package first just
+    # to render release notes.
+    name = "cocotb"
     directory = "docs/source/newsfragments"
     filename = "docs/source/release_notes.rst"
     issue_format = ":pr:`{issue}`"
@@ -72,6 +94,11 @@ dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
     # the second underline for the subcategories (like 'Features')
     underlines = ["=", "-"]
     all_bullets = false
+    # Renders to the same header towncrier's default template already
+    # produces, but also makes towncrier refuse (instead of silently
+    # duplicating the section) if `towncrier build` is run twice for the
+    # same version.
+    title_format = "{name} {version} ({project_date})"
 
     [[tool.towncrier.type]]
         directory = "feature"
@@ -198,6 +225,9 @@ required-imports = ["from __future__ import annotations"]
 # - CPython on Windows x86_64
 # - CPython on macOS x86_64 and arm64
 build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_x86_64 cp*-macosx_arm64"
+# cibuildwheel 3.2+ builds CPython 3.14 free-threaded wheels by default.
+# Skip them until cocotb supports the free-threaded ABI.
+skip = "cp3??t-*"
 
 # Build with optimizations and debugging
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
@@ -302,6 +332,8 @@ dev = [
     # required for development
     "nox",
     "nox-uv",
+    # used by the release sessions in noxfile.py to compare versions
+    "packaging",
     "prek",
     # allows linting the project manually
     "clang-format",
@@ -346,7 +378,7 @@ test_common = [
     # Needed for RaisesExc and RaisesGroup testing.
     "pytest>=8.4",
     # Needed for IPython shell interactive testing.
-    "IPython",
+    "IPython<9.17",
     "pexpect",
     # Needed for leak testing.
     "psutil",

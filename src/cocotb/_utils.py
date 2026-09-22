@@ -17,7 +17,7 @@ from functools import wraps
 from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
-from cocotb._compat import StrEnum
+from cocotb._py_compat import StrEnum
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias

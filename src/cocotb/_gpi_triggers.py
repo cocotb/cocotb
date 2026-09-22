@@ -265,7 +265,13 @@ class _EdgeBase(GPITrigger, Generic[_SignalType]):
 
 
 class RisingEdge(
-    _EdgeBase[Union["cocotb.handle.LogicObject", "cocotb.handle.LogicArrayObject"]]
+    _EdgeBase[
+        Union[
+            "cocotb.handle.LogicObject",
+            "cocotb.handle.LogicArrayObject",
+            "cocotb.handle.PackedObject",
+        ]
+    ]
 ):
     """Fires on the rising edge of *signal*, on a transition to ``1``.
 
@@ -289,16 +295,27 @@ class RisingEdge(
 
     def __new__(cls, signal: cocotb.handle.LogicObject) -> RisingEdge:
         if not isinstance(
-            signal, (cocotb.handle.LogicObject, cocotb.handle.LogicArrayObject)
+            signal,
+            (
+                cocotb.handle.LogicObject,
+                cocotb.handle.LogicArrayObject,
+                cocotb.handle.PackedObject,
+            ),
         ):
             raise TypeError(
-                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject or PackedObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal.rising_edge
 
 
 class FallingEdge(
-    _EdgeBase[Union["cocotb.handle.LogicObject", "cocotb.handle.LogicArrayObject"]]
+    _EdgeBase[
+        Union[
+            "cocotb.handle.LogicObject",
+            "cocotb.handle.LogicArrayObject",
+            "cocotb.handle.PackedObject",
+        ]
+    ]
 ):
     """Fires on the falling edge of *signal*, on a transition to ``0``.
 
@@ -322,10 +339,15 @@ class FallingEdge(
 
     def __new__(cls, signal: cocotb.handle.LogicObject) -> FallingEdge:
         if not isinstance(
-            signal, (cocotb.handle.LogicObject, cocotb.handle.LogicArrayObject)
+            signal,
+            (
+                cocotb.handle.LogicObject,
+                cocotb.handle.LogicArrayObject,
+                cocotb.handle.PackedObject,
+            ),
         ):
             raise TypeError(
-                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject. Got {signal!r} of type {type(signal).__qualname__}"
+                f"{cls.__qualname__} requires a scalar LogicObject or a 1-bit LogicArrayObject or PackedObject. Got {signal!r} of type {type(signal).__qualname__}"
             )
         return signal.falling_edge
 

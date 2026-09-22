@@ -1,0 +1,181 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+#
+# Step 2 of the release process. Run this once the release notes PR opened
+# by "Release 1: Prepare release" has been reviewed, hand-edited if needed,
+# and merged into the release branch.
+#
+# Tags the branch HEAD as vX.Y.Z (or vX.Y.ZrcN) and pushes the tag. Pushing
+# the tag is itself the release go-ahead: it triggers
+# build-test-release.yml, which builds and tests the package and publishes
+# it to PyPI. There is no manual step after this one, so the checks that
+# the branch really is ready to release happen here, before the tag is
+# created.
+#
+# For a final release this also opens a PR starting the next patch release
+# cycle on the release branch.
+#
+# Requires a GitHub App installed on the repository, exposed as the
+# COCOTB_CI_REPOACCESS_APP_ID and COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY secrets — see "Release
+# Automation Setup" in docs/source/maintaining.rst. The default
+# GITHUB_TOKEN would not do: a tag it pushes does not start any workflow
+# run, so nothing would be built or published.
+#
+
+name: "Release 2: Tag"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Full version to tag, e.g. "1.6.0rc1", "1.6.0" or "1.6.1"'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.version }}
+
+permissions: {}
+
+jobs:
+  tag:
+    name: Create and push tag
+    runs-on: ubuntu-22.04
+    outputs:
+      branch: ${{ steps.version.outputs.branch }}
+      final: ${{ steps.version.outputs.final }}
+      next_patch: ${{ steps.version.outputs.next_patch }}
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      # The release branch (stable/<major>.<minor>) is always derivable
+      # from the version, same as in "Release 1: Prepare release" — no
+      # need to ask for both and risk them disagreeing.
+      - name: Parse version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(.*)$ ]]; then
+            echo "::error::Version '$VERSION' doesn't look like X.Y.Z (with an optional rcN/etc suffix)."
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          suffix="${BASH_REMATCH[4]}"
+
+          {
+            echo "branch=stable/${major}.${minor}"
+            # The version the release notes are filed under: an rc ships
+            # the notes of the release it is a candidate for.
+            echo "release=${major}.${minor}.${patch}"
+            echo "final=$([ -z "$suffix" ] && echo true || echo false)"
+            echo "next_patch=${major}.${minor}.$((patch + 1))"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ steps.version.outputs.branch }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      # Tagging is the point of no return: it publishes to PyPI without
+      # any further approval. So check that the release notes for this
+      # version are actually on the branch and complete.
+      - name: Check the release notes are ready
+        env:
+          RELEASE: ${{ steps.version.outputs.release }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          set -euo pipefail
+
+          if ! grep -qE "^cocotb ${RELEASE//./\\.} \(" docs/source/release_notes.rst; then
+            echo "::error::docs/source/release_notes.rst on '$BRANCH' has no section for $RELEASE. Run 'Release 1: Prepare release' for $RELEASE and merge the PR it opens before tagging."
+            exit 1
+          fi
+
+          # README.rst documents the directory itself; towncrier skips it
+          # because it isn't named like a newsfragment.
+          leftover="$(find docs/source/newsfragments -name '*.rst' -type f ! -name 'README.rst')"
+          if [ -n "$leftover" ]; then
+            echo "::error::Newsfragments are still pending on '$BRANCH', so they are not covered by the $RELEASE release notes. Fold them into that section by hand and delete them:"
+            echo "$leftover"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          TAG: v${{ inputs.version }}
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+          ACTOR: ${{ github.actor }}
+          ACTOR_ID: ${{ github.actor_id }}
+        run: |
+          set -euo pipefail
+
+          if gh api "repos/$REPO/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "::error::Tag '$TAG' already exists."
+            exit 1
+          fi
+
+          # Tag as whoever started this release; git refuses to write an
+          # annotated tag without an identity to put in it.
+          git config user.name "$ACTOR"
+          git config user.email "${ACTOR_ID}+${ACTOR}@users.noreply.github.com"
+
+          git tag -a "$TAG" -m "Release $VERSION"
+          git push origin "$TAG"
+
+          {
+            echo "### Tagged \`$TAG\` on \`$BRANCH\` ($(git rev-parse HEAD))"
+            echo "Build, test, and PyPI publish now run in the 'Release' workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  bump_stable:
+    name: Start the next patch release cycle
+    needs: tag
+    # Not after a release candidate: the branch is still working towards
+    # the same final version.
+    if: needs.tag.outputs.final == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+          private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ needs.tag.outputs.branch }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump the version file
+        env:
+          NEXT_PATCH: ${{ needs.tag.outputs.next_patch }}
+        run: echo "$NEXT_PATCH" > VERSION
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          base: ${{ needs.tag.outputs.branch }}
+          branch: version-bump/${{ needs.tag.outputs.next_patch }}
+          delete-branch: true
+          commit-message: "Start ${{ needs.tag.outputs.next_patch }} release cycle"
+          title: "Start ${{ needs.tag.outputs.next_patch }} release cycle"
+          body: |
+            v${{ inputs.version }} has been tagged, so the dev versions built
+            from `${{ needs.tag.outputs.branch }}` are now leading up to
+            ${{ needs.tag.outputs.next_patch }}.
+          labels: type:task

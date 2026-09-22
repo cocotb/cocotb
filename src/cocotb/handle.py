@@ -53,6 +53,7 @@ __all__ = (
     "IntegerObject",
     "LogicArrayObject",
     "LogicObject",
+    "PackedObject",
     "RealObject",
     "Release",
     "SimHandleBase",
@@ -965,7 +966,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
 #: Type of value of each element in an :class:`ArrayObject`.
 ElemValueT = TypeVar("ElemValueT")
 
-#: Subtype of :class:`ValueObjectBase` returned when iterating or indexing a :class:`ArrayObject`.
+#: Subtype of :class:`ValueObjectBase` returned when indexing an array object.
 ChildObjectT = TypeVar("ChildObjectT", bound=ValueObjectBase[Any, Any])
 
 
@@ -1244,40 +1245,18 @@ class _SignednessObjectMixin(SimHandleBase):
             return (2 ** len(self)) - 1
 
 
-class LogicArrayObject(
+class _LogicArrayObjectBase(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
     _RangeableObjectMixin,
     _SignednessObjectMixin,
+    Generic[ChildObjectT],
 ):
-    """A logic array simulation object.
+    """Base class for logic array simulation objects."""
 
-    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
-
-    Verilog types that map to this object:
-
-        * All packed arrays, structs, and unions
-
-    VHDL types that map to this object:
-
-        * ``std_logic_vector`` and ``std_ulogic_vector``
-        * ``unsigned``
-        * ``signed``
-        * ``ufixed``
-        * ``sfixed``
-        * ``float``
-
-    Individual bits may be accessed by index.
-    The result is a :class:`LogicObject`.
-    An :class:`IndexError` is raised if no bit exists at the given index.
-
-    .. code-block:: python
-
-        bit_0 = dut.my_vec[0]
-    """
-
+    @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
-        self._sub_handles: dict[int, SimHandleBase] = {}
+        self._sub_handles: dict[int, ChildObjectT] = {}
 
     def _set_value(
         self,
@@ -1387,17 +1366,20 @@ class LogicArrayObject(
         # and this object needs to support multi-dimensional packed arrays.
         return self._handle.get_num_elems()
 
-    def __getitem__(self, key: int) -> LogicObject:
+    def __getitem__(self, index: int) -> ChildObjectT:
+        if isinstance(index, slice):
+            raise TypeError("Slice indexing is not supported")
         try:
-            return cast("LogicObject", self._sub_handles[key])
+            return self._sub_handles[index]
         except KeyError:
             pass
-        handle = self._handle.get_handle_by_index(key)
+        handle = self._handle.get_handle_by_index(index)
         if handle is None:
-            raise IndexError(f"{self._path} contains no object at index {key}")
-        sub = LogicObject(handle, f"{self._path}[{key}]")
-        self._sub_handles[key] = sub
-        return sub
+            raise IndexError(f"{self._path} contains no object at index {index}")
+        path = f"{self._path}[{index}]"
+        res = cast("ChildObjectT", _make_sim_object(handle, path))
+        self._sub_handles[index] = res
+        return res
 
     @cached_property
     def _min_val(self) -> int:
@@ -1416,7 +1398,7 @@ class LogicArrayObject(
             raise TypeError(f"Can't get RisingEdge on {len(self)}-bit signal")
         if self.is_const:
             raise TypeError("Can't get RisingEdge on immutable signal")
-        return RisingEdge._make(self)
+        return RisingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
 
     @cached_property
     def falling_edge(self) -> FallingEdge:
@@ -1425,7 +1407,59 @@ class LogicArrayObject(
             raise TypeError(f"Can't get FallingEdge on {len(self)}-bit signal")
         if self.is_const:
             raise TypeError("Can't get FallingEdge on immutable signal")
-        return FallingEdge._make(self)
+        return FallingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
+
+
+class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
+    """A packed Verilog struct, union, or vector simulation object.
+
+    Verilog types that map to this object:
+
+        * All packed arrays, structs, and unions
+
+    May be accessed by index.
+    An :class:`IndexError` is raised if no bit exists at the given index.
+
+    .. code-block:: python
+
+        bit_0 = dut.my_vec[0]
+    """
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
+
+class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
+    """A logic array simulation object.
+
+    Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
+
+    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
+    Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
+
+    VHDL types that map to this object:
+
+        * ``std_logic_vector`` and ``std_ulogic_vector``
+        * ``unsigned``
+        * ``signed``
+        * ``ufixed``
+        * ``sfixed``
+        * ``float``
+
+    Individual bits may be accessed by index.
+    The result is a :class:`LogicObject`.
+    An :class:`IndexError` is raised if no bit exists at the given index.
+
+    .. code-block:: python
+
+        bit_0 = dut.my_vec[0]
+
+    .. versionchanged:: 2.1
+        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
+    """
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
 
 
 class RealObject(_NonIndexableValueObjectBase[float, float]):
@@ -1800,6 +1834,7 @@ _ConcreteHandleTypes = Union[
     HierarchyArrayObject[SimHandleBase],
     LogicObject,
     LogicArrayObject,
+    PackedObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
     RealObject,
     IntegerObject,
@@ -1816,7 +1851,7 @@ _handle2obj: dict[
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
-    cocotb.simulator.PACKED_STRUCTURE: LogicArrayObject,
+    cocotb.simulator.PACKED: PackedObject,
     cocotb.simulator.LOGIC: LogicObject,
     cocotb.simulator.LOGIC_ARRAY: LogicArrayObject,
     cocotb.simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],

@@ -25,13 +25,7 @@ verilator_less_than_5024 = SIM_NAME.startswith("verilator") and VerilatorVersion
 
 
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
-@cocotb.test(
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
-)
+@cocotb.test(expect_error=AttributeError if verilator_less_than_5024 else ())
 async def test_sv_intf_arr_type(dut):
     """Test that interface arrays are the correct type"""
 
@@ -47,11 +41,7 @@ async def test_sv_intf_arr_type(dut):
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
 @cocotb.test(
     expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else (),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
 )
 async def test_sv_intf_arr_len(dut):
     """Test that interface array length is correct"""
@@ -59,15 +49,7 @@ async def test_sv_intf_arr_len(dut):
 
 
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
-@cocotb.test(
-    expect_error=IndexError
-    if cocotb.SIM_NAME.lower().startswith("riviera")
-    else AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else ()
-)
+@cocotb.test(expect_error=AttributeError if verilator_less_than_5024 else ())
 async def test_sv_intf_arr_access(dut):
     """Test that interface array objects can be accessed"""
     for i in range(3):
@@ -79,11 +61,7 @@ async def test_sv_intf_arr_access(dut):
 # Verilator before 5.024 doesn't support interface arrays (gh-3824)
 @cocotb.test(
     expect_fail=cocotb.SIM_NAME.lower().startswith("riviera"),
-    expect_error=AttributeError
-    if verilator_less_than_5024
-    else AttributeError
-    if "vcs" in SIM_NAME
-    else (),
+    expect_error=AttributeError if verilator_less_than_5024 else (),
 )
 async def test_sv_intf_arr_iteration(dut):
     """Test that interface arrays can be iterated"""

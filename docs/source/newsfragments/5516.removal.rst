@@ -1,1 +1,0 @@
-Removed the ``--lib-name`` option from the :ref:`cocotb-config <cocotb-config>` script.

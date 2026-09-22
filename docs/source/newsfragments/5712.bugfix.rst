@@ -1,1 +1,0 @@
-Fixed viewer invocation during test runs.

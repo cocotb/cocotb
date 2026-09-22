@@ -209,7 +209,7 @@ typedef enum gpi_objtype_e {
     GPI_FIXED_STRING = 12,
     GPI_GENARRAY = 13,
     GPI_PACKAGE = 14,
-    GPI_PACKED_STRUCTURE = 15,
+    GPI_PACKED = 15,
     GPI_LOGIC = 16,
     GPI_LOGIC_ARRAY = 17,
 } gpi_objtype;
