@@ -1021,8 +1021,28 @@ Debugging
 
     Default: :data:`False`
 
-    If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
+    If set to a true value, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
     See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
+
+    .. note::
+        To drop into a debugger at a specific line instead of only on test failure,
+        use the built-in :func:`breakpoint` and point the ``PYTHONBREAKPOINT`` environment variable
+        at the debugger you want it to call.
+        Because simulators interfere with ``stdin``,
+        the plain :mod:`pdb` is often unusable here;
+        the `remote_pdb`_ package is a drop-in replacement that listens on a TCP socket instead.
+        To use it, add :func:`breakpoint` where you want to stop and run:
+
+        .. code-block:: shell
+
+            PYTHONBREAKPOINT=remote_pdb.set_trace make
+
+        The listening port is printed to the log; connect to it with :command:`telnet` as described in
+        :ref:`troubleshooting-attaching-debugger-python`.
+
+        Setting ``PYTHONBREAKPOINT`` to ``0`` disables all :func:`breakpoint` calls,
+        which is a convenient way to keep them in the source without stopping on them.
+        See :func:`sys.breakpointhook` for details.
 
     .. note::
         Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
