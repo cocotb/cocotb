@@ -673,11 +673,6 @@ class InternalCbHdl : public GpiCbHdl, public detail::IntrusiveDequeNode {
         return error;
     }
 
-    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept override {
-        this->m_cb_func = cb_func;
-        this->m_cb_data = cb_data;
-    }
-
     void get_cb_info(int (**cb_func)(void *),
                      void **cb_data) const noexcept override {
         if (cb_func) {

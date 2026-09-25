@@ -33,14 +33,6 @@ class GpiCbHdl {
      */
     virtual int remove() = 0;
 
-    /** Set user callback info
-     *
-     * Not on init to prevent having to pass around the arguments everywhere.
-     * Secondary initialization routine. ONLY CALL ONCE!
-     */
-    virtual void set_cb_info(int (*cb_func)(void *),
-                             void *cb_data) noexcept = 0;
-
     /** Get the current user callback function and data. */
     virtual void get_cb_info(int (**cb_func)(void *),
                              void **cb_data) const noexcept = 0;
@@ -169,7 +161,12 @@ class GPI_EXPORT GpiCbHdlBase : public GpiHdl, public GpiCbHdl {
     GpiCbHdlBase() = delete;
     GpiCbHdlBase(GpiImplInterface *impl) : GpiHdl(impl) {}
 
-    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept override {
+    /** Set user callback info
+     *
+     * Not on init to prevent having to pass around the arguments everywhere.
+     * Secondary initialization routine. ONLY CALL ONCE!
+     */
+    void set_cb_info(int (*cb_func)(void *), void *cb_data) noexcept {
         this->m_cb_func = cb_func;
         this->m_cb_data = cb_data;
     }
