@@ -1027,12 +1027,12 @@ Debugging
     .. note::
         To drop into a debugger at a specific line instead of only on test failure,
         add a call to the built-in function :func:`breakpoint` to the line where you wish to pause.
-        
+
         By default this uses :mod:`pdb` for debugging;
         however, because simulators interfere with ``stdin``,
         the plain :mod:`!pdb` is often unusable here.
         The `remote_pdb`_ package is a drop-in replacement that listens on a TCP socket instead.
-        To use it, add :func:`breakpoint` where you want to stop and 
+        To use it, add :func:`breakpoint` where you want to stop and
         and point the ``PYTHONBREAKPOINT`` environment variable
         at ``remote_pdb``:
 
