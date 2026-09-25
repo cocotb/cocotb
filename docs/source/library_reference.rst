@@ -1035,7 +1035,7 @@ Debugging
 
         .. code-block:: shell
 
-            PYTHONBREAKPOINT=remote_pdb.set_trace make
+            PYTHONBREAKPOINT=remote_pdb.set_trace
 
         The listening port is printed to the log; connect to it with :command:`telnet` as described in
         :ref:`troubleshooting-attaching-debugger-python`.
