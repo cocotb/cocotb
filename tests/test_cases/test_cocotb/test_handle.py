@@ -263,6 +263,7 @@ async def test_assign_LogicArray_9value(dut):
 @cocotb.test
 async def test_assign_string(dut):
     assert len(dut.stream_in_data) == 8
+    assert dut.stream_in_data.size == 8
     cocotb.log.info("dut.stream_in_data type is %s", dut.stream_in_data._type)
     dut.stream_in_data.value = "10101010"
     await Timer(1, "ns")
