@@ -30,7 +30,7 @@ endif
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
-	$(COCOTB_ENV) \
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl cvc vpi) $(COCOTB_ENV) \
         $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi cvc) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
@@ -38,18 +38,18 @@ ifeq ($(CVC_ITERP),1)
     $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp
 else
     $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	$(COCOTB_ENV) \
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl cvc vpi) $(COCOTB_ENV) \
         $(SIM_CMD_PREFIX) $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 endif
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
     debug:  $(CUSTOM_SIM_DEPS)
-	$(COCOTB_ENV) \
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl cvc vpi) $(COCOTB_ENV) \
         $(SIM_CMD_PREFIX) gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +loadvpi=$(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi cvc) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 else
     debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
-	$(COCOTB_ENV) \
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl cvc vpi) $(COCOTB_ENV) \
         gdb --args $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS)
 endif
 

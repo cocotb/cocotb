@@ -69,9 +69,9 @@ else
     VSIM_ARGS += -onfinish exit
 endif # ifdef GUI
 
-FLI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path fli questa)
-VHPI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vhpi questa)
-GPI_EXTRA :=
+FLI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry fli questa)
+VHPI_LIB := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vhpi questa)
+GPI_IMPL :=
 
 VHDL_GPI_INTERFACE ?= fli
 
@@ -83,18 +83,21 @@ ifeq ($(TOPLEVEL_LANG),vhdl)
     VSIM_ARGS += -t $(COCOTB_HDL_TIMEPRECISION)
 ifeq ($(VHDL_GPI_INTERFACE),fli)
     CUSTOM_COMPILE_DEPS += $(FLI_LIB)
-    VSIM_ARGS += -foreign "cocotb_init $(FLI_LIB)"
+    VSIM_ARGS += -foreign "cocotb_bootstrap_entry $(FLI_LIB)"
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl questa fli)
 else
-    VSIM_ARGS += -foreign "vhpi_startup_routines_bootstrap $(call to_tcl_path,$(VHPI_LIB))"
+    VSIM_ARGS += -foreign "cocotb_bootstrap_entry $(call to_tcl_path,$(VHPI_LIB))"
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl questa vhpi)
 endif
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA :=  $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path vpi questa):cocotbvpi_entry_point
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl questa $(VHDL_GPI_INTERFACE) vpi)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
     VSIM_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi questa)
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl questa vpi)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl questa vpi $(VHDL_GPI_INTERFACE))
 endif
 
 else
@@ -122,7 +125,7 @@ $(COCOTB_RESULTS_FILE):
 	mkdir -p $(SIM_BUILD)
 
 	set -o pipefail; \
-	  GPI_EXTRA=$(GPI_EXTRA) \
+	  GPI_IMPL=$(GPI_IMPL) \
 	  VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE) \
 	  COCOTB__QUESTA_MODE=qisqrun \
 	  $(COCOTB_ENV) \
