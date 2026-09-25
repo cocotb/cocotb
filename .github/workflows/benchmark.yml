@@ -14,9 +14,13 @@ on:
       - master
 
 jobs:
+  changes:
+    if: github.repository == 'cocotb/cocotb'
+    uses: ./.github/workflows/detect-changes.yml
 
   tests:
-    if: github.repository == 'cocotb/cocotb'
+    needs: changes
+    if: github.repository == 'cocotb/cocotb' && needs.changes.outputs.run_benchmarks == 'true'
     name: Python ${{matrix.python-version}}
     runs-on: ubuntu-22.04
 
