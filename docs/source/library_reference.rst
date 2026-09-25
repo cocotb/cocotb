@@ -1026,12 +1026,15 @@ Debugging
 
     .. note::
         To drop into a debugger at a specific line instead of only on test failure,
-        use the built-in :func:`breakpoint` and point the ``PYTHONBREAKPOINT`` environment variable
-        at the debugger you want it to call.
-        Because simulators interfere with ``stdin``,
-        the plain :mod:`pdb` is often unusable here;
-        the `remote_pdb`_ package is a drop-in replacement that listens on a TCP socket instead.
-        To use it, add :func:`breakpoint` where you want to stop and run:
+        add a call to the built-in function :func:`breakpoint` to the line where you wish to pause.
+        
+        By default this uses :mod:`pdb` for debugging;
+        however, because simulators interfere with ``stdin``,
+        the plain :mod:`!pdb` is often unusable here.
+        The `remote_pdb`_ package is a drop-in replacement that listens on a TCP socket instead.
+        To use it, add :func:`breakpoint` where you want to stop and 
+        and point the ``PYTHONBREAKPOINT`` environment variable
+        at ``remote_pdb``:
 
         .. code-block:: shell
 
@@ -1040,9 +1043,7 @@ Debugging
         The listening port is printed to the log; connect to it with :command:`telnet` as described in
         :ref:`troubleshooting-attaching-debugger-python`.
 
-        Setting ``PYTHONBREAKPOINT`` to ``0`` disables all :func:`breakpoint` calls,
-        which is a convenient way to keep them in the source without stopping on them.
-        See :func:`sys.breakpointhook` for details.
+        See :func:`sys.breakpointhook` for details on Python's built-in debugging functionality and :envvar:`!PYTHONBREAKPOINT`.
 
     .. note::
         Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
