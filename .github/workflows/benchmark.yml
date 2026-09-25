@@ -36,6 +36,12 @@ jobs:
       run: |
         echo "/usr/lib/ccache" >> $GITHUB_PATH
 
+    # This action sets up its own Python, so run it before selecting the test Python.
+    - name: Set up Verilator
+      uses: ktbarrett/setup-verilator@2c87cbbff7b6d11227efef20a6f8a4278af11978  # v0.1.1
+      with:
+        version: v5.048
+
     - name: Set up Python ${{matrix.python-version}}
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
       with:
@@ -44,16 +50,6 @@ jobs:
     - name: Install Icarus Verilog
       run: |
         sudo apt-get install -y --no-install-recommends iverilog
-
-    - name: Set up Verilator
-      run: |
-        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
-        git clone --depth 1 --branch v5.048 https://github.com/verilator/verilator.git
-        cd verilator
-        autoconf
-        ./configure
-        make -j $(nproc)
-        sudo make install
 
     - name: Set up NVC (Ubuntu)
       run: |
