@@ -72,6 +72,8 @@ def env_vars_for_sim_test(
 def configure_test_env(session: nox.Session) -> None:
     """Set environment variables for any kind of test run."""
 
+    session.env["COCOTB_PREVIEW"] = "1"
+
     # Do not fail on DeprecationWarning caused by virtualenv, which might come from
     # the site module.
     session.env["PYTHONWARNINGS"] = (
