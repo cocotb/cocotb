@@ -1043,7 +1043,7 @@ Debugging
         The listening port is printed to the log; connect to it with :command:`telnet` as described in
         :ref:`Attaching a Debugger <troubleshooting-attaching-debugger-python>`.
 
-        See :func:`sys.breakpointhook` for details on Python's built-in debugging functionality and :envvar:`!PYTHONBREAKPOINT`.
+        See :func:`sys.breakpointhook` for more details on Python's built-in debugging functionality and :envvar:`!PYTHONBREAKPOINT`.
 
     .. note::
         Prior to Python 3.14 running the ``(q)uit`` command in the debugger would not exit the simulator process,
