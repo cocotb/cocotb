@@ -1,0 +1,1 @@
+Clarified the description of :envvar:`COCOTB_PDB_ON_EXCEPTION` and documented how to drop into a debugger at a specific line with :func:`breakpoint` and the ``PYTHONBREAKPOINT`` environment variable.
