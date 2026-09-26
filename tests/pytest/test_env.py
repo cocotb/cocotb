@@ -26,6 +26,7 @@ import cocotb._profiling
 import cocotb.regression
 import cocotb.types._resolve
 from cocotb.handle import SimHandleBase
+from cocotb.preview import Feature, disable, enable
 from cocotb.types import Logic, LogicArray
 from cocotb.types._resolve import ResolverLiteral
 from cocotb_tools import _env
@@ -347,6 +348,23 @@ def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:
     assert resolve("L") == "0"
     assert resolve("H") == "1"
     assert resolve("W") == "X"
+
+
+def test_env_cocotb_resolve_preview(monkeypatch: MonkeyPatch) -> None:
+    enable(Feature.STRICT_RESOLVE)
+
+    for inp in "UXZW-":
+        with pytest.raises(ValueError):
+            Logic(inp).resolve("weak")
+
+    for inp, exp in zip("01LH", "0101"):
+        assert Logic(inp).resolve("weak") == Logic(exp)
+
+    assert LogicArray("01LH").resolve("weak") == LogicArray("0101")
+    with pytest.raises(ValueError):
+        LogicArray("01U").resolve("weak")
+
+    disable(Feature.STRICT_RESOLVE)
 
 
 def test_env_cocotb_resolve_x_value_error(monkeypatch: MonkeyPatch) -> None:

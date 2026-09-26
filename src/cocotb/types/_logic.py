@@ -7,7 +7,12 @@ import sys
 from functools import cache
 from typing import ClassVar, Union
 
-from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+from cocotb.preview import Feature, is_enabled
+from cocotb.types._resolve import (
+    RESOLVE_X,
+    ResolverLiteral,
+    get_str_resolver,
+)
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -105,7 +110,7 @@ class Logic:
         value: value to construct into a :class:`!Logic`.
 
     Raises:
-        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`!Logic`.
+        ValueError: If the value is of the correct type, but cannot be constructed into a :class:`!Logic`.
         TypeError: If the value is of a type that can't be constructed into a :class:`!Logic`.
     """
 
@@ -238,7 +243,15 @@ class Logic:
     def __str__(self) -> str:
         return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
-    if RESOLVE_X is None:
+    if is_enabled(Feature.STRICT_RESOLVE):
+
+        def __bool__(self) -> bool:
+            return self.resolve("weak")._repr == _1
+
+        def __int__(self) -> int:
+            return 1 if self.resolve("weak")._repr == _1 else 0
+
+    elif RESOLVE_X is None:
 
         def __bool__(self) -> bool:
             if self._repr in (_0, _L):

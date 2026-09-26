@@ -8,6 +8,7 @@ from functools import cache
 from random import Random
 from typing import Callable, Final, Literal, cast
 
+from cocotb.preview import Feature, is_enabled
 from cocotb_tools import _env
 
 if sys.version_info >= (3, 10):
@@ -63,6 +64,15 @@ def get_str_resolver(resolver: ResolverLiteral) -> Callable[[str], str]:
         resolve_table = _resolve_tables[resolver]
 
         def resolve_func(value: str) -> str:
+            if is_enabled(Feature.STRICT_RESOLVE):
+                if resolver == "weak" and any(char in value for char in "WUXZ-"):
+                    raise ValueError(
+                        "Cannot resolve unknown values('WUXZ-') with 'weak' resolver"
+                    )
+                if resolver == "error" and any(char in value for char in "LHWUXZ-"):
+                    raise ValueError(
+                        "Cannot resolve unknown values('LHWUXZ-') with 'error' resolver"
+                    )
             return value.translate(resolve_table)
 
     return resolve_func
