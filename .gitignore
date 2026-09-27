@@ -133,3 +133,10 @@ compile_commands.*.json
 
 # CI artifacts
 .ccache/
+__pycache__/
+*.egg-info/
+.venv/
+.tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
