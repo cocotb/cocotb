@@ -44,3 +44,24 @@ jobs:
       test_task: dev_test
       collect_coverage: true
       group: ci-licensed
+
+  codecov_notify:
+    name: Send Codecov notifications
+    needs: [test_dev, test_dev_licensed]
+    # Notify after coverage jobs finish, including failures, unless all were skipped.
+    # The regex matches anything in this job's 'needs' section's results.
+    if: >-
+      ${{ !cancelled() &&
+          (contains(needs.*.result, 'success') || contains(needs.*.result, 'failure')) }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        # Match the upload jobs so Codecov resolves the same PR head commit.
+        fetch-depth: 2
+    - name: Send notifications
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
+      env:
+        CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
+      with:
+        run_command: send-notifications
