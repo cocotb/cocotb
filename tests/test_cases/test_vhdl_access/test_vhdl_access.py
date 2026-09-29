@@ -26,7 +26,22 @@ async def check_enum_object(dut):
 
     TODO: Implement an EnumObject class and detect valid string mappings
     """
-    assert isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject)
+    handle = dut.inst_ram_ctrl.write_ram_fsm
+    assert isinstance(handle, EnumObject)
+
+    feature = cocotb.preview.Feature.HANDLE_LEN
+    was_enabled = cocotb.preview.is_enabled(feature)
+    try:
+        cocotb.preview.disable(feature)
+        assert len(handle) == handle.size
+
+        with pytest.warns(DeprecationWarning):
+            assert int(handle) == handle.value
+    finally:
+        if was_enabled:
+            cocotb.preview.enable(feature)
+        else:
+            cocotb.preview.disable(feature)
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
