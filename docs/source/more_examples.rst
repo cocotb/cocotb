@@ -2,6 +2,11 @@
 More Examples
 *************
 
+.. note::
+
+    Make sure to use the example code from the tag that matches the version of cocotb installed
+    in your environment.
+
 Adder
 =====
 
