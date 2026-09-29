@@ -92,13 +92,22 @@ Python
 When executing the Makefile to run a cocotb test, a Python shell interpreter is called from within the
 :term:`VPI`/:term:`VHPI`/:term:`FLI` library.
 Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
-Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible,
-due to the way that simulators interfere with ``stdin``.
 
-To successfully debug your Python code use the `remote_pdb`_ Python package to create a :command:`pdb` instance
+Whether :mod:`pdb` can be used directly depends on the simulator:
+
+- On **terminal-based simulators** such as Icarus Verilog, Verilator, GHDL, and NVC,
+  the simulator passes ``stdin`` through to the embedded Python interpreter,
+  so :func:`breakpoint` or ``import pdb; pdb.set_trace()`` can be used directly
+  and the debugger is driven interactively from the terminal running the simulation.
+- On simulators that run under a GUI or otherwise take control of ``stdin``,
+  an interactive :mod:`pdb` session is frequently not possible,
+  and a TCP-based debugger (such as `remote_pdb`_ or `debugpy`_) is required instead.
+
+To debug over TCP use the `remote_pdb`_ Python package to create a :command:`pdb` instance
 accessible via a TCP socket:
 
 .. _remote_pdb: https://pypi.org/project/remote-pdb/
+.. _debugpy: https://pypi.org/project/debugpy/
 
 1. In your code insert the line:
 

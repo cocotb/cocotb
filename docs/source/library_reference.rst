@@ -1029,8 +1029,10 @@ Debugging
         add a call to the built-in function :func:`breakpoint` to the line where you wish to pause.
 
         By default this uses :mod:`pdb` for debugging;
-        however, because simulators interfere with ``stdin``,
-        the plain :mod:`!pdb` is often unusable here.
+        however, because some simulators take control of ``stdin``,
+        the plain :mod:`!pdb` is often unusable there
+        (it typically works in terminal-based simulators such as Icarus Verilog, Verilator, GHDL, and NVC,
+        see :ref:`troubleshooting-attaching-debugger-python`).
         The ``remote_pdb`` package is a drop-in replacement that listens on a TCP socket instead.
         To use it, add :func:`breakpoint` where you want to stop and
         and point the ``PYTHONBREAKPOINT`` environment variable

@@ -1,0 +1,1 @@
+Documented that plain :mod:`pdb` sessions work directly in terminal-based simulators such as Icarus Verilog, Verilator, GHDL, and NVC, and that TCP-based debuggers like ``remote_pdb`` or ``debugpy`` are only required for simulators that take control of ``stdin``.
