@@ -26,8 +26,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Refuse to build or publish anything but a final vX.Y.Z tag.
+  # setuptools-git-versioning takes the version from the VERSION file
+  # (count_commits_from_version_file = true) and ignores the tag's suffix
+  # entirely, so tagging e.g. v2.2.0rc1 would build a plain 2.2.0 and the
+  # deploy_pypi job below would upload it to PyPI, where publishing is
+  # irreversible. Upstream report:
+  # https://github.com/dolfinus/setuptools-git-versioning/issues/155
+  check_rc_tag:
+    name: Check for a final release tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-22.04
+    steps:
+    - id: check
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "'$TAG' is a final release tag, continuing."
+        else
+          echo "Refusing to build/publish: '$TAG' is not a final release tag." \
+            "setuptools-git-versioning takes the version from the VERSION file" \
+            "and ignores the tag suffix, so this tag would publish a" \
+            "non-pre-release version to PyPI." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi
+
   build_release:
     name: Build distribution on ${{ matrix.os }}
+    needs: check_rc_tag
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # Keep going even if one matrix build fails.
@@ -84,6 +112,7 @@ jobs:
   deploy_pypi:
     name: Deploy to pypi.org
     needs:
+    - check_rc_tag
     - test_release
     - test_release_licensed
     permissions:
