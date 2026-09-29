@@ -49,6 +49,10 @@ Environment Variables
     2. Load ``libpython.so``.
     3. Load the PyGPI, which eventually loads the :envvar:`PYGPI_USERS` and enters Python.
 
+    During compilation, VCS and Riviera-PRO load only the GPI and the VPI implementation,
+    allowing the implementation to register Verilog system functions.
+    The full bootstrap list is used during simulation.
+
     You can get the GPI entry points used by the cocotb flows by calling ``cocotb-config --gpi-entry-point``.
 
     .. versionadded:: 2.2

@@ -274,9 +274,6 @@ class Runner(ABC):
             )
 
     def _set_env_common(self) -> None:
-        # We have to set all environment variables before building because Xcelium and VCS load VPI for some reason.
-        # TODO: Remove this. Why are Xcelium and VCS loading VPI during build?
-
         self.env.update(os.environ)
 
         bootstrap_entries: list[str] = []
@@ -1659,6 +1656,12 @@ class AldecBase(Runner):
         if shutil.which("vsimsa") is None:
             raise SystemExit("ERROR: vsimsa executable not found!")
 
+    def _set_env_build(self) -> None:
+        super()._set_env_build()
+        # Load the VPI implementation so it can register system functions.
+        self.env["COCOTB_BOOTSTRAP"] = cocotb_tools.config.gpi_entry_point()
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("riviera", "vpi")
+
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{_as_tcl_value(str(include))}" for include in includes]
 
@@ -2190,6 +2193,12 @@ class Vcs(Runner):
     def _simulator_in_path(self) -> None:
         if shutil.which("vcs") is None:
             raise SystemExit("ERROR: vcs executable not found!")
+
+    def _set_env_build(self) -> None:
+        super()._set_env_build()
+        # Load the VPI implementation so it can register system functions.
+        self.env["COCOTB_BOOTSTRAP"] = cocotb_tools.config.gpi_entry_point()
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("vcs", "vpi")
 
     def _set_env_test(self) -> None:
         super()._set_env_test()

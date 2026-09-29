@@ -45,7 +45,7 @@ else
     TOPLEVEL_LIBRARY ?= work
 endif
 
-# Pass the VPI library to the Verilog compilation to get extended checking.
+# Load the VPI implementation during compilation for system function registration.
 ALOG_ARGS += -pli $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi riviera)
 
 # Aldec-specific coverage types:
@@ -110,7 +110,14 @@ ifneq ($(VHDL_SOURCES),)
 	@echo "acom -work $(TOPLEVEL_LIBRARY) $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
+	@echo 'set cocotb_sim_bootstrap $$::env(COCOTB_BOOTSTRAP)' >> $@
+	@echo 'set cocotb_sim_gpi_impl $$::env(GPI_IMPL)' >> $@
+	@echo 'set ::env(COCOTB_BOOTSTRAP) {$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-entry-point)}' >> $@
+	@echo 'set ::env(GPI_IMPL) {$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl riviera vpi)}' >> $@
 	@echo "alog -work $(TOPLEVEL_LIBRARY) $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
+	@echo 'set ::env(COCOTB_BOOTSTRAP) $$cocotb_sim_bootstrap' >> $@
+	@echo 'set ::env(GPI_IMPL) $$cocotb_sim_gpi_impl' >> $@
+	@echo 'unset cocotb_sim_bootstrap cocotb_sim_gpi_impl' >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@

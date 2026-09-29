@@ -62,7 +62,11 @@ Synopsys VCS
   to allow cocotb to access values in the design.
 * Extend the ``vcs`` call with the options
   ``+vpi -P pli.tab -load $(cocotb-config --lib-entry vpi vcs)``.
-* Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl vcs vpi)``.
+* During compilation, set :envvar:`COCOTB_BOOTSTRAP` to
+  ``$(cocotb-config --gpi-entry-point)`` and :envvar:`GPI_IMPL` to
+  ``$(cocotb-config --gpi-impl vcs vpi)``.
+  This loads the GPI and VPI implementation without starting PyGPI.
+* When running ``simv``, use the full :envvar:`COCOTB_BOOTSTRAP` list and the same :envvar:`GPI_IMPL`.
 
 .. _custom-flows-aldec:
 .. _custom-flows-riviera:
@@ -71,6 +75,11 @@ Aldec Riviera-PRO
 =================
 
 * The ``asim`` call needs the ``+access +w_nets`` option set to allow cocotb to access values in the design.
+* When compiling (System)Verilog with ``alog -pli``, set :envvar:`COCOTB_BOOTSTRAP` to
+  ``$(cocotb-config --gpi-entry-point)`` and :envvar:`GPI_IMPL` to
+  ``$(cocotb-config --gpi-impl riviera vpi)``.
+  Before calling ``asim``, restore the full :envvar:`COCOTB_BOOTSTRAP` list and
+  select the simulation interfaces as described below.
 
 .. tab-set::
 

@@ -213,9 +213,7 @@ int gpi_initialize() {
     gpi_init_logging_and_debug();
     gpi_entry_point();
 
-    // Some simulators load their interface library during compilation or
-    // elaboration. In that case no implementation is registered so we exit
-    // gracefully.
+    // Initialization requires at least one GPI implementation.
     return gpi_has_registered_impl() ? 0 : 1;
 }
 
