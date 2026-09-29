@@ -56,3 +56,39 @@ async def test_end_test_with_expect_error(_: object) -> None:
 @cocotb.test(expect_fail=True)
 async def test_end_test_with_expect_fail(_: object) -> None:
     cocotb.end_test()
+
+
+@cocotb.test()
+async def test_fail_test_forces_fail(_: object) -> None:
+    # A forced failure must record the test as FAIL even though nothing raised
+    # through the test coroutine itself (the out-of-context use case).
+    cocotb.fail_test("failed by request")
+
+
+@cocotb.test()
+async def test_fail_test_with_custom_exc(_: object) -> None:
+    # The caller's exception is attached as the failure cause.
+    try:
+        raise RuntimeWarning("warning promoted to failure")
+    except RuntimeWarning as w:
+        cocotb.fail_test("warning promoted to failure", exc=w)
+
+
+@cocotb.test(expect_fail=True)
+async def test_fail_test_overrides_expect_fail(_: object) -> None:
+    # fail_test precedence: the forced failure is not converted to an xfail
+    # by expect_fail (mirroring pass_test's precedence over xfail).
+    cocotb.fail_test("forced failure with expect_fail set")
+
+
+@cocotb.test()
+async def test_fail_regression_fails_this_test(_: object) -> None:
+    # The running test is failed immediately...
+    cocotb.fail_regression("regression failed by request")
+
+
+@cocotb.test()
+async def test_fail_regression_fails_remaining_tests(_: object) -> None:
+    # ...and this test is never run: _execute() scores it as failed because
+    # _regression_terminated was set by the call above.
+    assert False, "this test must be scored as failed without running"
