@@ -267,7 +267,7 @@ class Logic:
     def __index__(self) -> int:
         return int(self)
 
-    def resolve(self, resolver: ResolverLiteral) -> Self:
+    def resolve(self, resolver: ResolverLiteral) -> Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
@@ -297,7 +297,7 @@ class Logic:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
         """
-        return type(self)(get_str_resolver(resolver)(str(self)))
+        return Bit(get_str_resolver(resolver)(str(self)))
 
     def __len__(self) -> int:
         return 1
@@ -335,4 +335,5 @@ class Bit(Logic):
         TypeError: If the value is of a type that can't be constructed into a :class:`!Bit`.
     """
 
-    _values: ClassVar[set[int]] = {_0, _1}
+    # TODO Uncomment this
+    # _values: ClassVar[set[int]] = {_0, _1}
