@@ -350,7 +350,7 @@ def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:
     assert resolve("W") == "X"
 
 
-def test_env_cocotb_resolve_preview(monkeypatch: MonkeyPatch) -> None:
+def test_env_cocotb_resolve_preview() -> None:
     enable(Feature.STRICT_RESOLVE)
 
     for inp in "UXZW-":

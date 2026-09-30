@@ -8,11 +8,7 @@ from functools import cache
 from typing import ClassVar, Union
 
 from cocotb.preview import Feature, is_enabled
-from cocotb.types._resolve import (
-    RESOLVE_X,
-    ResolverLiteral,
-    get_str_resolver,
-)
+from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -243,15 +239,7 @@ class Logic:
     def __str__(self) -> str:
         return ("U", "X", "0", "1", "Z", "W", "L", "H", "-")[self._repr]
 
-    if is_enabled(Feature.STRICT_RESOLVE):
-
-        def __bool__(self) -> bool:
-            return self.resolve("weak")._repr == _1
-
-        def __int__(self) -> int:
-            return 1 if self.resolve("weak")._repr == _1 else 0
-
-    elif RESOLVE_X is None:
+    if RESOLVE_X is None:
 
         def __bool__(self) -> bool:
             if self._repr in (_0, _L):
@@ -280,7 +268,7 @@ class Logic:
     def __index__(self) -> int:
         return int(self)
 
-    def resolve(self, resolver: ResolverLiteral) -> Self:
+    def resolve(self, resolver: ResolverLiteral) -> Self | Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
@@ -310,7 +298,10 @@ class Logic:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
         """
-        return type(self)(get_str_resolver(resolver)(str(self)))
+        if is_enabled(Feature.STRICT_RESOLVE):
+            return Bit(get_str_resolver(resolver)(str(self)))
+        else:
+            return type(self)(get_str_resolver(resolver)(str(self)))
 
     def __len__(self) -> int:
         return 1

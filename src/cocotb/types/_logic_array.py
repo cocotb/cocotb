@@ -8,12 +8,7 @@ import sys
 import warnings
 from collections.abc import Iterable, Iterator
 from math import ceil
-from typing import (
-    Any,
-    Literal,
-    cast,
-    overload,
-)
+from typing import Any, Literal, cast, overload
 
 from cocotb._deprecation import deprecated
 from cocotb.preview import Feature, is_enabled
@@ -963,14 +958,7 @@ class LogicArray(AbstractMutableArray[Logic]):
     def __invert__(self) -> LogicArray:
         return LogicArray(~v for v in self)
 
-    if is_enabled(Feature.STRICT_RESOLVE):
-
-        def __bool__(self) -> bool:
-            if len(self) == 0:
-                return False
-            return bool(self.to_unsigned())
-
-    elif RESOLVE_X is None:
+    if RESOLVE_X is None:
 
         def __bool__(self) -> bool:
             if len(self) == 0:
@@ -1014,6 +1002,11 @@ class LogicArray(AbstractMutableArray[Logic]):
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
         """
+        # TODO Returning BitArray won't require this check
+        if is_enabled(Feature.STRICT_RESOLVE):
+            if not self.is_resolvable and resolver == "weak" or resolver == "error":
+                raise ValueError
+
         return LogicArray(get_str_resolver(resolver)(str(self)), self.range)
 
     def __copy__(self) -> LogicArray:
