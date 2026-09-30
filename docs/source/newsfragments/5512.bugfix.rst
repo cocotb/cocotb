@@ -1,0 +1,1 @@
+Fixed cancelled :func:`~cocotb.task.resume` coroutines, such as one still running when the test ends, failing the test with ``RuntimeError: Task was cancelled, but exited normally``.

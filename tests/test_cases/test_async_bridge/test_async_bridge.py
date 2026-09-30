@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import threading
 import time
+from asyncio import CancelledError
 
 import pytest
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.task import bridge, resume
-from cocotb.triggers import ReadOnly, RisingEdge, Timer
+from cocotb.task import bridge, current_task, resume
+from cocotb.triggers import Event, ReadOnly, RisingEdge, Timer
 from cocotb.utils import get_sim_steps, get_sim_time
 
 
@@ -334,3 +335,73 @@ async def test_resume_called_in_parallel(dut):
     v2 = await t2
     assert v1 == 1, v1
     assert v2 == 2, v2
+
+
+@cocotb.test()
+async def test_resume_cancelled(dut):
+    """
+    Test that cancelling a @resume coroutine raises CancelledError in the
+    calling @bridge thread and the Task ends as cancelled
+    """
+    resume_task = None
+
+    @resume
+    async def wait_forever():
+        nonlocal resume_task
+        resume_task = current_task()
+        await Event().wait()
+
+    @bridge
+    def call_wait_forever():
+        try:
+            wait_forever()
+        except CancelledError:
+            return "cancelled"
+        return "finished"
+
+    bridge_task = cocotb.start_soon(call_wait_forever())
+    await Timer(1, unit="ns")
+
+    assert resume_task is not None
+    resume_task.cancel()
+    assert await bridge_task == "cancelled"
+    assert resume_task.cancelled()
+
+
+resume_cancelled_on_test_end_result = None
+
+
+@cocotb.test()
+async def test_resume_cancelled_on_test_end(dut):
+    """
+    Test that ending a test while a @bridge thread is blocked in a @resume
+    coroutine cancels the coroutine without failing the test
+    """
+
+    @resume
+    async def wait_long():
+        await Timer(1, unit="us")
+
+    @bridge
+    def call_wait_long():
+        global resume_cancelled_on_test_end_result
+        try:
+            wait_long()
+        except CancelledError:
+            resume_cancelled_on_test_end_result = "cancelled"
+        else:
+            resume_cancelled_on_test_end_result = "finished"
+
+    cocotb.start_soon(call_wait_long())
+    await Timer(1, unit="ns")
+
+
+@cocotb.test()
+async def test_resume_cancelled_on_test_end_resumes_thread(dut):
+    """
+    Test that the @bridge thread from the previous test was resumed with
+    CancelledError when the test ended
+
+    NOTE: This test must be after test_resume_cancelled_on_test_end.
+    """
+    assert resume_cancelled_on_test_end_result == "cancelled"
