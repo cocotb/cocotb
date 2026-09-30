@@ -1,0 +1,51 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Upgrade locked dependencies
+
+on:
+  schedule:
+    - cron: "0 0 * * 2" # every Tuesday at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  upgrade:
+    name: Upgrade locked dependencies
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Generate GitHub App Token
+      id: app-token
+      uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+      with:
+        client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+        private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        token: ${{ steps.app-token.outputs.token }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      with:
+        activate-environment: "true"
+
+    - name: Upgrade dependencies
+      shell: bash
+      run: |
+        uv lock --upgrade 2>&1 | tee "$RUNNER_TEMP/uv-upgrade-output.md"
+
+    - name: Open pull request
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+      with:
+        commit-message: "Upgrade locked dependencies"
+        title: "Upgrade locked dependencies"
+        body-path: ${{ runner.temp }}/uv-upgrade-output.md
+        branch: "upgrade-locked-dependencies"
+        sign-commits: true
+        token: ${{ steps.app-token.outputs.token }}
