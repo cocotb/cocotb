@@ -37,7 +37,9 @@ _rnd_table = _random_resolve_table()
 
 _resolve_tables: dict[str, dict[int, int]] = {
     "error": {},
-    "weak": str.maketrans("LHW", "01X"),
+    "weak": str.maketrans(
+        "LHW", "01X"
+    ),  # TODO remove `W -> X` when incorporating Feature.STRICT_RESOLVE preview
     "zeros": str.maketrans("LHUXZW-", "0100000"),
     "ones": str.maketrans("LHUXZW-", "0111111"),
 }
