@@ -7,6 +7,7 @@ import functools
 import logging
 import sys
 import threading
+from asyncio import CancelledError
 from bdb import BdbQuit
 from collections.abc import Coroutine
 from enum import IntEnum
@@ -204,6 +205,16 @@ def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
 
     outcome: Outcome[Result] | None = None
 
+    def resume_thread() -> None:
+        # Notify the current (scheduler) thread that we are about to wake
+        # up the background (`@external`) thread, making sure to do so
+        # before the background thread gets a chance to go back to sleep by
+        # calling thread_suspend.
+        # We need to do this here in the scheduler thread so that no more
+        # tasks run until the background thread goes back to sleep.
+        t.thread_resume()
+        event.set()
+
     async def wrapper() -> None:
         nonlocal outcome
         # This function runs in the scheduler thread
@@ -213,16 +224,16 @@ def queue_function(task: Coroutine[Trigger, None, Result]) -> Result:
             # Allow these to bubble up to the execution root to fail the sim immediately.
             # This follows asyncio's behavior.
             raise
+        except CancelledError as e:
+            # Pass the cancellation on to the background thread, but also re-raise it
+            # so this Task ends as cancelled rather than failing for having suppressed
+            # the CancelledError.
+            outcome = Error(e)
+            resume_thread()
+            raise
         except BaseException as e:  # noqa: BLE001
             outcome = Error(e)
-        # Notify the current (scheduler) thread that we are about to wake
-        # up the background (`@external`) thread, making sure to do so
-        # before the background thread gets a chance to go back to sleep by
-        # calling thread_suspend.
-        # We need to do this here in the scheduler thread so that no more
-        # tasks run until the background thread goes back to sleep.
-        t.thread_resume()
-        event.set()
+        resume_thread()
 
     event = threading.Event()
     # must register this with test as there's no way to clean up with threading
