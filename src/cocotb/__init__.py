@@ -9,7 +9,15 @@ from logging import Logger
 from types import SimpleNamespace
 
 from cocotb._decorators import Param, parametrize, skipif, test, xfail
-from cocotb._test_manager import create_task, end_test, pass_test, start, start_soon
+from cocotb._test_manager import (
+    create_task,
+    end_test,
+    fail_regression,
+    fail_test,
+    pass_test,
+    start,
+    start_soon,
+)
 from cocotb.handle import SimHandleBase
 
 from ._version import __version__ as _version
@@ -23,6 +31,8 @@ __all__ = (
     "argv",
     "create_task",
     "end_test",
+    "fail_regression",
+    "fail_test",
     "is_simulation",
     "log",
     "packages",
@@ -49,6 +59,8 @@ for thing in [
     create_task,
     pass_test,
     end_test,
+    fail_test,
+    fail_regression,
 ]:
     thing.__module__ = __name__
 
