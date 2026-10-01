@@ -459,19 +459,19 @@ gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data);
  *
  * @param cb        Callback function pointer.
  * @param cb_data   Pointer to user data to be passed to callback function.
- * @return          Zero on success, non-zero on failure.
+ * @return          Handle to callback object.
  */
-GPI_EXPORT int gpi_register_start_of_sim_time_callback(int (*cb)(void *),
-                                                       void *cb_data);
+GPI_EXPORT gpi_cb_hdl gpi_register_start_of_sim_time_callback(int (*cb)(void *),
+                                                              void *cb_data);
 
 /** Register a callback to run at the end of simulation time.
  *
  * @param cb        Callback function pointer.
  * @param cb_data   Pointer to user data to be passed to callback function.
- * @return          Zero on success, non-zero on failure.
+ * @return          Handle to callback object.
  */
-GPI_EXPORT int gpi_register_end_of_sim_time_callback(void (*cb)(void *),
-                                                     void *cb_data);
+GPI_EXPORT gpi_cb_hdl gpi_register_end_of_sim_time_callback(int (*cb)(void *),
+                                                            void *cb_data);
 
 /** Type of a GPI finalization callback.
  *
