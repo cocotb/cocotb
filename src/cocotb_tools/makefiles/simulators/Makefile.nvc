@@ -50,7 +50,7 @@ analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
-	$(COCOTB_ENV) \
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl nvc vhpi) $(COCOTB_ENV) \
 	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) \
 	  -e $(COCOTB_TOPLEVEL) --no-save $(NVC_E_ARGS) \
 	  -r --load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)

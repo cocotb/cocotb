@@ -43,7 +43,7 @@ double sc_time_stamp() {  // Called by $time in Verilog
 }
 
 extern "C" {
-void vlog_startup_routines_bootstrap(void);
+void cocotb_bootstrap_entry(void);
 }
 
 static inline bool settle_value_callbacks() {
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    vlog_startup_routines_bootstrap();
+    cocotb_bootstrap_entry();
     Verilated::addExitCb([](void *) { wrap_up(); }, nullptr);
     VerilatedVpi::callCbs(cbStartOfSimulation);
     settle_value_callbacks();

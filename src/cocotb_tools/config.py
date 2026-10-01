@@ -93,8 +93,8 @@ def _help_vars_text() -> str:
 
         GPI
         ---
-        GPI_USERS         List of user libraries to load after GPI is initialized
-        GPI_EXTRA         Extra libraries to load as part of GPI initialization
+        COCOTB_BOOTSTRAP  Ordered list of native libraries and entry points to load
+        GPI_IMPL          Implementation libraries to load as part of GPI initialization
         GPI_LOG_LEVEL     Default logging level for "gpi" loggers (default INFO)
         GPI_DEBUG         Enable GPI debug features, including TRACE log output
 
@@ -109,17 +109,47 @@ def _help_vars_text() -> str:
     return helpmsg
 
 
+def bootstrap_entry(
+    library: str | os.PathLike[str], entry_point: str | None = None
+) -> str:
+    """Format a library and optional entry point for ``COCOTB_BOOTSTRAP``."""
+    library_str = Path(library).as_posix()
+    for reserved in (",", os.pathsep):
+        if reserved in library_str:
+            raise ValueError(
+                f"Library path {library_str!r} contains reserved character {reserved!r}"
+            )
+
+    if entry_point is None:
+        return library_str
+    if not entry_point or "," in entry_point or os.pathsep in entry_point:
+        raise ValueError(f"Invalid bootstrap entry point {entry_point!r}")
+    return f"{library_str},{entry_point}"
+
+
+def _shared_library_path(name: str) -> Path:
+    extension = ".dll" if os.name == "nt" else ".so"
+    for prefix in ("", "lib"):
+        library_path = libs_dir / f"{prefix}{name}{extension}"
+        if library_path.is_file():
+            return library_path
+    raise FileNotFoundError(f"Shared library {name!r} not found")
+
+
+def gpi_entry_point() -> str:
+    """Return the libgpi entry for ``COCOTB_BOOTSTRAP``."""
+    return bootstrap_entry(_shared_library_path("gpi"), "gpi_initialize")
+
+
 def pygpi_entry_point() -> str:
     import cocotb.simulator  # noqa: PLC0415
 
-    return f"{Path(cocotb.simulator.__file__).resolve()},initialize"
+    return bootstrap_entry(
+        Path(cocotb.simulator.__file__).resolve(), "pygpi_initialize"
+    )
 
 
-def lib_name_path(interface: str, simulator: str) -> Path:
-    """
-    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
-    """
-
+def _gpi_impl_path(interface: str, simulator: str) -> Path:
     interface_name = interface.lower()
     supported_interfaces = ["vpi", "vhpi", "fli"]
     if interface_name not in supported_interfaces:
@@ -168,34 +198,44 @@ def lib_name_path(interface: str, simulator: str) -> Path:
     else:
         lib_prefix = "lib"
 
-    lib_name = f"{lib_prefix}cocotb{interface_name}_{library_name}{lib_ext}"
-    return libs_dir / lib_name
+    filename = f"{lib_prefix}gpi_impl_{library_name}_{interface_name}{lib_ext}"
+    return libs_dir / filename
 
 
 def lib_entry(interface: str, simulator: str) -> str:
-    """Return the interface library and, when required, its entry function.
-
-    The returned value is suitable for simulator options which accept either a
-    library path or a ``library:entry_function`` pair.  Simulators which can
-    discover the standard interface entry point receive only the library path.
-    """
+    """Return the bootstrap library and, when required, its entry function."""
 
     interface_name = interface.lower()
     simulator_name = simulator.lower()
-    library = lib_name_path(interface_name, simulator_name).as_posix()
+    # Validate the interface and simulator names.
+    _gpi_impl_path(interface_name, simulator_name)
+    library = _shared_library_path("cocotb_bootstrap").as_posix()
 
-    entry_functions = {
-        ("vpi", "cvc"): "vlog_startup_routines_bootstrap",
-        ("vpi", "ius"): "vlog_startup_routines_bootstrap",
-        ("vpi", "xcelium"): "vlog_startup_routines_bootstrap",
-        ("vhpi", "activehdl"): "vhpi_startup_routines_bootstrap",
-        ("vhpi", "riviera"): "vhpi_startup_routines_bootstrap",
+    requires_entry_function = {
+        ("vpi", "cvc"),
+        ("vpi", "ius"),
+        ("vpi", "xcelium"),
+        ("vhpi", "activehdl"),
+        ("vhpi", "riviera"),
     }
-    entry_function = entry_functions.get((interface_name, simulator_name))
 
-    if entry_function is None:
-        return library
-    return f"{library}:{entry_function}"
+    if (interface_name, simulator_name) in requires_entry_function:
+        return f"{library}:cocotb_bootstrap_entry"
+    return library
+
+
+def gpi_impl(simulator: str, *interfaces: str) -> str:
+    """Return the comma-separated implementation entries for ``GPI_IMPL``."""
+    if not interfaces:
+        raise ValueError("At least one GPI interface is required")
+
+    entries = []
+    for interface in interfaces:
+        interface_name = interface.lower()
+        library_path = _gpi_impl_path(interface_name, simulator)
+        entry_point = f"{library_path.stem.removeprefix('lib')}_entry"
+        entries.append(f"{library_path.as_posix()}:{entry_point}")
+    return ",".join(entries)
 
 
 def _get_parser() -> argparse.ArgumentParser:
@@ -233,26 +273,31 @@ def _get_parser() -> argparse.ArgumentParser:
         help="Print the absolute path to the interface libraries location",
     )
     group.add_argument(
-        "--lib-name-path",
-        help="Print the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator",
+        "--lib-entry",
+        help="Print the bootstrap library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
         nargs=2,
         metavar=("INTERFACE", "SIMULATOR"),
     )
     group.add_argument(
-        "--lib-entry",
-        help="Print the interface library and, when required, its entry function for given interface (VPI/VHPI/FLI) and simulator",
-        nargs=2,
-        metavar=("INTERFACE", "SIMULATOR"),
+        "--gpi-impl",
+        help="Print the GPI_IMPL entries for the given simulator and interface(s) (VPI/VHPI/FLI)",
+        nargs="+",
+        metavar=("SIMULATOR", "INTERFACE"),
+    )
+    group.add_argument(
+        "--gpi-entry-point",
+        action="store_true",
+        help="Print the libgpi entry point for use in COCOTB_BOOTSTRAP",
+    )
+    group.add_argument(
+        "--pygpi-entry-point",
+        action="store_true",
+        help="Print the PyGPI entry point for use in COCOTB_BOOTSTRAP",
     )
     group.add_argument(
         "--version",
         action="store_true",
         help="Print the version of cocotb",
-    )
-    group.add_argument(
-        "--pygpi-entry-point",
-        action="store_true",
-        help="Print the PYGPI entry point for use in GPI_USERS",
     )
 
     return parser
@@ -277,10 +322,15 @@ def main() -> None:
         print(Path(libpython_path).as_posix())
     elif args.lib_dir:
         print(libs_dir.as_posix())
-    elif args.lib_name_path:
-        print(lib_name_path(*args.lib_name_path).as_posix())
     elif args.lib_entry:
         print(lib_entry(*args.lib_entry))
+    elif args.gpi_impl:
+        simulator, *interfaces = args.gpi_impl
+        if not interfaces:
+            parser.error("--gpi-impl requires at least one interface")
+        print(gpi_impl(simulator, *interfaces))
+    elif args.gpi_entry_point:
+        print(gpi_entry_point())
     elif args.pygpi_entry_point:
         print(pygpi_entry_point())
     elif args.version:
