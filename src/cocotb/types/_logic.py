@@ -7,6 +7,7 @@ import sys
 from functools import cache
 from typing import ClassVar, Union
 
+from cocotb.preview import Feature, is_enabled
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
 
 if sys.version_info >= (3, 10):
@@ -105,7 +106,7 @@ class Logic:
         value: value to construct into a :class:`!Logic`.
 
     Raises:
-        ValueError: If the value if of the correct type, but cannot be constructed into a :class:`!Logic`.
+        ValueError: If the value is of the correct type, but cannot be constructed into a :class:`!Logic`.
         TypeError: If the value is of a type that can't be constructed into a :class:`!Logic`.
     """
 
@@ -267,7 +268,7 @@ class Logic:
     def __index__(self) -> int:
         return int(self)
 
-    def resolve(self, resolver: ResolverLiteral) -> Self:
+    def resolve(self, resolver: ResolverLiteral) -> Self | Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
@@ -297,7 +298,10 @@ class Logic:
             ValueError: Invalid *resolver* value.
             TypeError: Unsupported *value* type.
         """
-        return type(self)(get_str_resolver(resolver)(str(self)))
+        if is_enabled(Feature.STRICT_RESOLVE):
+            return Bit(get_str_resolver(resolver)(str(self)))
+        else:
+            return type(self)(get_str_resolver(resolver)(str(self)))
 
     def __len__(self) -> int:
         return 1
