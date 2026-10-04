@@ -130,7 +130,7 @@ async def test_in_arr_unpacked(dut):
 @cocotb.test()
 async def test_in_2d_arr(dut):
     assert isinstance(dut.in_2d_arr, PackedObject)
-    assert len(dut.in_2d_arr) == 9
+    assert dut.in_2d_arr.size == 9
 
     test_value = 365
     dut.in_2d_arr.value = test_value
@@ -292,7 +292,7 @@ async def test_in_2d_arr_unpacked(dut):
 @cocotb.test()
 async def test_in_3d_arr(dut):
     assert isinstance(dut.in_3d_arr, PackedObject)
-    assert len(dut.in_3d_arr) == 27
+    assert dut.in_3d_arr.size == 27
 
     test_value = (365 << 18) | (365 << 9) | (365)
     dut.in_3d_arr.value = test_value

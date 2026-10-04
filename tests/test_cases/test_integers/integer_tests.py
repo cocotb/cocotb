@@ -51,7 +51,6 @@ async def test_int_verilog(
         return
     obj_name = f"{name}_{obj_type}"
     handle = getattr(verilog_dut, obj_name)
-    assert len(handle) == width
     assert handle.size == width
     assert handle.is_signed is is_signed
 
@@ -138,7 +137,6 @@ async def test_integer_access_vhdl(
     obj_name = f"{name}_{obj_type}"
     handle = getattr(vhdl_dut, obj_name)
     assert handle.is_signed is is_signed
-    assert len(handle) == width
     assert handle.size == width
 
     # For backwards compatibility, LogicArray/PackedObjects always use (INT_MIN, UINT_MAX) for bounds.
