@@ -34,7 +34,7 @@ from cocotb import preview
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
-from cocotb._test_manager import TestManager, TestSuccess
+from cocotb._test_manager import TestFailure, TestManager, TestSuccess
 from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import Status, XUnitReporter
 from cocotb.logging import ANSI
@@ -541,6 +541,16 @@ class RegressionManager:
                     wall_time_s=wall_time_s,
                     sim_time_start=sim_time_start,
                     sim_time_stop=sim_time_stop,
+                )
+            elif isinstance(exc, TestFailure):
+                # Forced failure takes precedence over expect_error/expect_fail,
+                # mirroring the TestSuccess precedence above.
+                return self._record_test_failed(
+                    wall_time_s=wall_time_s,
+                    sim_time_start=sim_time_start,
+                    sim_time_stop=sim_time_stop,
+                    result=exc.__cause__ if exc.__cause__ is not None else exc,
+                    msg=exc.msg,
                 )
             if test.expect_error:
                 expected_error_set = set(test.expect_error)
@@ -1126,6 +1136,46 @@ class RegressionManager:
         self._regression_terminated = SimFailure(msg)
         self._running_test.cancel(msg)
         cocotb._event_loop._inst.run()
+
+    def fail_regression(
+        self,
+        msg: str | None = None,
+        *,
+        exc: BaseException | None = None,
+    ) -> None:
+        """Fail the current regression.
+
+        The currently running test (if any) is failed, and every remaining
+        test is recorded as failed without being run.
+
+        The first failure cause wins: subsequent calls have no effect.
+
+        Args:
+            msg: The failure message.
+            exc: An exception of the caller's choice to record as the failure cause.
+
+        .. versionadded:: 2.2
+        """
+        if self._tearing_down:
+            self.log.warning(
+                "fail_regression() called after the regression finished teardown; ignoring"
+            )
+            return
+
+        if self._regression_terminated is None:
+            cause = f": {exc}" if exc is not None else (f": {msg}" if msg else "")
+            self._regression_terminated = RegressionTerminated(
+                f"Regression failed by user request{cause}"
+            )
+            self.log.warning(str(self._regression_terminated))
+
+        # If a test is running, end it now so the failure is not delayed until
+        # the test completes naturally. The cancellation is scored as a
+        # failure because _test_complete() overrides the test outcome with
+        # _regression_terminated when it is set.
+        running = getattr(self, "_running_test", None)
+        if running is not None and not running.done():
+            running.cancel("regression failed by user request")
 
     def list_tests(self) -> None:
         """List the tests that would be run, without running them."""

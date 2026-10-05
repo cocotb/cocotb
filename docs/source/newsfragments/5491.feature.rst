@@ -1,0 +1,1 @@
+Added :func:`cocotb.fail_test` and :func:`cocotb.fail_regression` to fail the current test or the whole regression from out-of-context handlers, optionally attaching an exception of the caller's choice as the failure cause.
