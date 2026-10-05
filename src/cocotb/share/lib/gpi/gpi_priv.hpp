@@ -262,7 +262,7 @@ class GPI_EXPORT GpiImplInterface {
 };
 
 /* Called from implementation layers back up the stack */
-GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
+GPI_EXPORT void gpi_register_impl(GpiImplInterface *func_tbl);
 
 // GpiImpls are currently expected to register single callbacks with the
 // interface for the start and end of simulation time. These functions are

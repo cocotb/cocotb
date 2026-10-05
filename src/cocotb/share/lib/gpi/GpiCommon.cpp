@@ -76,18 +76,27 @@ static size_t gpi_print_registered_impl() {
     return registered_impls.size();
 }
 
-int gpi_register_impl(GpiImplInterface *func_tbl) {
-    vector<GpiImplInterface *>::iterator iter;
-    for (iter = registered_impls.begin(); iter != registered_impls.end();
-         iter++) {
-        if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("GPI: %s support already registered, check GPI_EXTRA",
-                     func_tbl->get_name_c());
-            return -1;
+void gpi_register_impl(GpiImplInterface *func_tbl) {
+    if (!func_tbl) {
+        LOG_ERROR("GPI: Attempted to register a null implementation pointer");
+        gpi_finish();
+        return;
+    }
+
+    for (auto *impl : registered_impls) {
+        if (impl->get_name_s() == func_tbl->get_name_s()) {
+            LOG_ERROR(
+                "GPI: %s support already registered; duplicate registration "
+                "aborted. "
+                "Check GPI_EXTRA and simulator restart arguments.",
+                func_tbl->get_name_c());
+            // Prevent state desynchronization and command graceful teardown.
+            gpi_finish();
+            return;
         }
     }
+
     registered_impls.push_back(func_tbl);
-    return 0;
 }
 
 bool gpi_has_registered_impl() { return registered_impls.size() > 0; }

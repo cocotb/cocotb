@@ -858,6 +858,7 @@ static void vpi_main() {
 }
 
 // This is run by GPI when requested for mixed-language simulations
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     LOG_TRACE("GPI Init => [ VPI (register_impl) ]");
     auto vpi_table = new VpiImpl("VPI");

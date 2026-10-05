@@ -1142,6 +1142,7 @@ static void vhpi_main() {
 }
 
 // This is run by GPI when requested for mixed-language simulations
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     LOG_TRACE("GPI Init => [ VHPI (register_impl) ]");
     auto vhpi_table = new VhpiImpl("VHPI");

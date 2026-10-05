@@ -1151,6 +1151,7 @@ void FliImpl::main() noexcept {
 }
 
 // This is run by GPI when requested for mixed-language simulations
+// This is run by GPI when requested for mixed-language simulations
 static void register_impl() {
     LOG_TRACE("GPI Init => [ FLI (register_impl) ]");
     auto fli_table = new FliImpl("FLI");
