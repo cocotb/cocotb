@@ -64,7 +64,7 @@ There are several issues with using Makefiles as a build system:
 * Limited built-in functionality, requires shelling out.
 * Shell features are not consistent between different OSes.
 
-To address these issues and others, cocotb developed a Python-based build and test runner system known as the `Python Runners <howto-python-runner>`_.
+To address these issues and others, cocotb developed a Python-based build and test runner system known as the :ref:`Python Runners <howto-python-runner>`.
 This system does the exact same job as the Makefile-based system, but is implemented in Python.
 Instead of writing a declarative Makefile, users write a Python script that uses the Python Runners API to configure and run their tests.
 
