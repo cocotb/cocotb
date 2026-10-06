@@ -190,12 +190,18 @@ int FliShutdownCbHdl::arm() {
 }
 
 int FliShutdownCbHdl::run() {
+    m_running = true;
     int res = m_cb_func(m_cb_data);
     delete this;
     return res;
 }
 
 int FliShutdownCbHdl::remove() {
+    if (m_running) {
+        // Called from run() through FliImpl::sim_end(); run() deletes this
+        // once the callback returns, so deleting it here frees it twice.
+        return 0;
+    }
     mti_RemoveQuitCB(handle_fli_callback, (void *)this);
     delete this;
     return 0;
