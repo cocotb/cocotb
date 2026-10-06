@@ -1,0 +1,1 @@
+Fixed a crash of Questa when quitting the simulation before cocotb finished, for example with ``quit -sim`` or by closing the GUI, when using FLI.

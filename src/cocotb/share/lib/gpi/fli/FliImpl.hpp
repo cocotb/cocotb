@@ -148,6 +148,10 @@ class FliShutdownCbHdl : public FliCbHdl {
     int arm() override;
     int run() override;
     int remove() override;
+
+  private:
+    // run() ends the simulation, which removes this callback while it runs
+    bool m_running = false;
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {
