@@ -1,0 +1,1 @@
+Document how :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` handles test results and simulator exit status under pytest and in direct usage.

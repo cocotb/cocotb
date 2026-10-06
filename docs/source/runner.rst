@@ -84,6 +84,59 @@ For example, add the following code at the end:
     if __name__ == "__main__":
         test_simple_dff_runner()
 
+.. _runner-test-results:
+
+Test results and exit status
+============================
+
+:meth:`Runner.test() <cocotb_tools.runner.Runner.test>` returns the absolute path to
+the results XML file when it completes normally.
+How it handles test failures depends on whether it is called from a pytest test
+or directly from a Python script.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 30 30
+
+   * - Simulation outcome
+     - Usage with pytest
+     - Direct usage
+   * - Simulator exits with status 0; XML reports no failures or errors
+     - Returns the results path
+     - Returns the results path
+   * - Simulator exits with status 0; XML reports failures or errors
+     - Raises ``SystemExit(1)``
+     - Returns the results path without checking the XML
+   * - Simulator exits with a non-zero status
+     - Raises ``RuntimeError`` before checking the XML
+     - Raises ``RuntimeError``
+   * - Simulator exits with status 0; results XML file is missing
+     - Raises ``SystemExit(0)``
+     - Returns the results path, even though the file does not exist
+
+Under pytest, an uncaught ``SystemExit`` fails the enclosing pytest test,
+including ``SystemExit(0)``.
+An uncaught ``RuntimeError`` also fails the enclosing pytest test.
+These are the exceptions raised by the runner, not the exit status of pytest
+itself.
+Pytest usage is detected through the ``PYTEST_CURRENT_TEST`` environment variable.
+
+In direct usage, a successful simulator exit does not guarantee that the cocotb
+tests passed or that a results file was produced.
+The caller is responsible for checking the results file.
+For example, after running a script that writes :file:`sim_build/results.xml`,
+check its results with:
+
+.. code-block:: bash
+
+    python -m cocotb_tools.check_results sim_build/results.xml
+
+The checker uses the reported number of failures and errors as its exit status,
+or 1 if the file is missing.
+Use the actual results path returned by ``Runner.test()`` if a different
+``build_dir``, ``test_dir``, or ``results_xml`` was specified.
+
+
 Generate waveforms
 ==================
 
