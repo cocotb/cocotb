@@ -239,7 +239,7 @@ class Task(Generic[ResultType]):
             # - finished coroutine
             except IndexError:
                 try:
-                    coro_name = self._coro.__name__
+                    coro_name = self._coro.__name__  # type: ignore[attr-defined]
                 except AttributeError:
                     coro_name = type(self._coro).__name__
         else:
