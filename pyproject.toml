@@ -1,9 +1,6 @@
 [build-system]
 requires = [
     "scikit-build-core>=0.3.3",
-    "find_libpython",
-    "setuptools>=77",
-    "wheel",
     "setuptools-git-versioning>=3.0,<4",
 ]
 build-backend = "scikit_build_core.build"

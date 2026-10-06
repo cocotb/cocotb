@@ -101,6 +101,13 @@ jobs:
       if: ${{ inputs.download_artifacts }}
       run: ls -R dist
 
+    # This action sets up its own Python, so run it before selecting the test Python.
+    - name: Set up Verilator
+      if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
+      uses: ktbarrett/setup-verilator@2c87cbbff7b6d11227efef20a6f8a4278af11978  # v0.1.1
+      with:
+        version: ${{matrix.sim-version}}
+
       # Install Python
     - name: Set up Python ${{matrix.python-version}} (setup-python)
       if: matrix.setup_python == ''
@@ -111,7 +118,7 @@ jobs:
 
     - name: Install msys2 (Windows)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
-      uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884  # v2.31.0
+      uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e  # v2.31.0
       with:
         msystem: MINGW64
         update: true
@@ -125,7 +132,7 @@ jobs:
       run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
 
     - name: Install uv
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
 
     - name: Install Python testing dependencies
       run: |
@@ -223,32 +230,6 @@ jobs:
         make -j $(nproc)
         sudo make install
 
-      # Install Verilator (Linux)
-    - name: Set up Verilator (Ubuntu - source)
-      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator'
-      run: |
-        sudo apt-get install -y --no-install-recommends help2man make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlib1g zlib1g-dev
-        git clone https://github.com/verilator/verilator.git
-        cd verilator
-        git reset --hard ${{matrix.sim-version}}
-        autoconf
-        ./configure
-        make -j $(nproc)
-        sudo make install
-
-      # Install Verilator (MacOS)
-    - name: Set up Verilator (MacOS - source)
-      if: startsWith(matrix.os, 'macos') && matrix.sim == 'verilator'
-      run: |
-        brew install autoconf help2man
-        git clone https://github.com/verilator/verilator.git
-        cd verilator
-        git reset --hard ${{matrix.sim-version}}
-        autoconf
-        ./configure
-        make -j $(sysctl -n hw.logicalcpu)
-        sudo make install
-
       # Windows Testing
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
@@ -296,7 +277,7 @@ jobs:
 
     - name: Upload to codecov
       if: inputs.collect_coverage
-      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
       env:
         # https://community.codecov.com/t/upload-issues-unable-to-locate-build-via-github-actions-api/3954
         CODECOV_TOKEN: 669f2048-851e-479e-a618-8fa64f3736cc
