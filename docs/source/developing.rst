@@ -7,7 +7,8 @@ Setting Up a Development Environment
 
 :ref:`Install prerequisites to build the development version of cocotb <install-devel>` and standard development tools (editor, shell, git, etc.).
 
-.. note:: Documentation generation requires Python 3.11+.
+.. note::
+   Developing cocotb, including building the documentation, requires Python 3.11+.
 
 First, you should `fork and clone <https://guides.github.com/activities/forking/>`__ the cocotb repo to your machine.
 This will allow you to make changes to the cocotb source code, create pull requests, and run regressions and build documentation locally.

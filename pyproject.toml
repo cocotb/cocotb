@@ -404,6 +404,16 @@ release_test = [
 ]
 
 [tool.uv.dependency-groups]
-# We need Python 3.11 to run Sphinx 8.2 and cibuildwheel 3.2
+# cocotb supports running on Python 3.9+, but development, documentation, and
+# release tooling assume Python 3.11+, which is the oldest Python shipped by the
+# current releases of the major Linux distributions. This matches what CI uses
+# (.readthedocs.yml, build-test-release.yml, release-*.yml) and stops uv from
+# resolving these groups for Python 3.9/3.10, which held back many packages.
+#
+# Groups used by the simulator test matrix (test_common, dev_test,
+# release_test, coverage_report) must keep the project floor of 3.9.
+dev = {requires-python = ">=3.11"}
 docs = {requires-python = ">=3.11"}
+docs_preview = {requires-python = ">=3.11"}
 release_build_wheel = {requires-python = ">=3.11"}
+release_build_sdist = {requires-python = ">=3.11"}
