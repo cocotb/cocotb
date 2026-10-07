@@ -1194,7 +1194,7 @@ The PyGPI is a Python wrapper around the :term:`GPI` (Generic Procedural Interfa
 
     1. Start collecting coverage on ``cocotb`` sources.
     2. Configure logging and ``cocotb``, ``gpi`` and related loggers.
-    3. Initialize ``cocotb`` namespace variables (:data:`cocotb.top`,:data:`cocotb.packages`, :data:`cocotb.RANDOM_SEED`, etc.)
+    3. Initialize ``cocotb`` namespace variables (:data:`cocotb.top`, :data:`cocotb.packages`, :data:`cocotb.RANDOM_SEED`, etc.)
        and other internal state like the scheduler, debugging, profiling, previews, etc.
     4. Start the regression manager, which discovers and starts the first test.
 

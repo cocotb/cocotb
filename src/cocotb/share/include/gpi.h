@@ -102,7 +102,7 @@ GPI_EXPORT bool gpi_has_registered_impl(void);
 
 /** Initialize the GPI and load the implementations listed in GPI_IMPL.
  *
- * This is an entry point for libcocotb_bootstrap.
+ * This is an entry point for `libcocotb_bootstrap`.
  *
  * @return `0` if initialization completed successfully, or `1` if no GPI
  * implementation was registered.
