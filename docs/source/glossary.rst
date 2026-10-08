@@ -54,6 +54,9 @@ Glossary
    GPI
       Generic Procedural Interface, cocotb's abstraction over :term:`VPI`, :term:`VHPI`, and :term:`FLI`.
 
+   GPI Implementation Library
+      A native library (``.so``, ``.dll``, or ``.dylib``) that implements the :term:`GPI` interface for a specific simulator.
+
    HAL
       Hardware Abstraction Layer
 
