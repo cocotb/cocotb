@@ -696,9 +696,9 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
              *    parent->get_name():   sig_name(x)(y)...  where x,y,... are the
              * indices to a multi-dimensional array. pseudo_idx:   (x)(y)...
              */
-            if (hdl_name.length() < parent->get_name().length()) {
+            if (hdl_name.length() < parent->get_fullname().length()) {
                 std::string pseudo_idx =
-                    parent->get_name().substr(hdl_name.length());
+                    parent->get_fullname().substr(hdl_name.length());
 
                 while (pseudo_idx.length() > 0) {
                     std::size_t found = pseudo_idx.find_first_of(")");
