@@ -10,7 +10,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
-from functools import cached_property
+from functools import cache, cached_property
 from logging import Logger
 from typing import (
     Any,
@@ -60,6 +60,17 @@ __all__ = (
     "StringObject",
     "ValueObjectBase",
 )
+
+
+@cache
+def _int_bounds(width: int, signed: bool | None) -> tuple[int, int]:
+    if signed is None:
+        # We don't know if it's signed or unsigned, so return the full range.
+        return -(1 << (width - 1)), (1 << width) - 1
+    elif signed:
+        return -(1 << (width - 1)), (1 << (width - 1)) - 1
+    else:
+        return 0, (1 << width) - 1
 
 
 class SimHandleBase(ABC):
@@ -601,9 +612,11 @@ class HierarchyArrayObject(
     # ideally `__len__` could be implemented in terms of `range`, but `range` doesn't work universally.
 
     def __iter__(self) -> Iterator[HierarchyChildObjectT]:
-        # must use `sorted(self._keys())` instead of the range because `range` doesn't work universally.
-        for i in sorted(self._keys()):
-            yield self[i]
+        self._discover_all()
+        sub_handles = cast("dict[int, HierarchyChildObjectT]", self._sub_handles)
+        # Must sort discovered indexes because `range` doesn't work universally.
+        for i in sorted(sub_handles):
+            yield sub_handles[i]
 
 
 class _GPISetAction(enum.Enum):
@@ -1075,16 +1088,17 @@ class ArrayObject(
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slicing is not supported")
-        if index in self._sub_handles:
+        try:
             return self._sub_handles[index]
+        except KeyError:
+            pass
         new_handle = self._handle.get_handle_by_index(index)
-        if not new_handle:
+        if new_handle is None:
             raise IndexError(f"{self._path} contains no object at index {index}")
         path = self._path + "[" + str(index) + "]"
-        self._sub_handles[index] = cast(
-            "ChildObjectT", _make_sim_object(new_handle, path)
-        )
-        return self._sub_handles[index]
+        value = cast("ChildObjectT", _make_sim_object(new_handle, path))
+        self._sub_handles[index] = value
+        return value
 
     def __iter__(self) -> Iterator[ChildObjectT]:
         for i in self.range:
@@ -1225,20 +1239,6 @@ class _SignednessObjectMixin(SimHandleBase):
     def is_signed(self) -> bool:
         return self._handle.get_signed()
 
-    @property
-    def _min_val(self) -> int:
-        if not self.is_signed:
-            return 0
-        else:
-            return -(2 ** (len(self) - 1))
-
-    @property
-    def _max_val(self) -> int:
-        if self.is_signed:
-            return (2 ** (len(self) - 1)) - 1
-        else:
-            return (2 ** len(self)) - 1
-
 
 class _LogicArrayObjectBase(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
@@ -1266,19 +1266,25 @@ class _LogicArrayObjectBase(
     ) -> None:
         value_: str
         if isinstance(value, int):
-            if not self._min_val <= value <= self._max_val:
+            width = len(self)
+            min_val, max_val = _int_bounds(width, None)
+
+            if not min_val <= value <= max_val:
                 raise ValueError(
-                    f"Int value ({value!r}) out of range for assignment of {len(self)!r}-bit signal ({self._name!r})"
+                    f"Int value ({value!r}) out of range for assignment of {width!r}-bit signal ({self._name!r})"
                 )
 
-            if len(self) <= 32:
+            if width <= 32:
                 return _schedule_write(
                     self, self._handle.set_signal_val_int, action, value
                 )
             else:
                 if value < 0:
-                    value += 1 << len(self)
-                value_ = f"{value:0{len(self)}b}"
+                    value += 1 << width
+                value_ = f"{value:0{width}b}"
+                return _schedule_write(
+                    self, self._handle.set_signal_val_binstr, action, value_
+                )
 
         elif isinstance(value, str):
             value_ = value.replace("_", "")  # remove visual separators
@@ -1551,12 +1557,15 @@ class EnumObject(
                 f"Unsupported type for enum value assignment: {type(value)} ({value!r})"
             )
 
-        if not self._min_val <= value <= self._max_val:
+        width = len(self)
+        min_val, max_val = _int_bounds(width, self.is_signed)
+
+        if not min_val <= value <= max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of enum signal ({self._name!r})"
             )
 
-        if len(self) <= 32:
+        if width <= 32:
             # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
@@ -1564,7 +1573,7 @@ class EnumObject(
                 self,
                 self._handle.set_signal_val_binstr,
                 action,
-                format(value, f"0{len(self)}b"),
+                format(value, f"0{width}b"),
             )
 
     def get(self) -> int:
@@ -1572,14 +1581,21 @@ class EnumObject(
 
         See :class:`EnumObject` for details on what :class:`int` values correspond to which enumeration values.
         """
-        if len(self) <= 32:
+        width = len(self)
+        if width <= 32:
             res = self._handle.get_signal_val_long()
+            # The signed 32-bit result may not sign-extend narrow signed objects.
+            if self.is_signed:
+                if res >= 1 << (width - 1):
+                    res -= 1 << width
+            # Large unsigned values may appear as negatives.
+            elif res < 0:
+                res += 1 << width
         else:
             res = int(self._handle.get_signal_val_binstr(), 2)
-        if res > self._max_val:
-            res -= 1 << len(self)
-        elif res < 0 and not self.is_signed:
-            res += 1 << len(self)
+            # binstr is always unsigned, so if this is a signed object, adjust large values down to negatives.
+            if self.is_signed and res >= 1 << (width - 1):
+                res -= 1 << width
         return res
 
     def set(
@@ -1667,18 +1683,21 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
                 f"Unsupported type for integer value assignment: {type(value)} ({value!r})"
             )
 
-        if not self._min_val <= value <= self._max_val:
+        width = len(self)
+        min_val, max_val = _int_bounds(width, self.is_signed)
+
+        if not min_val <= value <= max_val:
             raise ValueError(
                 f"Int value ({value!r}) out of range for assignment of integer signal ({self._name!r})"
             )
 
-        if len(self) <= 32:
+        if width <= 32:
             # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
             if value < 0:
-                value += 1 << len(self)
-            value_ = format(value, f"0{len(self)}b")
+                value += 1 << width
+            value_ = format(value, f"0{width}b")
 
             return _schedule_write(
                 self,
@@ -1689,14 +1708,21 @@ class IntegerObject(_NonIndexableValueObjectBase[int, int], _SignednessObjectMix
 
     def get(self) -> int:
         """Return the current value of the simulation object as an :class:`int`."""
-        if len(self) <= 32:
+        width = len(self)
+        if width <= 32:
             res = self._handle.get_signal_val_long()
+            # The signed 32-bit result may not sign-extend narrow signed objects.
+            if self.is_signed:
+                if res >= 1 << (width - 1):
+                    res -= 1 << width
+            # Large unsigned values may appear as negatives.
+            elif res < 0:
+                res += 1 << width
         else:
             res = int(self._handle.get_signal_val_binstr(), 2)
-        if res > self._max_val:
-            res -= 1 << len(self)
-        elif res < 0 and not self.is_signed:
-            res += 1 << len(self)
+            # This is always unsigned, so if this is a signed object, adjust large values down to negatives.
+            if self.is_signed and res >= 1 << (width - 1):
+                res -= 1 << width
         return res
 
     def set(
@@ -1889,10 +1915,10 @@ def _make_sim_object(
         pass
 
     t = handle.get_type()
-    if t not in _type2cls:
+    if (cls := _type2cls.get(t)) is None:
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
-    obj = _type2cls[t](handle, path)
+    obj = cls(handle, path)
     _handle2obj[handle] = obj
     return obj
