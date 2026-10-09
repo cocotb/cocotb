@@ -1,0 +1,1 @@
+Fixed memory leak in GPI where VPI handles for range objects of arrays and generate arrays were not being released.

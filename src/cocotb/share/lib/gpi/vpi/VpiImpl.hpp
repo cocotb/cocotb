@@ -68,6 +68,10 @@ static inline void __check_vpi_error(const char *file, const char *func,
 gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
                            bool is_vector = false);
 
+// Borrows obj and releases the bound handles.
+// Returns 0 on success, -1 on failure.
+int get_range_bounds(vpiHandle obj, int &left, int &right);
+
 #define check_vpi_error()                                \
     do {                                                 \
         __check_vpi_error(__FILE__, __func__, __LINE__); \
