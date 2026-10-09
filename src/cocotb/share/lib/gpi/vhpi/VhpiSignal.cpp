@@ -558,6 +558,8 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
 int VhpiSignalObjHdl::get_signed() {
     if (m_type == GPI_INTEGER) {
         return 1;
+    } else if (m_type == GPI_ENUM) {
+        return 0;
     } else {
         return -1;
     }
