@@ -12,6 +12,10 @@
 #include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
+VpiSignalObjHdl::~VpiSignalObjHdl() {
+    vpi_free_object(get_handle<vpiHandle>());
+}
+
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
@@ -44,19 +48,37 @@ int VpiSignalObjHdl::initialise(const std::string &name,
 
                 /* Only ever need the first "range" */
                 if (iter != NULL) {
+                    DEFER(vpi_free_object(iter));
+
                     vpiHandle rangeHdl = vpi_scan(iter);
 
-                    vpi_free_object(iter);
-
                     if (rangeHdl != NULL) {
-                        vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
-                        check_vpi_error();
-                        m_range_left = val.value.integer;
+                        DEFER(vpi_free_object(rangeHdl));
 
-                        vpi_get_value(vpi_handle(vpiRightRange, rangeHdl),
-                                      &val);
-                        check_vpi_error();
+                        vpiHandle leftRange =
+                            vpi_handle(vpiLeftRange, rangeHdl);
+                        if (leftRange == NULL) {
+                            LOG_ERROR(
+                                "Unable to get left range for indexable array");
+                            check_vpi_error();
+                            return -1;
+                        }
+                        vpi_get_value(leftRange, &val);
+                        m_range_left = val.value.integer;
+                        vpi_free_object(leftRange);
+
+                        vpiHandle rightRange =
+                            vpi_handle(vpiRightRange, rangeHdl);
+                        if (rightRange == NULL) {
+                            LOG_ERROR(
+                                "Unable to get right range for indexable "
+                                "array");
+                            check_vpi_error();
+                            return -1;
+                        }
+                        vpi_get_value(rightRange, &val);
                         m_range_right = val.value.integer;
+                        vpi_free_object(rightRange);
                     } else {
                         LOG_ERROR(
                             "VPI: Unable to get range for %s of type %s (%d)",
@@ -64,24 +86,41 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         return -1;
                     }
                 } else {
-                    vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
-                    check_vpi_error();
-                    vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
-                    check_vpi_error();
-
-                    if (leftRange != NULL and rightRange != NULL) {
+                    [&]() {
+                        vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
+                        if (leftRange == NULL) {
+                            check_vpi_error();
+                            // TODO is this the best behavior? Do simulators
+                            // actually hit this case?
+                            LOG_WARN(
+                                "VPI: Cannot discover range bounds, guessing "
+                                "based "
+                                "on elements");
+                            m_range_left = 0;
+                            m_range_right = m_num_elems - 1;
+                            return;
+                        }
                         vpi_get_value(leftRange, &val);
                         m_range_left = val.value.integer;
+                        vpi_free_object(leftRange);
 
+                        vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
+                        if (rightRange == NULL) {
+                            check_vpi_error();
+                            // TODO is this the best behavior? Do simulators
+                            // actually hit this case?
+                            LOG_WARN(
+                                "VPI: Cannot discover range bounds, guessing "
+                                "based "
+                                "on elements");
+                            m_range_left = 0;
+                            m_range_right = m_num_elems - 1;
+                            return;
+                        }
                         vpi_get_value(rightRange, &val);
                         m_range_right = val.value.integer;
-                    } else {
-                        LOG_WARN(
-                            "VPI: Cannot discover range bounds, guessing based "
-                            "on elements");
-                        m_range_left = 0;
-                        m_range_right = m_num_elems - 1;
-                    }
+                        vpi_free_object(rightRange);
+                    }();
                 }
 
                 LOG_DEBUG(

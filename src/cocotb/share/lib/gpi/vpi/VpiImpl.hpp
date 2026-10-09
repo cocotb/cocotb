@@ -172,17 +172,23 @@ class VpiShutdownCbHdl : public VpiCbHdl {
 
 class VpiArrayObjHdl : public GpiObjHdl {
   public:
-    VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype)
-        : GpiObjHdl(impl, hdl, objtype) {}
+    VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
+                   bool owns_handle = true)
+        : GpiObjHdl(impl, hdl, objtype), m_owns_handle(owns_handle) {}
+    ~VpiArrayObjHdl() override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
+
+  private:
+    bool m_owns_handle;
 };
 
 class VpiObjHdl : public GpiObjHdl {
   public:
     VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype)
         : GpiObjHdl(impl, hdl, objtype) {}
+    ~VpiObjHdl() override;
 
     const char *get_definition_name() override;
     const char *get_definition_file() override;
@@ -193,6 +199,7 @@ class VpiSignalObjHdl : public GpiSignalObjHdl {
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
                     bool is_const)
         : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
+    ~VpiSignalObjHdl() override;
 
     const char *get_signal_value_binstr() override;
     const char *get_signal_value_str() override;
@@ -339,7 +346,8 @@ class VpiImpl : public GpiImplInterface {
     static const char *reason_to_string(int reason);
     GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl,
                                           const std::string &name,
-                                          const std::string &fq_name);
+                                          const std::string &fq_name,
+                                          bool owns_handle = true);
 
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);

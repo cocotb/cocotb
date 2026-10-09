@@ -9,6 +9,15 @@
 #include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
+VpiArrayObjHdl::~VpiArrayObjHdl() {
+    if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
+}
+
+VpiObjHdl::~VpiObjHdl() {
+    // Generate pseudo-regions borrow their containing region's handle.
+    if (m_type != GPI_GENARRAY) vpi_free_object(get_handle<vpiHandle>());
+}
+
 int VpiArrayObjHdl::initialise(const std::string &name,
                                const std::string &fq_name) {
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
@@ -46,6 +55,7 @@ int VpiArrayObjHdl::initialise(const std::string &name,
 // Questa and VCS vpiRange iter always starts from the first index of the array.
 #if defined(MODELSIM) || defined(VCS)
         for (int i = 0; i < range_idx; ++i) {
+            vpi_free_object(rangeHdl);
             rangeHdl = vpi_scan(iter);
             if (rangeHdl == NULL) {
                 break;
@@ -63,16 +73,29 @@ int VpiArrayObjHdl::initialise(const std::string &name,
         LOG_ERROR("Unable to get range for indexable array or memory");
         return -1;
     }
+    DEFER(if (rangeHdl != hdl) vpi_free_object(rangeHdl));
 
     s_vpi_value val;
     val.format = vpiIntVal;
-    vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
-    check_vpi_error();
+    vpiHandle leftRange = vpi_handle(vpiLeftRange, rangeHdl);
+    if (leftRange == NULL) {
+        LOG_ERROR("Unable to get left range for indexable array");
+        check_vpi_error();
+        return -1;
+    }
+    vpi_get_value(leftRange, &val);
     m_range_left = val.value.integer;
+    vpi_free_object(leftRange);
 
-    vpi_get_value(vpi_handle(vpiRightRange, rangeHdl), &val);
-    check_vpi_error();
+    vpiHandle rightRange = vpi_handle(vpiRightRange, rangeHdl);
+    if (rightRange == NULL) {
+        LOG_ERROR("Unable to get right range for indexable array");
+        check_vpi_error();
+        return -1;
+    }
+    vpi_get_value(rightRange, &val);
     m_range_right = val.value.integer;
+    vpi_free_object(rightRange);
 
     /* vpiSize will return a size that is incorrect for multi-dimensional arrays
      * so use the range to calculate the m_num_elems.

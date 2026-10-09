@@ -189,7 +189,8 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
 
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                                                const std::string &name,
-                                               const std::string &fq_name) {
+                                               const std::string &fq_name,
+                                               bool owns_handle) {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
@@ -282,7 +283,8 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             const auto is_vector = vpi_get(vpiVector, new_hdl);
             const auto num_elements = vpi_get(vpiSize, new_hdl);
             new_obj = new VpiArrayObjHdl(
-                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
+                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
+                owns_handle);
             break;
         }
         case vpiStructVar:
@@ -484,6 +486,7 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
 GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     vpiHandle vpi_hdl = parent->get_handle<vpiHandle>();
     vpiHandle new_hdl = NULL;
+    bool owns_handle = true;
 
     char buff[14];  // needs to be large enough to hold -2^31 to 2^31-1 in
                     // string form ('['+'-'10+']'+'\0')
@@ -528,7 +531,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             vpiHandle it = vpi_iterate(vpiRange, p_hdl);
             int constraint_cnt = 0;
             if (it != NULL) {
-                while (vpi_scan(it) != NULL) {
+                for (vpiHandle r = vpi_scan(it); r != NULL; r = vpi_scan(it)) {
+                    vpi_free_object(r);
                     ++constraint_cnt;
                 }
             } else {
@@ -583,6 +587,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                  * multi-dimensional array */
                 if (constraint_cnt > 1) {
                     new_hdl = p_hdl;
+                    owns_handle = false;
                 }
             }
         }
@@ -606,9 +611,10 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     std::string idx = buff;
     std::string name = parent->get_name() + idx;
     std::string fq_name = parent->get_fullname() + idx;
-    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl *new_obj =
+        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
     if (new_obj == NULL) {
-        vpi_free_object(new_hdl);
+        if (owns_handle) vpi_free_object(new_hdl);
         LOG_DEBUG("Unable to fetch object below entity (%s) at index (%d)",
                   parent->get_name_str(), index);
         return NULL;
