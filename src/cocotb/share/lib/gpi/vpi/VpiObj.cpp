@@ -9,6 +9,15 @@
 #include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
+VpiArrayObjHdl::~VpiArrayObjHdl() {
+    if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
+}
+
+VpiObjHdl::~VpiObjHdl() {
+    // Generate pseudo-regions borrow their containing region's handle.
+    if (m_type != GPI_GENARRAY) vpi_free_object(get_handle<vpiHandle>());
+}
+
 int VpiArrayObjHdl::initialise(const std::string &name,
                                const std::string &fq_name) {
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
@@ -64,7 +73,7 @@ int VpiArrayObjHdl::initialise(const std::string &name,
         LOG_ERROR("Unable to get range for indexable array or memory");
         return -1;
     }
-    DEFER(vpi_free_object(rangeHdl));
+    DEFER(if (rangeHdl != hdl) vpi_free_object(rangeHdl));
 
     s_vpi_value val;
     val.format = vpiIntVal;
