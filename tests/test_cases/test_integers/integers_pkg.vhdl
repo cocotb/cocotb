@@ -3,5 +3,6 @@
 -- SPDX-License-Identifier: BSD-3-Clause
 
 package integers_pkg is
+    type my_enum is (enum_a, enum_b, enum_c);
     subtype my_integer is integer range -100 to 100;
 end package integers_pkg;
