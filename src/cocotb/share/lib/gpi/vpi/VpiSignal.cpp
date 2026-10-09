@@ -35,53 +35,41 @@ int VpiSignalObjHdl::initialise(const std::string &name,
             m_indexable = vpi_get(vpiVector, hdl);
 
             if (m_indexable) {
-                s_vpi_value val;
-                vpiHandle iter;
-
-                val.format = vpiIntVal;
-
-                iter = vpi_iterate(vpiRange, hdl);
+                vpiHandle iter = vpi_iterate(vpiRange, hdl);
 
                 /* Only ever need the first "range" */
                 if (iter != NULL) {
                     vpiHandle rangeHdl = vpi_scan(iter);
 
-                    vpi_free_object(iter);
-
                     if (rangeHdl != NULL) {
-                        vpi_get_value(vpi_handle(vpiLeftRange, rangeHdl), &val);
-                        check_vpi_error();
-                        m_range_left = val.value.integer;
+                        DEFER(vpi_free_object(iter));
+                        DEFER(vpi_free_object(rangeHdl));
 
-                        vpi_get_value(vpi_handle(vpiRightRange, rangeHdl),
-                                      &val);
-                        check_vpi_error();
-                        m_range_right = val.value.integer;
-                    } else {
+                        int res = get_range_bounds(rangeHdl, m_range_left,
+                                                   m_range_right);
+                        // LCOV_EXCL_START
+                        if (res) {
+                            return -1;
+                        }
+                        // LCOV_EXCL_STOP
+                    }
+                    // LCOV_EXCL_START
+                    else {
                         LOG_ERROR(
                             "VPI: Unable to get range for %s of type %s (%d)",
                             name.c_str(), vpi_get_str(vpiType, hdl), type);
                         return -1;
                     }
-                } else {
-                    vpiHandle leftRange = vpi_handle(vpiLeftRange, hdl);
-                    check_vpi_error();
-                    vpiHandle rightRange = vpi_handle(vpiRightRange, hdl);
-                    check_vpi_error();
-
-                    if (leftRange != NULL and rightRange != NULL) {
-                        vpi_get_value(leftRange, &val);
-                        m_range_left = val.value.integer;
-
-                        vpi_get_value(rightRange, &val);
-                        m_range_right = val.value.integer;
-                    } else {
-                        LOG_WARN(
-                            "VPI: Cannot discover range bounds, guessing based "
-                            "on elements");
-                        m_range_left = 0;
-                        m_range_right = m_num_elems - 1;
-                    }
+                    // LCOV_EXCL_STOP
+                } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
+                           0) {
+                    // TODO is this the best behavior? Do simulators actually
+                    // hit this case?
+                    LOG_WARN(
+                        "VPI: Cannot discover range bounds, guessing based "
+                        "on elements");
+                    m_range_left = 0;
+                    m_range_right = m_num_elems - 1;
                 }
 
                 LOG_DEBUG(

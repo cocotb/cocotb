@@ -528,7 +528,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             vpiHandle it = vpi_iterate(vpiRange, p_hdl);
             int constraint_cnt = 0;
             if (it != NULL) {
-                while (vpi_scan(it) != NULL) {
+                for (vpiHandle r = vpi_scan(it); r != NULL; r = vpi_scan(it)) {
+                    vpi_free_object(r);
                     ++constraint_cnt;
                 }
             } else {
