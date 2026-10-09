@@ -12,6 +12,10 @@
 #include "../logging.hpp"
 #include "./VpiImpl.hpp"
 
+VpiSignalObjHdl::~VpiSignalObjHdl() {
+    vpi_free_object(get_handle<vpiHandle>());
+}
+
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
