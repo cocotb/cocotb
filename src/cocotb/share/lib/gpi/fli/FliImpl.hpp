@@ -270,6 +270,7 @@ class FliEnumObjHdl : public FliValueObjHdl {
 
     const char *get_signal_value_str() override;
     long get_signal_value_long() override;
+    int get_signed() override { return 0; }
 
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action action) override;

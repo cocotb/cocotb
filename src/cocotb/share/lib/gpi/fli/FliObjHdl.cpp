@@ -184,7 +184,8 @@ void *FliValueObjHdl::get_sub_hdl(int index) {
 
 int FliEnumObjHdl::initialise(const std::string &name,
                               const std::string &fq_name) {
-    m_num_elems = 1;
+    // Enumeration values are returned as 32-bit integer ordinals.
+    m_num_elems = 32;
     m_value_enum = mti_GetEnumValues(m_val_type);
     m_num_enum = mti_TickLength(m_val_type);
 
