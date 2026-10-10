@@ -6,7 +6,7 @@ if(WIN32)
     set(ENV{CXXFLAGS} "")
     set(ENV{LDFLAGS} "")
 
-    set(CMAKE_CXX_FLAGS "/W3" CACHE STRING "CXX compiler flags" FORCE)
+    set(CMAKE_CXX_FLAGS "/W3 /EHsc" CACHE STRING "CXX compiler flags" FORCE)
     set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1" CACHE STRING "CXX debug flags" FORCE)
     set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG" CACHE STRING "CXX release flags" FORCE)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /Zi /O2 /Ob1 /DNDEBUG" CACHE STRING "CXX release with debug info flags" FORCE)
@@ -277,11 +277,16 @@ if(WIN32)
 endif()
 add_vpi_library(GHDL GHDL EXTRA_LIBS ${GHDL_EXTRA_LIBS})
 
+set(VERILATOR_EXTRA_LIBS "")
+if(WIN32)
+    set(VERILATOR_EXTRA_LIBS verilator)
+endif()
+add_vpi_library(VERILATOR VERILATOR EXTRA_LIBS ${VERILATOR_EXTRA_LIBS})
+
 if(UNIX)
     add_vpi_library(IUS IUS)
     add_vhpi_library(IUS IUS)
     add_vpi_library(VCS VCS)
-    add_vpi_library(VERILATOR VERILATOR)
     add_vpi_library(DSim DSim)
 endif()
 
@@ -300,17 +305,17 @@ add_vhpi_library(ALDEC ALDEC EXTRA_LIBS ${ALDEC_EXTRA_LIBS})
 
 if(WIN32)
     if(MSVC)
-        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
+        foreach(SIM icarus modelsim aldec ghdl nvcvhpi verilator)
             add_custom_command(
                 OUTPUT ${COCOTB_DEF_DIR}/${SIM}.lib
-                COMMAND lib /def:${COCOTB_DEF_DIR}/${SIM}.def /out:${COCOTB_DEF_DIR}/${SIM}.lib /machine:$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,X64,X86>
+                COMMAND ${CMAKE_AR} /def:${COCOTB_DEF_DIR}/${SIM}.def /out:${COCOTB_DEF_DIR}/${SIM}.lib /machine:$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,X64,X86>
                 DEPENDS ${COCOTB_DEF_DIR}/${SIM}.def
                 COMMENT "Generating import library for ${SIM}"
             )
             add_custom_target(${SIM}_import_lib ALL DEPENDS ${COCOTB_DEF_DIR}/${SIM}.lib)
         endforeach()
     else()
-        foreach(SIM icarus modelsim aldec ghdl nvcvhpi)
+        foreach(SIM icarus modelsim aldec ghdl nvcvhpi verilator)
             add_custom_command(
                 OUTPUT ${COCOTB_DEF_DIR}/lib${SIM}.a
                 COMMAND dlltool -d ${COCOTB_DEF_DIR}/${SIM}.def -l ${COCOTB_DEF_DIR}/lib${SIM}.a
@@ -331,6 +336,7 @@ if(WIN32)
     add_dependencies(gpi_impl_nvc_vhpi nvcvhpi_import_lib)
     add_dependencies(gpi_impl_aldec_vpi aldec_import_lib)
     add_dependencies(gpi_impl_aldec_vhpi aldec_import_lib)
+    add_dependencies(gpi_impl_verilator_vpi verilator_import_lib)
 endif()
 
 if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
@@ -344,7 +350,7 @@ if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     if(UNIX)
         list(APPEND SIM_TARGETS
             gpi_impl_ius_vpi gpi_impl_ius_vhpi gpi_impl_vcs_vpi
-            gpi_impl_verilator_vpi gpi_impl_dsim_vpi)
+            gpi_impl_dsim_vpi)
     endif()
 
     install(TARGETS ${SIM_TARGETS} DESTINATION cocotb/libs OPTIONAL)
