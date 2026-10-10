@@ -247,6 +247,17 @@ ENVS = [
         "extra-name": "msvc",
         "group": "ci-free",
     },
+    # Verilator on windows, built from source with MSVC
+    {
+        "lang": "verilog",
+        "sim": "verilator",
+        "sim-version": "v5.046",
+        "os": "windows-latest",
+        "python-version": "3.11",
+        "toolchain": "msvc",
+        "extra-name": "msvc",
+        "group": "experimental",
+    },
     # NVC on windows
     {
         "lang": "vhdl",

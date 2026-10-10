@@ -1892,7 +1892,7 @@ class Verilator(Runner):
         return "dump.vcd"
 
     def _simulator_in_path_build_only(self) -> None:
-        executable = shutil.which("verilator")
+        executable = shutil.which("verilator") or shutil.which("verilator_bin")
         if executable is None:
             raise SystemExit("ERROR: verilator executable not found!")
         self.executable: str = executable
@@ -1935,26 +1935,8 @@ class Verilator(Runner):
             cocotb_tools.config.share_dir / "lib" / "verilator" / "verilator.cpp"
         )
 
-        cmds = []
-        cmds.append(
-            [
-                self.executable,
-                "-cc",
-                "--exe",
-                "-Mdir",
-                str(self.build_dir),
-                "--top-module",
-                self.hdl_toplevel,
-                "--vpi",
-                "--public-flat-rw",
-                "--prefix",
-                "Vtop",
-                "-o",
-                self.hdl_toplevel,
-                "-LDFLAGS",
-                f"-Wl,-rpath,{cocotb_tools.config.libs_dir} -L{cocotb_tools.config.libs_dir} -lcocotb_bootstrap -rdynamic",
-            ]
-            + (["--trace"] if self.waves else [])
+        verilator_args = (
+            ["--vpi", "--public-flat-rw"]
             + [arg.value for arg in self._build_args]
             + (
                 ["--timescale", "{}/{}".format(*self.timescale)]
@@ -1964,30 +1946,100 @@ class Verilator(Runner):
             + self._get_define_options(self.defines)
             + self._get_include_options(self.includes)
             + self._get_parameter_options(self.parameters)
-            + [verilator_cpp]
-            + [str(source.value) for source in sources]
         )
 
-        cmds.append(
+        cmake = shutil.which("cmake")
+        if cmake is None:
+            raise SystemExit("ERROR: cmake executable not found!")
+
+        self._create_cmake_file(
+            verilator_cpp, [str(source.value) for source in sources], verilator_args
+        )
+
+        cmake_build_dir = self.build_dir / "cmake"
+        # Verilator's CMake package is found relative to the verilator executable
+        # (or VERILATOR_ROOT, which the package honors itself).
+        configure = [
+            cmake,
+            "-S",
+            str(self.build_dir),
+            "-B",
+            str(cmake_build_dir),
+            "-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_PREFIX_PATH={Path(self.executable).resolve().parent.parent}",
+        ]
+        if shutil.which("ninja") is not None:
+            configure += ["-G", "Ninja"]
+
+        return [
+            configure,
             [
-                "make",
-                "-j",
+                cmake,
+                "--build",
+                str(cmake_build_dir),
+                "--config",
+                "Release",
+                "--parallel",
                 f"{_get_max_parallel_build_jobs()}",
-                "-C",
-                str(self.build_dir),
-                "-f",
-                "Vtop.mk",
-                f"VM_TRACE={int(self.waves)}",
-            ]
-        )
+            ],
+        ]
 
-        return cmds
+    def _create_cmake_file(
+        self, main_cpp: str, sources: Sequence[str], verilator_args: Sequence[str]
+    ) -> None:
+        def q(value: str) -> str:
+            escaped = (
+                value.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("$", "\\$")
+                .replace(";", "\\;")
+            )
+            return f'"{escaped}"'
+
+        def p(value: PathLike) -> str:
+            return q(Path(value).as_posix())
+
+        assert self.hdl_toplevel is not None
+        out_dir = p(self.build_dir)
+        output_dirs = " ".join(
+            f"RUNTIME_OUTPUT_DIRECTORY_{config} {out_dir}"
+            for config in ("DEBUG", "RELEASE", "RELWITHDEBINFO", "MINSIZEREL")
+        )
+        lines = [
+            "cmake_minimum_required(VERSION 3.15)",
+            "project(cocotb_verilator LANGUAGES CXX)",
+            # --timing makes Verilator emit C++20 coroutines
+            *(
+                ["set(CMAKE_CXX_STANDARD 20)", "set(CMAKE_CXX_STANDARD_REQUIRED ON)"]
+                if "--timing" in verilator_args
+                else []
+            ),
+            "find_package(verilator REQUIRED)",
+            f"find_library(COCOTB_BOOTSTRAP_LIB cocotb_bootstrap PATHS {p(cocotb_tools.config.libs_dir)} NO_DEFAULT_PATH)",
+            "if(NOT COCOTB_BOOTSTRAP_LIB)",
+            '  message(FATAL_ERROR "cocotb_bootstrap library not found")',
+            "endif()",
+            f"add_executable(cocotb_sim {p(main_cpp)})",
+            # ENABLE_EXPORTS exports the VPI symbols to the cocotb libraries (-rdynamic)
+            f"set_target_properties(cocotb_sim PROPERTIES OUTPUT_NAME Vtop ENABLE_EXPORTS ON RUNTIME_OUTPUT_DIRECTORY {out_dir} {output_dirs})",
+            "target_link_libraries(cocotb_sim PRIVATE ${COCOTB_BOOTSTRAP_LIB})",
+            "verilate(cocotb_sim",
+            "  PREFIX Vtop",
+            f"  TOP_MODULE {q(self.hdl_toplevel)}",
+            *(["  TRACE"] if self.waves else []),
+            "  SOURCES",
+            *(f"    {p(source)}" for source in sources),
+            "  VERILATOR_ARGS",
+            *(f"    {q(arg)}" for arg in verilator_args),
+            ")",
+        ]
+        (self.build_dir / "CMakeLists.txt").write_text("\n".join(lines) + "\n")
 
     def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Verilator.")
 
-        out_file = self.build_dir / self.sim_hdl_toplevel
+        out_file = self.build_dir / "Vtop"
         return [
             self._get_sim_cmd_prefix()
             + [str(out_file)]

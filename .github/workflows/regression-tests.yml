@@ -182,6 +182,21 @@ jobs:
       run: |
         pacman -U --noconfirm iverilog/msys2/*.zst
         echo "$(dirname $(cygpath -m $(which iverilog)))" >> $GITHUB_PATH
+    - name: Set up Verilator (Windows - MSVC - source)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'verilator'
+      shell: pwsh
+      run: |
+        choco install winflexbison3 --no-progress -y
+        git clone https://github.com/verilator/verilator.git
+        git -C verilator checkout ${{matrix.sim-version}}
+        cmake -S verilator -B verilator/build -G Ninja -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
+          -DCMAKE_INSTALL_PREFIX="$env:RUNNER_TEMP/verilator"
+        cmake --build verilator/build --config Release
+        cmake --install verilator/build --config Release
+        "$env:RUNNER_TEMP/verilator/bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+        "VERILATOR_ROOT=$env:RUNNER_TEMP/verilator/share/verilator" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
