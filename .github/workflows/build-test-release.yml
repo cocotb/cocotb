@@ -47,6 +47,13 @@ jobs:
       - name: Install nox
         run: python3 -m pip install nox nox-uv
 
+      - name: Check release tag against VERSION
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: nox -s release_check_tag -- "$TAG"
+
       # Use the cibuildwheel configuration inside nox, instead of the
       # cibuildwheel GitHub Action, to make the process easy to reproduce
       # locally.

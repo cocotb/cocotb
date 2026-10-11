@@ -181,7 +181,7 @@ How Releases Work
 -----------------
 
 Releases are made by pushing an annotated ``vX.Y.Z`` tag; that push alone triggers the whole build, test, and PyPI publish pipeline (``.github/workflows/build-test-release.yml``), so it is the actual point of no return in the process above -- every step before it can be redone or abandoned freely.
-The only thing that can stop a release after the tag exists is a protection rule on the ``pypi`` environment (see below).
+Publishing requires the tag to match ``VERSION`` and the build and tests to pass; protection rules on the ``pypi`` environment can require approval as well (see below).
 That is also why "Release 2: Tag" checks before tagging that the release notes for the version exist on the branch and that no newsfragments are left pending.
 
 Two situations are handled the same way:
@@ -199,6 +199,9 @@ The ``VERSION`` file names the release the current branch is working towards, as
 It feeds `setuptools-git-versioning <https://setuptools-git-versioning.readthedocs.io/>`_, which uses it to version the ``dev`` builds made from every commit that isn't tagged, and it is where ``nox -s release_notes`` takes the version to file the notes under.
 It therefore has to move on whenever a branch starts working towards a different version: to the next minor on ``master`` when a series is branched off (done by "Release 1"), and to the next patch on the release branch once a final release is tagged (done by "Release 2").
 Both are proposed as PRs, like everything else these workflows do.
+
+The build workflow checks that the tag's base version matches ``VERSION`` before proceeding; pre, post, development, and local versions are allowed.
+For example, ``VERSION`` containing ``2.2.0`` allows ``v2.2.0``, ``v2.2.0a1``, ``v2.2.0b1``, ``v2.2.0rc1``, ``v2.2.0.post1``, ``v2.2.0.dev1``, and ``v2.2.0+build``, but rejects ``v2.2.1``.
 
 ``master``'s ``docs/source/release_notes.rst`` should always show the full release history, including patch releases, even though patch releases only ever run towncrier on a stable branch. For a **final** release (``vX.Y.Z``, no ``rc`` suffix), ``build-test-release.yml`` handles this automatically once publishing succeeds, by calling `Release 3: Backport release notes to master <https://github.com/cocotb/cocotb/actions/workflows/release-3-backport-notes.yml>`__: it copies the notes section that was just generated on the release branch back into ``master``, removes the newsfragments it consumed there so they aren't listed again under the next release, and opens a PR. Release candidates are skipped, since they ship the final release's notes rather than a section of their own.
 
