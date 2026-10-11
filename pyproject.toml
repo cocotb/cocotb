@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "scikit-build-core>=0.3.3",
-    "setuptools-git-versioning>=3.0,<4",
+    "setuptools-git-versioning>=3.2,<4",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -65,6 +65,7 @@ version_file = "VERSION"
 count_commits_from_version_file = true
 dev_template = "{tag}.dev{ccount}+r{sha}"
 dirty_template = "{tag}.dev{ccount}+r{sha}.dirty"
+prefer_tag = true
 
 [tool.scikit-build]
 experimental = true

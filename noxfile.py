@@ -22,6 +22,11 @@ nox.options.default_venv_backend = "uv"
 # Sessions run by default if nox is called without further arguments.
 nox.options.sessions = ["dev_test"]
 
+# Names the version a branch is working towards, and hence the version its
+# next release notes are filed under. See "cocotb Releases" in
+# docs/source/maintaining.rst.
+VERSION_FILE = Path("VERSION")
+
 #
 # Helpers for use within this file.
 #
@@ -396,6 +401,27 @@ def dev_coverage_report(session: nox.Session) -> None:
 dist_dir = "dist"
 
 
+@nox.session(venv_backend="none")
+def release_check_tag(session: nox.Session) -> None:
+    """Check a release tag against VERSION, e.g. -- v2.2.0rc1."""
+    parser = argparse.ArgumentParser(prog="nox -s release_check_tag --")
+    parser.add_argument("tag")
+    args = parser.parse_args(session.posargs)
+
+    try:
+        tag_version = Version(args.tag)
+    except InvalidVersion:
+        session.error(f"Tag {args.tag!r} is not a valid release version.")
+
+    version = VERSION_FILE.read_text().strip()
+    if tag_version.base_version != version:
+        session.error(
+            f"Tag {args.tag!r} has base version {tag_version.base_version!r}, "
+            f"but {VERSION_FILE} contains {version!r}."
+        )
+    session.log(f"Tag {args.tag!r} is compatible with {VERSION_FILE} ({version}).")
+
+
 @nox_uv.session(
     uv_no_install_project=True,
     uv_groups=[],
@@ -654,10 +680,6 @@ def docs_spelling(session: nox.Session) -> None:
 # pyproject.toml.
 RELEASE_NOTES = Path("docs") / "source" / "release_notes.rst"
 NEWSFRAGMENTS = Path("docs") / "source" / "newsfragments"
-# Names the version a branch is working towards, and hence the version its
-# next release notes are filed under. See "cocotb Releases" in
-# docs/source/maintaining.rst.
-VERSION_FILE = Path("VERSION")
 # Inserted by towncrier as the header of each release's section. Also the
 # marker this file uses to find where a section starts and ends.
 SECTION_HEADER_RE = re.compile(r"^cocotb (?P<version>\S+) \([^)]*\)$")
