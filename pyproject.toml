@@ -226,6 +226,10 @@ build = "cp*-manylinux_x86_64 cp*-win_amd64 cp*-macosx_x86_64 cp*-macosx_arm64"
 # Skip them until cocotb supports the free-threaded ABI.
 skip = "cp3??t-*"
 
+# cocotb preloads libraries rather than using RPATH or something similar.
+# This makes delocate/auditwheel very unhappy as they assume the RPATH approach.
+repair-wheel-command = ""
+
 # Build with optimizations and debugging
 # -O2   Enables reasonable optimizations. -O3 is unnecessary with the virtual-call-heavy code in the GPI and may bloat binary size.
 # -g    Generate standard debugging info.
@@ -243,9 +247,6 @@ manylinux-x86_64-image = "manylinux2014"
 # /LTCG Enables LTO which can reduce binary size and improve inlining.
 [tool.cibuildwheel.windows]
 environment = {CL = "/O2 /Z7 /Zo /LTCG"}
-
-[tool.cibuildwheel.macos]
-repair-wheel-command = "delocate-wheel --no-sanitize-rpaths --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.pytest.ini_options]
 # Note: Do *not* add files within the cocotb/ tree here. Add them to the
