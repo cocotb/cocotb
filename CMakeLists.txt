@@ -327,7 +327,7 @@ if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
     set(SIM_TARGETS
         gpi_impl_icarus_vpi gpi_impl_modelsim_vpi gpi_impl_modelsim_vhpi
         gpi_impl_modelsim_fli gpi_impl_ghdl_vpi gpi_impl_aldec_vpi
-        gpi_impl_aldec_vhpi gpi_impl_nvc_vhpi)
+        gpi_impl_aldec_vhpi gpi_impl_nvc_vhpi gpi_impl_verilator_vpi)
 
     if(UNIX)
         list(APPEND SIM_TARGETS
