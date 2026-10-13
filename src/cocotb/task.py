@@ -411,17 +411,7 @@ class Task(Generic[ResultType]):
                     remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
                 )
         else:
-            if self._must_cancel:
-                if debug.debug:
-                    self._log.debug("Task %r was cancelled but continued running", self)
-                self._coro.close()
-                self._set_outcome(
-                    RuntimeError(
-                        "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
-                    ),
-                    _TaskState.ERRORED,
-                )
-            elif not isinstance(trigger, Trigger):
+            if not isinstance(trigger, Trigger):
                 if debug.debug:
                     self._log.debug(
                         "Task %r yielded non-Trigger of type: %r", self, type(trigger)

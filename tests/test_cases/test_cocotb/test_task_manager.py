@@ -289,6 +289,38 @@ async def test_child_failure_in_block(_: object, continue_on_error: bool) -> Non
 
 
 @cocotb.test
+async def test_await_during_internal_cancellation(_: object) -> None:
+    cleanup_completed: list[str] = []
+
+    with assert_takes(6, "step"), pytest.raises(BaseExceptionGroup) as exc_info:
+        async with TaskManager() as tm:
+            tm.start_soon(raises_after(1))
+
+            @tm.fork
+            async def child() -> None:
+                try:
+                    await Timer(10)
+                except CancelledError:
+                    await Timer(2)
+                    await Timer(3)
+                    cleanup_completed.append("child")
+                    raise
+
+            try:
+                await Timer(10)
+            except CancelledError:
+                await Timer(1)
+                await Timer(1)
+                cleanup_completed.append("body")
+                raise
+
+    assert len(exc_info.value.exceptions) == 1
+    assert isinstance(exc_info.value.exceptions[0], MyException)
+    assert cleanup_completed == ["body", "child"]
+    assert child.cancelled()
+
+
+@cocotb.test
 @cocotb.parametrize(outer_continue_on_error=[True, False])
 @cocotb.parametrize(inner_continue_on_error=[True, False])
 async def test_child_failure_in_nested_block(
@@ -633,6 +665,44 @@ async def test_external_cancel_in_aexit(_: object, continue_on_error: bool) -> N
 
 @cocotb.test
 @cocotb.parametrize(continue_on_error=[True, False])
+async def test_await_during_external_cancellation(
+    _: object, continue_on_error: bool
+) -> None:
+    child_task: Task[None] | None = None
+    cleanup_completed = Event()
+
+    async def child() -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            await Timer(2)
+            await Timer(3)
+            cleanup_completed.set()
+            raise
+
+    async def run_task_manager() -> None:
+        nonlocal child_task
+        async with TaskManager(default_continue_on_error=continue_on_error) as tm:
+            child_task = tm.start_soon(child())
+
+    task = cocotb.start_soon(run_task_manager())
+    await Timer(1)
+    task.cancel("cleanup requested")
+
+    with (
+        assert_takes(5, "step"),
+        pytest.raises(CancelledError, match="cleanup requested"),
+    ):
+        await task
+
+    assert cleanup_completed.is_set()
+    assert child_task is not None
+    assert child_task.cancelled()
+    assert task.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(continue_on_error=[True, False])
 async def test_double_external_cancel_in_aexit(
     _: object, continue_on_error: bool
 ) -> None:
@@ -656,7 +726,6 @@ async def test_double_external_cancel_in_aexit(
     await task.complete
 
     assert task.cancelled()
-    assert task._must_cancel == 0
 
 
 @cocotb.test
@@ -752,7 +821,6 @@ async def test_external_double_cancel_in_nested_aexit(
 
     await task.complete
     assert task.cancelled()
-    assert task._must_cancel == 0
 
 
 @cocotb.test
