@@ -583,42 +583,6 @@ class Task(Generic[ResultType]):
 
         return True
 
-    def _cancel_now(self, msg: str | None = None) -> bool:
-        """Like cancel(), but throws CancelledError into the Task and puts it into a "done" state immediately.
-
-        Not safe to be called from a running Task.
-        Only from done callbacks or scheduler or Task internals.
-        """
-        state = self._state
-        if state is _TaskState.PENDING:
-            # Unprime triggers if pending.
-            self._trigger_callback.cancel()
-        elif state is _TaskState.SCHEDULED:
-            # Unschedule if scheduled.
-            self._schedule_callback.cancel()
-        elif state is _TaskState.UNSTARTED:
-            # Resume anyways, the error will come out when calling coro.throw() on an
-            # unstarted coroutine and this will prevent ResourceWarnings from un-awaited
-            # coroutines.
-            pass
-        elif state is _TaskState.RUNNING:
-            raise RuntimeError("Can't _cancel_now() currently running Task")
-        else:  # FINISHED, ERRORED, CANCELLED
-            return False
-
-        # Set state to do cancel
-        if msg is None:
-            cancelled_error = CancelledError()
-        else:
-            cancelled_error = CancelledError(msg)
-        self._must_cancel += 1
-
-        # Throw CancelledError now
-        self._exc = cancelled_error
-        self._resume()
-
-        return True
-
     def _uncancel(self) -> None:
         """Prevents :exc:`RuntimeError` from occurring when cancelled Tasks suppress :exc:`asyncio.CancelledError`.
 
