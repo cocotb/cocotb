@@ -774,6 +774,29 @@ async def test_cancel_task(_: object) -> None:
     assert task.done()
 
 
+@cocotb.test
+async def test_await_during_cancellation(_: object) -> None:
+    async def coro() -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            await Timer(2)
+            await Timer(3)
+            raise
+
+    task = cocotb.start_soon(coro())
+    await Timer(1)
+    task.cancel("cleanup requested")
+
+    with (
+        assert_takes(5, "step"),
+        pytest.raises(CancelledError, match="cleanup requested"),
+    ):
+        await task
+
+    assert task.cancelled()
+
+
 @cocotb.test(expect_error=RuntimeError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()
@@ -1193,3 +1216,10 @@ async def test_task_closes_coro_when_never_started(_: object) -> None:
 
     # Ensure child was closed
     assert inspect.getcoroutinestate(c) == inspect.CORO_CLOSED
+
+
+@cocotb.test()
+async def test_cancel_then_return(dut: object) -> None:
+    task = cocotb.start_soon(First(Timer(10, unit="ns")))
+    await Timer(1, unit="ns")
+    task.cancel()

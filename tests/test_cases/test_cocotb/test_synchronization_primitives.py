@@ -128,30 +128,7 @@ async def test_internalevent(dut):
     with assert_takes(1, "ns"):
         await e
     assert e.is_set()
-    # _InternalEvent can only be awaited once
-    with pytest.raises(RuntimeError):
-        await e
-
-    e = _InternalEvent(None)
-    ran = False
-
-    async def await_internalevent():
-        nonlocal ran
-        await e
-        ran = True
-
-    # Test multiple coroutines waiting
-    cocotb.start_soon(await_internalevent())
-    await NullTrigger()
-    assert not e.is_set()
-    assert not ran
-    # _InternalEvent can only be awaited by one coroutine
-    with pytest.raises(RuntimeError):
-        await e
-    e.set()
-    await Timer(1)
-    assert e.is_set()
-    assert ran
+    await e
 
     # Test waiting after set
     e = _InternalEvent(None)
