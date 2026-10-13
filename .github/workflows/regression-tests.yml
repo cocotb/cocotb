@@ -117,7 +117,7 @@ jobs:
         allow-prereleases: true
 
     - name: Install msys2 (Windows)
-      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      if: startsWith(matrix.os, 'windows') && (matrix.sim == 'icarus' || matrix.sim == 'verilator')
       uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e  # v2.31.0
       with:
         msystem: MINGW64
@@ -126,6 +126,7 @@ jobs:
           base-devel
           gperf
           mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
 
     - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
@@ -182,20 +183,20 @@ jobs:
       run: |
         pacman -U --noconfirm iverilog/msys2/*.zst
         echo "$(dirname $(cygpath -m $(which iverilog)))" >> $GITHUB_PATH
-    - name: Set up Verilator (Windows - MSVC - source)
+    - name: Set up Verilator (Windows - source)
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'verilator'
-      shell: pwsh
+      shell: msys2 {0}
+      env:
+        MINGW_ARCH: MINGW64
       run: |
-        choco install winflexbison3 --no-progress -y
         git clone https://github.com/verilator/verilator.git
         git -C verilator checkout ${{matrix.sim-version}}
-        cmake -S verilator -B verilator/build -G Ninja -DCMAKE_BUILD_TYPE=Release `
-          -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
-          -DCMAKE_INSTALL_PREFIX="$env:RUNNER_TEMP/verilator"
+        cmake -S verilator -B verilator/build -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/verilator"
         cmake --build verilator/build --config Release
         cmake --install verilator/build --config Release
-        "$env:RUNNER_TEMP/verilator/bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
-        "VERILATOR_ROOT=$env:RUNNER_TEMP/verilator/share/verilator" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+        echo "$RUNNER_TEMP/verilator/bin" >> "$GITHUB_PATH"
+        echo "VERILATOR_ROOT=$RUNNER_TEMP/verilator/share/verilator" >> "$GITHUB_ENV"
 
     - name: Set up Icarus (MacOS - homebrew --HEAD)
       if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
