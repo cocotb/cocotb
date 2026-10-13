@@ -268,8 +268,8 @@ class Logic:
     def __index__(self) -> int:
         return int(self)
 
-    # TODO 3.0: Update return type to `Bit`.
-    def resolve(self, resolver: ResolverLiteral) -> Self:
+    # TODO 3.0: Update return type to just `Bit`.
+def resolve(self, resolver: ResolverLiteral) -> Self | Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
