@@ -114,6 +114,16 @@ If a pull request cannot pass *all* of these tests, it will likely be rejected.
 To ensure cocotb only includes the highest quality code, these test should be exhaustive.
 We use code coverage as a quantifiable metric of the "exhaustiveness" of these tests, and wish to improve this metric.
 
+Run the Makefile-based regression suites and examples from the repository root with ``python run_tests.py``.
+Set ``SIM`` and ``TOPLEVEL_LANG`` in the environment to select the simulator and HDL language;
+the defaults are ``icarus`` and ``verilog``.
+Use ``python run_tests.py tests`` or ``python run_tests.py examples`` to run only that group.
+The script continues after failed suites; use ``--fail-fast`` to stop at the first failure,
+or ``--clean`` to run each suite's cleanup target.
+It returns a nonzero exit status if any suite's Make invocation fails and emits error annotations when running in GitHub Actions.
+After running the suites, the script calls :ref:`combine_results <combine-results>` to combine the XML results, report individual failing test cases, and return a nonzero exit status if they contain failures.
+The Nox development test sessions use this script automatically.
+
 Working on this task requires a familiarity with:
 
 -  cocotb's core functionality

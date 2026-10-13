@@ -103,7 +103,7 @@ def stringify_dict(d: dict[str, str]) -> str:
 # - Run doctests in the source tree with pytest.
 # - Run simulator-agnostic tests with pytest.
 # - Run simulator-specific tests and examples with pytest.
-# - Run 'make test' to test Makefile-based tests.
+# - Run 'run_tests.py' to test Makefile-based tests.
 # - Combine coverage from all test runs into a .coverage file.
 # - Produce coverage reports from the combined .coverage file.
 #
@@ -183,12 +183,11 @@ def dev_test_sim(
         coverage_file.unlink()
 
     if "COCOTB_CI_SKIP_MAKE" not in os.environ:
-        session.log(f"Running 'make test' against a simulator {config_str}")
-        make_args = ["make"]
-        if "COCOTB_CI_FAIL_FAST" not in os.environ:
-            make_args.append("-k")
-        make_args.append("test")
-        session.run(*make_args, external=True, env=env)
+        session.log(f"Running Makefile-based suites against a simulator {config_str}")
+        test_args = ["python", "run_tests.py"]
+        if "COCOTB_CI_FAIL_FAST" in os.environ:
+            test_args.append("--fail-fast")
+        session.run(*test_args, env=env)
 
     # Run pytest for files which can only be tested in the source tree, not in
     # the installed binary (otherwise we get an "import file mismatch" error

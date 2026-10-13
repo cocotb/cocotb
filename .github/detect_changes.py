@@ -29,6 +29,7 @@ SELECTED_PATHS: dict[str, tuple[str, ...]] = {
         "tests/**",
         "examples/**",
         "noxfile.py",
+        "run_tests.py",
     ),
     "run_benchmarks": (
         # Project sources
