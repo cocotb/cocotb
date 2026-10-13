@@ -1,0 +1,1 @@
+Fixed bug where :meth:`cancelling a Task <cocotb.task.Task.cancel>` while it was awaiting :func:`~cocotb.triggers.gather`, :func:`~cocotb.triggers.select`, :func:`~cocotb.triggers.wait`, :class:`~cocotb.triggers.First`, or :class:`~cocotb.triggers.Combine`, or in the body of a :class:`~cocotb.triggers.TaskManager` before a test ended would result in a :exc:`RuntimeError`.

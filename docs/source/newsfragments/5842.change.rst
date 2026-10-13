@@ -1,0 +1,1 @@
+Users can now :keyword:`await` :keyword:`trigger <triggers>` after a :class:`~cocotb.task.Task` is cancelled, e.g. in an :keyword:`except CancelledError: <except>` clause.
