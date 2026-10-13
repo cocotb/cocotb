@@ -1,24 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-# Prevent CMake from picking up GCC-style env flags when targeting MSVC
-if(WIN32)
-    set(ENV{CFLAGS} "")
-    set(ENV{CXXFLAGS} "")
-    set(ENV{LDFLAGS} "")
-
-    set(CMAKE_CXX_FLAGS "/W3 /EHsc" CACHE STRING "CXX compiler flags" FORCE)
-    set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1" CACHE STRING "CXX debug flags" FORCE)
-    set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG" CACHE STRING "CXX release flags" FORCE)
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /Zi /O2 /Ob1 /DNDEBUG" CACHE STRING "CXX release with debug info flags" FORCE)
-    set(CMAKE_CXX_FLAGS_MINSIZEREL "/MD /O1 /Ob1 /DNDEBUG" CACHE STRING "CXX min size release flags" FORCE)
-endif()
-
 project(cocotb LANGUAGES CXX)
-
-if(MSVC)
-    message(STATUS "MSVC detected - using forced MSVC-compatible flags")
-    message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
