@@ -1,0 +1,1 @@
+Fixed :ref:`combine-results` to include results files prefixed with the pytest test name by the Python runner.
