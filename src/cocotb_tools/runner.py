@@ -1968,8 +1968,6 @@ class Verilator(Runner):
             "-DCMAKE_BUILD_TYPE=Release",
             f"-DCMAKE_PREFIX_PATH={Path(self.executable).resolve().parent.parent}",
         ]
-        if shutil.which("ninja") is not None:
-            configure += ["-G", "Ninja"]
 
         return [
             configure,
