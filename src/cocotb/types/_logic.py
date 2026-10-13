@@ -269,7 +269,7 @@ class Logic:
         return int(self)
 
     # TODO 3.0: Update return type to just `Bit`.
-def resolve(self, resolver: ResolverLiteral) -> Self | Bit:
+    def resolve(self, resolver: ResolverLiteral) -> Self | Bit:
         """Resolve non-``0``/``1`` values to ``0``/``1``.
 
         The possible values of the *resolver* argument are:
