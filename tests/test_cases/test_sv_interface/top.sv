@@ -10,10 +10,17 @@ interface sv_if();
   wire c;
 endinterface
 
+module child (
+    sv_if sv_if
+);
+endmodule
+
 module top ();
 
 sv_if sv_if_i();
 
 sv_if sv_if_arr[3]();
+
+child child_inst(.sv_if(sv_if_i));
 
 endmodule
