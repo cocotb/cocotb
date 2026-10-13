@@ -8,12 +8,29 @@ Simple script to combine JUnit test results into a single XML file.
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 from re import Pattern
 from xml.etree import ElementTree as ET
+
+log = logging.getLogger(__name__)
+
+_DEFAULT_INPUT_FILENAME = r"(results.*|.*\.result)\.xml"
+
+
+@dataclass
+class Results:
+    """Collected suites, test cases, and counts for callers to report or write."""
+
+    testsuite_count: int = 0
+    testcase_count: int = 0
+    testsuites: list[ET.Element] = field(default_factory=list)
+    testcases: list[tuple[str | None, ET.Element]] = field(default_factory=list)
+    failed_testcases: list[tuple[str | None, ET.Element]] = field(default_factory=list)
 
 
 def _find_all(name: Pattern, path: Path) -> Iterable[Path]:
@@ -52,13 +69,14 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i",
         "--input-filename",
-        default=r"(results.*|.*\.result)\.xml",
+        default=_DEFAULT_INPUT_FILENAME,
         help="A regular expression to match input filenames.",
     )
     parser.add_argument(
         "-o",
         "--output-file",
-        default="combined_results.xml",
+        type=Path,
+        default=Path("combined_results.xml"),
         help="Path of output XML file.",
     )
     parser.add_argument(
@@ -79,82 +97,83 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
-    parser = _get_parser()
-    args = parser.parse_args()
-    rc = 0
+def combine_results(
+    directories: Iterable[Path], input_filename: str = _DEFAULT_INPUT_FILENAME
+) -> Results:
+    """Collect and merge XML results from *directories* that match *input_filename*."""
+    results = Results()
 
-    result = ET.Element("testsuites", name=args.output_testsuites_name)
+    input_pattern = re.compile(input_filename)
 
-    input_pattern = re.compile(args.input_filename)
-
-    for directory in args.directories:
-        if args.verbose:
-            print(f"Searching in {directory} for results.xml files.")
+    for directory in directories:
+        log.debug("Searching in %s for results XML files.", directory)
         for fname in _find_all(input_pattern, directory):
-            if args.verbose:
-                print(f"Reading file {fname}.")
+            log.debug("Reading file %s.", fname)
             tree = ET.parse(fname)
             for ts in tree.iter("testsuite"):
-                if args.verbose:
-                    print("Testsuite name: {!r}".format(ts.get("name")))
-                for existing in result:
+                log.debug("Testsuite name: %r", ts.get("name"))
+                for existing in results.testsuites:
                     if existing.get("name") == ts.get("name"):
-                        if args.verbose:
-                            print(
-                                "Testsuite already exists in combined results. Extending it."
-                            )
+                        log.debug(
+                            "Testsuite already exists in combined results. Extending it."
+                        )
                         existing.extend(list(ts))
                         break
                 else:
-                    if args.verbose:
-                        print(
-                            "Testsuite does not already exist in combined results. Adding it."
-                        )
-                    result.append(ts)
+                    log.debug(
+                        "Testsuite does not already exist in combined results. Adding it."
+                    )
+                    results.testsuites.append(ts)
 
-    workspace = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
-
-    testsuite_count = 0
-    testcase_count = 0
-
-    for testsuite in result.findall("testsuite"):
-        testsuite_count += 1
-
+    results.testsuite_count = len(results.testsuites)
+    for testsuite in results.testsuites:
         for testcase in testsuite.iter("testcase"):
-            testcase_count += 1
+            test_result = (testsuite.get("name"), testcase)
+            results.testcases.append(test_result)
+            if (
+                testcase.find("failure") is not None
+                or testcase.find("error") is not None
+            ):
+                results.failed_testcases.append(test_result)
+    results.testcase_count = len(results.testcases)
+    return results
 
-            if testcase.find("failure") is None and testcase.find("error") is None:
-                continue
 
-            properties = _get_properties(testcase)
-            file = properties.get("file")
-            rc = 1
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = _get_parser()
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
+    results = combine_results(args.directories, input_filename=args.input_filename)
+    workspace = args.repo_root.resolve() if args.repo_root else Path.cwd()
 
-            if file is not None and (file_path := Path(file)).is_absolute():
-                try:
-                    file = str(file_path.resolve().relative_to(workspace))
-                except ValueError:
-                    pass
+    for testsuite_name, testcase in results.failed_testcases:
+        properties = _get_properties(testcase)
+        file = properties.get("file")
+        if file is not None and (file_path := Path(file)).is_absolute():
+            try:
+                file = str(file_path.resolve().relative_to(workspace))
+            except ValueError:
+                pass
 
-            print(
-                "Failure in testsuite: '{}' testcase: '{}.{}' file: '{}::{}'".format(
-                    testsuite.get("name"),
-                    testcase.get("classname"),
-                    testcase.get("name"),
-                    file,
-                    properties.get("line"),
-                )
+        print(
+            "Failure in testsuite: '{}' testcase: '{}.{}' file: '{}::{}'".format(
+                testsuite_name,
+                testcase.get("classname"),
+                testcase.get("name"),
+                file,
+                properties.get("line"),
             )
+        )
 
-    print(f"Ran a total of {testsuite_count} TestSuites and {testcase_count} TestCases")
-
-    if args.verbose:
-        print(f"Writing combined results to {args.output_file}")
-    ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
-    return rc
+    print(
+        f"Ran a total of {results.testsuite_count} TestSuites and {results.testcase_count} TestCases"
+    )
+    log.debug("Writing combined results to %s", args.output_file)
+    root = ET.Element("testsuites", name=args.output_testsuites_name)
+    root.extend(results.testsuites)
+    ET.ElementTree(root).write(args.output_file, encoding="UTF-8")
+    return int(len(results.failed_testcases) != 0)
 
 
 if __name__ == "__main__":
-    rc = main()
-    sys.exit(rc)
+    sys.exit(main())
