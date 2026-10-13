@@ -1,0 +1,1 @@
+Defaulted the ``hdl_toplevel`` parameter in :meth:`.Runner.test` to the value passed to :meth:`.Runner.build`.
