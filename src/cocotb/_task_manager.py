@@ -245,7 +245,10 @@ class TaskManager:
             # The context block was cancelled due to a child Task failure.
             if isinstance(body_exc, CancelledError):
                 # Suppress CancelledError in this case to allow child Tasks to finish cancelling.
-                self._parent_task._uncancel()
+                if self._parent_task._uncancel():
+                    # If we account for our own cancellation request and there are still pending ones,
+                    # we assume there was an external cancellation request before the body ended.
+                    external_cancellation = body_exc
             else:
                 # The context block ignored the cancellation and either threw some other exception or finished successfully.
                 # We have to have this here as we are basically treating the body as a separate Task,
