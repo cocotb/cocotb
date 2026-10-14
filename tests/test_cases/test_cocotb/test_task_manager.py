@@ -1577,3 +1577,34 @@ async def test_cancel_child_during_wait_cannot_be_swallowed(_: object) -> None:
 
     await tm_task.complete
     assert isinstance(child.exception(), RuntimeError)
+
+
+@cocotb.test
+async def test_external_cancel_after_internal_cancel_in_block(_: object) -> None:
+    internal_cancelled = Event()
+    outer_cancelled = False
+
+    async def run_task_manager() -> None:
+        nonlocal outer_cancelled
+        try:
+            async with TaskManager() as tm:
+                tm.start_soon(raises_after(1))
+                try:
+                    await Event().wait()
+                except CancelledError:
+                    # Let the external canceller know where are internally cancelled.
+                    internal_cancelled.set()
+                    await Timer(10)
+                    raise
+        except CancelledError:
+            outer_cancelled = True
+            raise
+
+    task = cocotb.start_soon(run_task_manager())
+
+    # Wait until the context body is cancelled before doing an external cancellation on the task.
+    await internal_cancelled.wait()
+    task.cancel()
+    await task.complete
+    assert outer_cancelled
+    assert task.cancelled()
