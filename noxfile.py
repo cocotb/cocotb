@@ -680,6 +680,7 @@ def docs_spelling(session: nox.Session) -> None:
 # pyproject.toml.
 RELEASE_NOTES = Path("docs") / "source" / "release_notes.rst"
 NEWSFRAGMENTS = Path("docs") / "source" / "newsfragments"
+SPHINX_CONF = Path("docs") / "source" / "conf.py"
 # Inserted by towncrier as the header of each release's section. Also the
 # marker this file uses to find where a section starts and ends.
 SECTION_HEADER_RE = re.compile(r"^cocotb (?P<version>\S+) \([^)]*\)$")
@@ -799,6 +800,11 @@ def backport_release_notes(session: nox.Session) -> None:
     deletes the newsfragments the release consumed so they aren't listed
     again under the next release.
 
+    Point cocotb API references, Make variables, and cocotb/GPI environment
+    variables in the copied section at the released documentation. Add an
+    intersphinx mapping for a new major/minor series, or advance its
+    documentation URL to the latest patch release being backported.
+
     The section is inserted by version rather than always at the top,
     because a patch release on an older series can well be published after
     a newer series' first release: master's notes may already start with
@@ -845,9 +851,11 @@ def backport_release_notes(session: nox.Session) -> None:
         "--",
         RELEASE_NOTES.as_posix(),
         NEWSFRAGMENTS.as_posix(),
+        SPHINX_CONF.as_posix(),
     ).strip():
         session.error(
-            f"{RELEASE_NOTES} and/or {NEWSFRAGMENTS} have uncommitted changes. "
+            f"{RELEASE_NOTES}, {NEWSFRAGMENTS}, and/or {SPHINX_CONF} "
+            "have uncommitted changes. "
             "Commit or stash them first."
         )
 
@@ -916,11 +924,12 @@ def backport_release_notes(session: nox.Session) -> None:
 
     # Insert ahead of the first older release, so that backporting a patch
     # release of an older series doesn't put it above a newer one.
+    release_version = Version(version)
     existing = _section_starts(lines)
     insert_at = len(lines)
     for start, other in existing:
         try:
-            is_older = Version(other) < Version(version)
+            is_older = Version(other) < release_version
         except InvalidVersion:
             continue
         if is_older:
@@ -933,9 +942,58 @@ def backport_release_notes(session: nox.Session) -> None:
                 f"{RELEASE_NOTES}; appending it at the end."
             )
 
+    # Keep one mapping per major/minor series, in descending version order.
+    # Backporting historical notes must not downgrade a newer patch URL.
+    mapping_name = f"cocotb{release_version.major}{release_version.minor}"
+    mapping_entry = (
+        f'    "{mapping_name}": ("https://docs.cocotb.org/en/v{version}/", None),'
+    )
+    conf_lines = SPHINX_CONF.read_text().splitlines()
+    mapping_start = conf_lines.index("intersphinx_mapping = {") + 1
+    mapping_end = conf_lines.index("}", mapping_start)
+    mapping_insert_at = mapping_end
+    for i in range(mapping_start, mapping_end):
+        mapping = re.fullmatch(
+            r'    "(cocotb\d+)": \("https://docs\.cocotb\.org/en/v([^/]+)/", None\),',
+            conf_lines[i],
+        )
+        if mapping is None:
+            continue
+        mapped_version = Version(mapping[2])
+        if mapping[1] == mapping_name:
+            if release_version > mapped_version:
+                conf_lines[i] = mapping_entry
+            break
+        if release_version > mapped_version:
+            mapping_insert_at = min(mapping_insert_at, i)
+    else:
+        conf_lines.insert(mapping_insert_at, mapping_entry)
+
+    # Match whole roles so an existing :external[+inventory]: prefix (or
+    # another domain) cannot be mistaken for an unqualified reference.
+    # Check the target, not an explicit title, and preserve ! suppression.
+    # Other labels and environment variables keep their existing links.
+    section = re.sub(
+        r"""
+        (?<![\w:\\`]):
+        (?:
+            (?:(?:py:)?(?:func|deco|class|mod|attr|data|meth|exc|const)|(?:std:)?ref)
+            :`(?!\!)(?:[^`<>]+<)?(?!\!)(?:\.[^`<>]+|[^`<>]*cocotb[^`<>]*)>?
+          | make:var:`(?!\!)(?:[^`<>]+<)?(?!\!)[^`<>]+>?
+          | (?:std:)?envvar:`(?!\!)(?:[^`<>]+<)?(?!\!)
+            [^`<>]*(?i:cocotb|gpi|pygpi)[^`<>]*>?
+        )
+        `
+        """,
+        lambda match: f":external+{mapping_name}{match[0]}",
+        section,
+        flags=re.VERBOSE,
+    )
+
     lines[insert_at:insert_at] = [*section.splitlines(), "", ""]
     RELEASE_NOTES.write_text("\n".join(lines).rstrip("\n") + "\n")
-    _git("add", "--", RELEASE_NOTES.as_posix())
+    SPHINX_CONF.write_text("\n".join(conf_lines).rstrip("\n") + "\n")
+    _git("add", "--", RELEASE_NOTES.as_posix(), SPHINX_CONF.as_posix())
 
     # Every newsfragment the release consumed was deleted somewhere between
     # `since` and `until` — either by towncrier, or by hand while folding a
