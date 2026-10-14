@@ -573,13 +573,14 @@ class Task(Generic[ResultType]):
 
         return True
 
-    def _uncancel(self) -> None:
-        """Prevents :exc:`RuntimeError` from occurring when cancelled Tasks suppress :exc:`asyncio.CancelledError`.
+    def _uncancel(self) -> bool:
+        """Decrease the cancellation count by one.
 
-        Currently only useful for :class:`.TaskManager`.
+        Returns: ``True`` if there are still pending cancellation requests; ``False`` otherwise.
         """
         if self._must_cancel > 0:
             self._must_cancel -= 1
+        return self._must_cancel > 0
 
     def _unstarted(self) -> bool:
         """Return ``True`` if the Task has not started executing."""
