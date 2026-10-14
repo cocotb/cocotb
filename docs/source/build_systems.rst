@@ -135,6 +135,6 @@ Then it uses the Python Runners to build and run the simulations necessary for e
 
 This means that you can use pytest features directly on cocotb tests.
 For example, parametrizing tests with :ref:`@pytest.mark.parametrize <@pytest.mark.parametrize>`
-and marking tests as expected to fail with :any:`@pytest.mark.xfail <pytest.mark.xfail>`.
+and marking tests as expected to fail with :func:`@pytest.mark.xfail <pytest.mark.xfail>`.
 
 .. note:: The ``pytest`` plugin is still in development and is not yet recommended for general use.
