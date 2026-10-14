@@ -797,6 +797,50 @@ async def test_await_during_cancellation(_: object) -> None:
     assert task.cancelled()
 
 
+async def test_task_cancelling(_: object) -> None:
+    task = cocotb.start_soon(Timer(10))
+    assert task.cancelling() == 0
+    await NullTrigger()
+
+    assert task.cancel()
+    assert task.cancelling() == 1
+    assert task.cancel()
+    assert task.cancelling() == 2
+
+    await task.complete
+    assert task.cancelled()
+    assert task.cancelling() == 2
+    assert not task.cancel()
+    assert task.cancelling() == 2
+
+
+@cocotb.test
+async def test_task_uncancel(_: object) -> None:
+    async def coro() -> int:
+        try:
+            await Timer(10)
+        except CancelledError:
+            assert task.cancelling() == 2
+            assert task._uncancel() is True
+            assert task.cancelling() == 1
+            assert task._uncancel() is False
+            assert task.cancelling() == 0
+            assert task._uncancel() is False
+            assert task.cancelling() == 0
+        return 123
+
+    task = cocotb.start_soon(coro())
+    assert task._uncancel() is False
+    assert task.cancelling() == 0
+    await NullTrigger()
+    task.cancel()
+    task.cancel()
+
+    assert await task == 123
+    assert not task.cancelled()
+    assert task.cancelling() == 0
+
+
 @cocotb.test(expect_error=RuntimeError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()

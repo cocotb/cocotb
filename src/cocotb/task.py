@@ -573,6 +573,13 @@ class Task(Generic[ResultType]):
 
         return True
 
+    def cancelling(self) -> int:
+        """Return the number of cancellation requests the Task has.
+
+        .. versionadded:: 2.2
+        """
+        return self._must_cancel
+
     def _uncancel(self) -> bool:
         """Decrease the cancellation count by one.
 
