@@ -22,7 +22,10 @@ class Feature(DocStrEnum):
         "xfail_in_results",
         "Use the XFAIL status in the terminal results summary for xfailed tests",
     )
-    STRICT_RESOLVE = ("strict_resolve", "resolve strictly returns bits(0/1) only")
+    STRICT_RESOLVE = (
+        "strict_resolve",
+        "`Logic.resolve()` and `LogicArray.resolve()` return `Bit` or 0/1-only `LogicArray`, respectively",
+    )
 
 
 _feature_strs = {feature.value for feature in Feature}
