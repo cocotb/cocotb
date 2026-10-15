@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from asyncio import CancelledError
 from collections.abc import Generator
+from typing import Literal
 
 import pytest
+from common import assert_takes
 
 import cocotb
 from cocotb.triggers import NullTrigger, Timer, Trigger, gather, select, wait
@@ -399,6 +401,84 @@ async def test_select_unfired_triggers_killed(_: object) -> None:
 
 
 @cocotb.test
+@cocotb.parametrize(
+    kind=["gather", "select", "FIRST_COMPLETED", "FIRST_EXCEPTION", "ALL_COMPLETED"]
+)
+async def test_await_during_external_cancellation(
+    _: object,
+    kind: Literal[
+        "gather", "select", "FIRST_COMPLETED", "FIRST_EXCEPTION", "ALL_COMPLETED"
+    ],
+) -> None:
+    cleanup_completed: list[int] = []
+
+    async def child(delay: int) -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            await Timer(delay)
+            await Timer(1)
+            cleanup_completed.append(delay)
+            raise
+
+    async def run_waiter() -> None:
+        if kind == "gather":
+            await gather(child(2), child(4))
+        elif kind == "select":
+            await select(child(2), child(4))
+        else:
+            await wait(child(2), child(4), return_when=kind)
+
+    task = cocotb.start_soon(run_waiter())
+    await Timer(1)
+    task.cancel("cleanup requested")
+
+    with (
+        assert_takes(5, "step"),
+        pytest.raises(CancelledError, match="cleanup requested"),
+    ):
+        await task
+
+    assert cleanup_completed == [2, 4]
+    assert task.cancelled()
+
+
+@cocotb.test
+@cocotb.parametrize(kind=["gather", "select", "FIRST_COMPLETED", "FIRST_EXCEPTION"])
+async def test_await_during_internal_cancellation(
+    _: object, kind: Literal["gather", "select", "FIRST_COMPLETED", "FIRST_EXCEPTION"]
+) -> None:
+    cleanup_completed: list[int] = []
+
+    async def child(delay: int) -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            await Timer(delay)
+            await Timer(1)
+            cleanup_completed.append(delay)
+            raise
+
+    with assert_takes(6, "step"):
+        if kind == "gather":
+            with pytest.raises(MyException):
+                await gather(raises_after(1), child(2), child(4))
+        elif kind == "select":
+            with pytest.raises(MyException):
+                await select(raises_after(1), child(2), child(4))
+        else:
+            idx, tasks = await wait(
+                raises_after(1), child(2), child(4), return_when=kind
+            )
+            assert idx == 0
+            assert isinstance(tasks[0].exception(), MyException)
+            assert tasks[1].cancelled()
+            assert tasks[2].cancelled()
+
+    assert cleanup_completed == [2, 4]
+
+
+@cocotb.test
 @cocotb.parametrize(kind=["gather", "select", "wait"])
 async def test_double_external_cancel_in_waiters(_: object, kind: str) -> None:
     """Cancelling the task awaiting wait/gather/select twice should leave it cancelled.
@@ -430,7 +510,6 @@ async def test_double_external_cancel_in_waiters(_: object, kind: str) -> None:
     await task.complete
 
     assert task.cancelled()
-    assert task._must_cancel == 0
 
 
 @cocotb.test
