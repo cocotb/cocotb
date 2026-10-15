@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import inspect
 import sys
+from abc import ABC, abstractmethod
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -109,6 +110,10 @@ class Test:
 
 
 TestFuncType: TypeAlias = Callable[..., Coroutine[Trigger, None, None]]
+"""Type alias for a valid cocotb test function.
+
+.. versionadded:: 2.2
+"""
 
 
 @dataclass(frozen=True)
@@ -146,7 +151,32 @@ class Param:
     name: str | None = None
 
 
-class TestGenerator:
+class AbstractTestGenerator(ABC):
+    """Abstract base class for objects that support generating :class:`~cocotb.regression.Test` by the :class:`~cocotb.regression.RegressionManager`.
+
+    .. versionadded:: 2.2
+    """
+
+    @abstractmethod
+    def generate_tests(self) -> Iterable[Test]:
+        """Generate :class:`~cocotb.regression.Test` instances.
+
+        Returns:
+            An iterable of :class:`~cocotb.regression.Test` objects.
+        """
+        raise NotImplementedError
+
+
+class TestGenerator(AbstractTestGenerator):
+    """Default implementation of :class:`AbstractTestGenerator` for use in cocotb simulations.
+
+    Supports the following features:
+    - Test parametrization using :deco:`cocotb.parametrize`.
+    - Handling naming of parameter values using the :class:`Param` class.
+
+    .. versionadded:: 2.1
+    """
+
     def __init__(
         self,
         func: TestFuncType,
@@ -172,6 +202,11 @@ class TestGenerator:
         self.reason: str | None = None
 
     def generate_tests(self) -> Iterable[Test]:
+        """Generate :class:`~cocotb.regression.Test` instances based on the parameterization options.
+
+        Returns:
+            An iterable of :class:`~cocotb.regression.Test` objects.
+        """
         option_reprs: dict[str, list[str]] = {}
 
         for name, values in self.options:

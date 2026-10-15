@@ -31,7 +31,7 @@ import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
 from cocotb import preview
-from cocotb._decorators import Test, TestGenerator
+from cocotb._decorators import AbstractTestGenerator, Test, TestFuncType, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager, TestSuccess
@@ -42,11 +42,13 @@ from cocotb.simtime import get_sim_time
 from cocotb_tools import _env
 
 __all__ = (
+    "AbstractTestGenerator",
     "RegressionManager",
     "RegressionMode",
     "SimFailure",
     "Test",
     "TestFactory",
+    "TestFuncType",
     "TestGenerator",
 )
 
@@ -259,7 +261,7 @@ class RegressionManager:
                 if isinstance(obj, Test):
                     found_test = True
                     self.register_test(obj)
-                elif isinstance(obj, TestGenerator):
+                elif isinstance(obj, AbstractTestGenerator):
                     found_test = True
                     generated_tests = False
                     for test in obj.generate_tests():
@@ -267,7 +269,7 @@ class RegressionManager:
                         self.register_test(test)
                     if not generated_tests:
                         warnings.warn(
-                            f"TestGenerator generated no tests: {module_name}.{obj_name}",
+                            f"Test generator generated no tests: {module_name}.{obj_name}",
                             stacklevel=2,
                         )
 
