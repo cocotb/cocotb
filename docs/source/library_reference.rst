@@ -1155,6 +1155,10 @@ The Regression Manager
 
 .. autoclass:: Test
 
+.. autoclass:: AbstractTestGenerator
+    :members:
+    :member-order: bysource
+
 .. autoclass:: TestGenerator
     :members:
     :member-order: bysource

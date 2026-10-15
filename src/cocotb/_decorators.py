@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import inspect
 import sys
+from abc import ABC, abstractmethod
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -150,7 +151,23 @@ class Param:
     name: str | None = None
 
 
-class TestGenerator:
+class AbstractTestGenerator(ABC):
+    """Abstract base class for objects that support generating :class:`~cocotb.regression.Test` by the :class:`~cocotb.regression.RegressionManager`.
+
+    .. versionadded:: 2.2
+    """
+
+    @abstractmethod
+    def generate_tests(self) -> Iterable[Test]:
+        """Generate :class:`~cocotb.regression.Test` instances.
+
+        Returns:
+            An iterable of :class:`~cocotb.regression.Test` objects.
+        """
+        raise NotImplementedError
+
+
+class TestGenerator(AbstractTestGenerator):
     """Default implementation of :class:`AbstractTestGenerator` for use in cocotb simulations.
 
     Supports the following features:
