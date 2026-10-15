@@ -1151,7 +1151,13 @@ The Regression Manager
 
 .. autodata:: _manager_inst
 
+.. autodata:: TestFuncType
+
 .. autoclass:: Test
+
+.. autoclass:: TestGenerator
+    :members:
+    :member-order: bysource
 
 .. autoenum:: RegressionMode
 

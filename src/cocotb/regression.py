@@ -31,7 +31,7 @@ import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
 from cocotb import preview
-from cocotb._decorators import Test, TestGenerator
+from cocotb._decorators import Test, TestFuncType, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
 from cocotb._test_manager import TestManager, TestSuccess
@@ -47,6 +47,7 @@ __all__ = (
     "SimFailure",
     "Test",
     "TestFactory",
+    "TestFuncType",
     "TestGenerator",
 )
 
