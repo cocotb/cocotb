@@ -682,15 +682,17 @@ class RegressionManager:
         hilight_start = "" if cocotb_logging.strip_ansi else self.COLOR_SKIPPED
         hilight_end = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
         if msg is not None:
-            msg = f": {msg}"
+            log_suffix = f": {msg}"
         else:
-            msg = f" ({self.count}/{self.total_tests}){_format_doc(self._test.doc)}"
+            log_suffix = (
+                f" ({self.count}/{self.total_tests}){_format_doc(self._test.doc)}"
+            )
         self.log.info(
             "%sskipping%s %s%s",
             hilight_start,
             hilight_end,
             self._test.fullname,
-            msg,
+            log_suffix,
         )
 
         # write out xunit results
@@ -698,7 +700,7 @@ class RegressionManager:
             name=self._test.name,
             classname=self._test.module,
             status="skipped",
-            reason="Test was skipped",
+            reason=self._test.reason or msg or "Test was skipped",
             extra_properties={
                 # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
                 # especially after merging multiple XML reports from different sources (e. g. CI jobs)
@@ -823,6 +825,7 @@ class RegressionManager:
             classname=self._test.module,
             time=wall_time_s,
             status=status,
+            reason=self._test.reason or result or msg or "errored as expected",
             extra_properties={
                 # Used to distinguish a cocotb testcase from other testcases (C++, Rust, ...),
                 # especially after merging multiple XML reports from different sources (e. g. CI jobs)
