@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import cast
@@ -111,19 +112,21 @@ def build_cocotb_for_dev_test(session: nox.Session) -> None:
     """
 
     env = session.env.copy()
-    flags = " ".join(
-        [
-            "-Werror",
-            "-Wno-error=deprecated-declarations",
-            "-Wsuggest-override",
-            "-Og",
-            "-g",
-            "--coverage",
-        ]
-    )
-    env["CFLAGS"] = flags
-    env["CXXFLAGS"] = flags
-    env["LDFLAGS"] = "--coverage"
+    # On Windows, CMake defaults to MSVC, which rejects GCC-style flags.
+    if sys.platform != "win32":
+        flags = " ".join(
+            [
+                "-Werror",
+                "-Wno-error=deprecated-declarations",
+                "-Wsuggest-override",
+                "-Og",
+                "-g",
+                "--coverage",
+            ]
+        )
+        env["CFLAGS"] = flags
+        env["CXXFLAGS"] = flags
+        env["LDFLAGS"] = "--coverage"
 
     # Editable installs break C/C++ coverage collection; don't use them.
     # C/C++ coverage collection requires that the object files produced by the
