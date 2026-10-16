@@ -2019,7 +2019,7 @@ class Verilator(Runner):
             "endif()",
             f"add_executable(cocotb_sim {p(main_cpp)})",
             # ENABLE_EXPORTS exports the VPI symbols to the cocotb libraries (-rdynamic)
-            f"set_target_properties(cocotb_sim PROPERTIES OUTPUT_NAME Vtop ENABLE_EXPORTS ON RUNTIME_OUTPUT_DIRECTORY {out_dir} {output_dirs})",
+            f"set_target_properties(cocotb_sim PROPERTIES OUTPUT_NAME {q(self.hdl_toplevel)} ENABLE_EXPORTS ON RUNTIME_OUTPUT_DIRECTORY {out_dir} {output_dirs})",
             "target_link_libraries(cocotb_sim PRIVATE ${COCOTB_BOOTSTRAP_LIB})",
             "verilate(cocotb_sim",
             "  PREFIX Vtop",
@@ -2037,7 +2037,7 @@ class Verilator(Runner):
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Verilator.")
 
-        out_file = self.build_dir / "Vtop"
+        out_file = self.build_dir / self.sim_hdl_toplevel
         return [
             self._get_sim_cmd_prefix()
             + [str(out_file)]
