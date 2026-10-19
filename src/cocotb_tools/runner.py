@@ -219,7 +219,7 @@ class Runner(ABC):
         self.env: dict[str, str] = {}
 
         # for running test() independently of build()
-        self.build_dir: Path = get_abs_path("sim_build")
+        self.build_dir: Path | None = None
         self.parameters: Mapping[str, object] = {}
 
         self.log = logging.getLogger(type(self).__qualname__)
@@ -347,7 +347,7 @@ class Runner(ABC):
         build_args: Sequence[str | VHDL | Verilog] = [],
         hdl_toplevel: str | None = None,
         always: bool = False,
-        build_dir: PathLike = "sim_build",
+        build_dir: PathLike | None = None,
         cwd: PathLike | None = None,
         clean: bool = False,
         verbose: bool = False,
@@ -421,12 +421,16 @@ class Runner(ABC):
             *defines* are no longer implicitly converted to HDL literals.
             Users must explicitly call :func:`~cocotb_tools.runner.as_vhdl_literal` or
             :func:`~cocotb_tools.runner.as_sv_literal` to convert Python values to HDL literals.
+
+        .. versionchanged:: 2.2
+            :meth:`~cocotb_tools.runner.Runner.build` now creates a temporary directory in the current working directory,
+            named ``sim_build_`` followed by random characters, when the ``build_dir`` parameter is not set.
+            To restore the previous behavior, pass ``build_dir="sim_build"``.
         """
         # We don't get anything by printing this if the build fails
         __tracebackhide__ = True
 
         self.clean: bool = clean
-        self.build_dir = get_abs_path(build_dir)
 
         # note: to avoid mutating argument defaults, we ensure that no value
         # is written without a copy. This is much more concise and leads to
@@ -459,17 +463,28 @@ class Runner(ABC):
         self.verbose: bool = verbose
         self.timescale: tuple[str, str] | None = timescale
         self.log_file: PathLike | None = log_file
-        self.cwd = self.build_dir if cwd is None else cwd
-
         self.waves = _env.get_bool("WAVES", waves)
 
         self._set_env_build()
 
-        if self.clean:
-            self.rm_build_folder(self.build_dir)
-            self.always = True
-        self.build_dir.mkdir(parents=True, exist_ok=True)
+        if build_dir is not None:
+            self.build_dir = get_abs_path(build_dir)
 
+        if self.build_dir is not None:
+            if self.clean:
+                self.rm_build_folder(self.build_dir)
+                self.always = True
+            self.build_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            if self.clean:
+                warnings.warn(
+                    "Ignoring the *clean* parameter since no build steps were previously run.",
+                    stacklevel=2,
+                )
+                self.always = True
+            self.build_dir = Path(tempfile.mkdtemp(prefix="sim_build_", dir=Path.cwd()))
+
+        self.cwd = self.build_dir if cwd is None else cwd
         cmds: Sequence[_Command] = self._build_command()
         self._execute(cmds, cwd=self.cwd)
 
@@ -542,6 +557,10 @@ class Runner(ABC):
 
         if build_dir is not None:
             self.build_dir = get_abs_path(build_dir)
+        elif self.build_dir is None:
+            raise RuntimeError(
+                "Cannot run test(). Either run the build step first or set the *build_dir* parameter."
+            )
 
         if parameters is not None:
             self.parameters = dict(parameters)
