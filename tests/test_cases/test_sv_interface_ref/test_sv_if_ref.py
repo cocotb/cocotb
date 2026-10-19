@@ -15,6 +15,7 @@ from __future__ import annotations
 import cocotb
 from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
 from cocotb.triggers import Timer
+from cocotb_tools.sim_versions import VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -24,37 +25,50 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 # object instead.
 ref_array_is_pseudo_region = SIM_NAME.startswith("verilator")
 
+xfail_without_if_refs = cocotb.xfail(
+    SIM_NAME.startswith("verilator")
+    and VerilatorVersion(cocotb.SIM_VERSION) < VerilatorVersion("5.053"),
+    raises=AttributeError,
+    reason="Verilator does not expose resolvable interface references before v5.053",
+)
 
+
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_type(dut):
     """Test that an interface reference resolves to the interface itself"""
     assert isinstance(dut.sub_i.sv_if_ref, HierarchyObject)
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_path(dut):
     """Test that an interface reference reports the concrete interface path"""
     assert dut.sub_i.sv_if_ref._path == "top.sv_if_i"
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_is_concrete_object(dut):
     """Test that a reference and the direct path give the same object"""
     assert dut.sub_i.sv_if_ref is dut.sv_if_i
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_signals(dut):
     """Test that signals inside a referenced interface are discovered"""
     assert {"a", "b", "c"} <= set(dut.sub_i.sv_if_ref._keys())
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_signal_path(dut):
     """Test that signals reached through a reference report a concrete path"""
     assert dut.sub_i.sv_if_ref.a._path == "top.sv_if_i.a"
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_read_write(dut):
     """Test reading and writing a signal through an interface reference"""
@@ -69,12 +83,14 @@ async def test_sv_if_ref_read_write(dut):
     assert dut.sub_i.sv_if_ref.a.value == 0
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_modport_ref_type(dut):
     """Test that a modport reference resolves to the interface itself"""
     assert isinstance(dut.sub_i.sv_if_modport_ref, HierarchyObject)
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_modport_ref_path(dut):
     """Test that a modport reference reports the concrete interface path"""
@@ -82,6 +98,7 @@ async def test_sv_if_modport_ref_path(dut):
     assert dut.sub_i.sv_if_modport_ref is dut.sv_if_i
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_modport_ref_read_write(dut):
     """Test reading and writing a signal through a modport reference"""
@@ -94,6 +111,7 @@ async def test_sv_if_modport_ref_read_write(dut):
     assert dut.sub_i.sv_if_modport_ref.a.value == 0
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_arr_type(dut):
     """Test that an array of interface references is the correct type"""
@@ -113,12 +131,14 @@ async def test_sv_if_ref_arr_type(dut):
 # (sv_if_ref_arr), so HierarchyArrayObject._sub_handle_key cannot extract an
 # index from them and drops every child. Indexing is unaffected because it
 # looks elements up by index rather than by name.
+@xfail_without_if_refs
 @cocotb.test(expect_fail=ref_array_is_pseudo_region)
 async def test_sv_if_ref_arr_len(dut):
     """Test that the length of an interface reference array is correct"""
     assert len(dut.sub_i.sv_if_ref_arr) == 3
 
 
+@xfail_without_if_refs
 @cocotb.test(expect_fail=ref_array_is_pseudo_region)
 async def test_sv_if_ref_arr_iteration(dut):
     """Test that an array of interface references can be iterated"""
@@ -126,6 +146,7 @@ async def test_sv_if_ref_arr_iteration(dut):
     assert paths == [f"top.sv_if_arr[{i}]" for i in range(3)]
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_arr_access(dut):
     """Test that elements of an interface reference array can be accessed"""
@@ -133,6 +154,7 @@ async def test_sv_if_ref_arr_access(dut):
         assert {"a", "b", "c"} <= set(dut.sub_i.sv_if_ref_arr[i]._keys())
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_arr_path(dut):
     """Test that reference array elements report the concrete interface path"""
@@ -141,6 +163,7 @@ async def test_sv_if_ref_arr_path(dut):
         assert dut.sub_i.sv_if_ref_arr[i] is dut.sv_if_arr[i]
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_arr_signal_path(dut):
     """Test that signals in a reference array report a concrete path"""
@@ -148,6 +171,7 @@ async def test_sv_if_ref_arr_signal_path(dut):
         assert dut.sub_i.sv_if_ref_arr[i].b._path == f"top.sv_if_arr[{i}].b"
 
 
+@xfail_without_if_refs
 @cocotb.test()
 async def test_sv_if_ref_arr_read_write(dut):
     """Test reading and writing signals through an interface reference array"""
