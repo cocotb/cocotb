@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_SIMTIME_DEFAULT_ROUND_MODE` to set the default rounding mode for simulation time conversions across all APIs that take a ``round_mode`` parameter.

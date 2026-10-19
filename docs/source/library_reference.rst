@@ -591,6 +591,16 @@ Simulation Time Utilities
     :member-order: bysource
     :synopsis: Tools for dealing with simulated time.
 
+.. envvar:: COCOTB_SIMTIME_DEFAULT_ROUND_MODE
+
+    Type: :ref:`env-string`
+
+    Sets :data:`cocotb.simtime.default_round_mode`, the default rounding mode for simulation time conversions.
+    Defaults to ``error``.
+    Valid values are ``error``, ``ceil``, ``round``, and ``floor``.
+
+    .. versionadded:: 2.2
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource

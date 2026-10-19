@@ -24,6 +24,8 @@ import cocotb
 import cocotb._init
 import cocotb._profiling
 import cocotb.regression
+import cocotb.simtime
+import cocotb.simulator
 import cocotb.types._resolve
 from cocotb.handle import SimHandleBase
 from cocotb.preview import Feature, disable, enable
@@ -334,6 +336,47 @@ def test_env_cocotb_enable_profiling(monkeypatch: MonkeyPatch) -> None:
 
         with cocotb._profiling.profiling_context:
             pass
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("error", "error"),
+        ("ceil", "ceil"),
+        ("round", "round"),
+        ("floor", "floor"),
+        (" \tRoUnD\n", "round"),
+    ],
+)
+def test_env_cocotb_simtime_default_round_mode(
+    monkeypatch: MonkeyPatch, value: str, expected: str
+) -> None:
+    monkeypatch.setenv("COCOTB_SIMTIME_DEFAULT_ROUND_MODE", value)
+    monkeypatch.delenv("COCOTB_SIMTIME_REPORT_PRECISION", raising=False)
+    monkeypatch.setattr(
+        cocotb.simulator, "get_precision", lambda: cocotb.simtime.time_precision
+    )
+    monkeypatch.setattr(cocotb.simtime, "default_round_mode", "error")
+
+    cocotb.simtime._init()
+
+    assert cocotb.simtime.default_round_mode == expected
+
+
+@pytest.mark.parametrize("value", ["invalid", "", " \tINVALID\n"])
+def test_env_cocotb_simtime_default_round_mode_invalid(
+    monkeypatch: MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("COCOTB_SIMTIME_DEFAULT_ROUND_MODE", value)
+    monkeypatch.setattr(
+        cocotb.simulator, "get_precision", lambda: cocotb.simtime.time_precision
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="^Invalid round mode specified in COCOTB_SIMTIME_DEFAULT_ROUND_MODE:",
+    ):
+        cocotb.simtime._init()
 
 
 def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:
