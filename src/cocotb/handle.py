@@ -1919,6 +1919,11 @@ def _make_sim_object(
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
+    # A handle reached through a reference (e.g. an interface port) is the
+    # referenced object itself, so its path is the concrete path of the
+    # referenced object regardless of which path was used to reach it first.
+    if path is not None and (concrete_path := handle.get_concrete_path()) is not None:
+        path = concrete_path
     obj = cls(handle, path)
     _handle2obj[handle] = obj
     return obj
