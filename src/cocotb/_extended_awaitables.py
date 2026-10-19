@@ -351,7 +351,6 @@ async def with_timeout(
 
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
-
     """
     i, res = await select(
         Timer(timeout_time, timeout_unit, round_mode=round_mode), trigger

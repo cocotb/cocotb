@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import warnings
 from decimal import Decimal
@@ -59,7 +60,7 @@ def convert(
     unit: TimeUnit,
     *,
     to: Literal["step"],
-    round_mode: RoundMode = "error",
+    round_mode: RoundMode | None = None,
 ) -> int: ...
 
 
@@ -69,7 +70,7 @@ def convert(
     unit: TimeUnit,
     *,
     to: Literal["fs", "ps", "ns", "us", "ms", "sec"],
-    round_mode: RoundMode = "error",
+    round_mode: RoundMode | None = None,
 ) -> float: ...
 
 
@@ -78,7 +79,7 @@ def convert(
     unit: TimeUnit,
     *,
     to: TimeUnit,
-    round_mode: RoundMode = "error",
+    round_mode: RoundMode | None = None,
 ) -> float:
     """Convert time values from one unit to another unit.
 
@@ -92,11 +93,16 @@ def convert(
         round_mode:
             How to handle non-integral step values (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
+            .. note::
+                This only applies when converting to ``'step'`` units.
+                For other units, standard floating-point arithmetic is used.
+
             When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
             be accurately represented in terms of simulator time steps.
             When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
             rounding function from the standard library will be used to round to a simulator
             time step.
+            When *round_mode* is ``None``, the value of :data:`~cocotb.simtime.default_round_mode` is used.
 
     Returns:
         The value scaled by the difference in units.
@@ -196,8 +202,10 @@ def _get_sim_steps(
     time: float | Fraction | Decimal,
     unit: TimeUnit = "step",
     *,
-    round_mode: RoundMode = "error",
+    round_mode: RoundMode | None = None,
 ) -> int:
+    if round_mode is None:
+        round_mode = default_round_mode
     result: float | Fraction | Decimal
     if unit != "step":
         result = _ldexp10(time, _get_log_time_scale(unit) - time_precision)
@@ -258,6 +266,26 @@ i.e. ``-15`` is ``10**-15`` seconds or 1 femtosecond.
 """
 
 
+default_round_mode: RoundMode = "error"
+"""The default rounding mode for conversions and :class:`~cocotb.triggers.Timer`.
+
+Defaults to ``'error'``.
+Valid values are ``'error'``, ``'ceil'``, ``'round'``, and ``'floor'``.
+
+.. versionadded:: 2.2
+"""
+
+
 def _init() -> None:
     global time_precision
     time_precision = cocotb.simulator.get_precision()
+
+    global default_round_mode
+    round_mode_envvar = os.getenv("COCOTB_SIMTIME_DEFAULT_ROUND_MODE", None)
+    if round_mode_envvar is not None:
+        round_mode_envvar = round_mode_envvar.lower().strip()
+        if round_mode_envvar not in ("error", "ceil", "round", "floor"):
+            raise ValueError(
+                f"Invalid round mode specified in COCOTB_SIMTIME_DEFAULT_ROUND_MODE: {round_mode_envvar}"
+            )
+        default_round_mode = cast("RoundMode", round_mode_envvar)

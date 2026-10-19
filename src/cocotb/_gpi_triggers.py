@@ -127,8 +127,13 @@ class Timer(GPITrigger):
         Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
-    round_mode: ClassVar[RoundMode] = "error"
-    """The default rounding mode."""
+    round_mode: ClassVar[RoundMode | None] = None
+    """The default rounding mode.
+
+    .. versionchanged:: 2.2
+        When *round_mode* is ``None``, the value of :data:`~cocotb.simtime.default_round_mode` is used.
+        This variable now defaults to ``None``.
+    """
 
     def __init__(
         self,
