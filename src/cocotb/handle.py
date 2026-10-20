@@ -1535,7 +1535,7 @@ class EnumObject(
     The value of this object is represented with an :class:`int`.
 
     For VHDL objects, the value being represented is the enumeration value at the integer index into the original ``type`` declaration,
-    as if it were a 1-based array.
+    as if it were a 0-based array.
 
     For Verilog objects, enumerations are little more than named integer values.
     There may be many enumeration values that a given :class:`int` value represents.
@@ -1569,6 +1569,8 @@ class EnumObject(
             # set_signal_val_int is limited to 32 bits.
             return _schedule_write(self, self._handle.set_signal_val_int, action, value)
         else:
+            if value < 0:
+                value += 1 << width
             return _schedule_write(
                 self,
                 self._handle.set_signal_val_binstr,
