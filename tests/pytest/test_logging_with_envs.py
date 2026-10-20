@@ -16,6 +16,7 @@ import pytest
 from pytest import LogCaptureFixture, MonkeyPatch
 
 import cocotb.logging
+import cocotb.simtime
 import cocotb.simulator
 
 
@@ -125,3 +126,17 @@ def test_default_config_no_simulator(caplog: LogCaptureFixture) -> None:
 
     assert caplog.records
     assert all(record.created_sim_time is None for record in caplog.records)
+
+
+@pytest.mark.parametrize("unit, expected", [("ns", "1.25ns"), ("ps", "1250.00ps")])
+def test_report_precision(monkeypatch: MonkeyPatch, unit: str, expected: str) -> None:
+    formatter = cocotb.logging.SimLogFormatter(strip_ansi=True)
+    monkeypatch.setattr(cocotb.simtime, "time_precision", -12)
+    monkeypatch.setattr(cocotb.simtime, "report_precision", unit)
+    record = logging.LogRecord("cocotb", INFO, __file__, 0, "message", (), None)
+    record.created_sim_time = 1250
+
+    assert formatter.format(record).split()[0] == expected
+
+    record.created_sim_time = None
+    assert formatter.format(record).split()[0] == f"-.--{unit}"

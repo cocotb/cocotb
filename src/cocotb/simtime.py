@@ -27,6 +27,7 @@ __all__ = (
     "TimeUnit",
     "convert",
     "get_sim_time",
+    "report_precision",
     "time_precision",
 )
 
@@ -276,6 +277,16 @@ Valid values are ``'error'``, ``'ceil'``, ``'round'``, and ``'floor'``.
 """
 
 
+report_precision: TimeUnit = "ns"
+"""The precision used for reporting simulation time.
+
+Defaults to ``'ns'`` (nanoseconds).
+Valid values are ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, and ``'sec'``.
+
+.. versionadded:: 2.2
+"""
+
+
 def _init() -> None:
     global time_precision
     time_precision = cocotb.simulator.get_precision()
@@ -290,3 +301,14 @@ def _init() -> None:
                 f"Valid values are 'error', 'ceil', 'round', and 'floor'."
             )
         default_round_mode = cast("RoundMode", round_mode_envvar)
+
+    global report_precision
+    report_precision_envvar = os.getenv("COCOTB_SIMTIME_REPORT_PRECISION", None)
+    if report_precision_envvar is not None:
+        report_precision_envvar = report_precision_envvar.lower().strip()
+        if report_precision_envvar not in ("fs", "ps", "ns", "us", "ms", "sec"):
+            raise ValueError(
+                f"Invalid report precision specified in COCOTB_SIMTIME_REPORT_PRECISION: {report_precision_envvar}.\n"
+                f"Valid values are 'fs', 'ps', 'ns', 'us', 'ms', and 'sec'."
+            )
+        report_precision = cast("TimeUnit", report_precision_envvar)

@@ -62,12 +62,14 @@ def assert_child_exited(child) -> None:
     sys.platform == "win32",
     reason="pexpect.spawn is not available on Windows",
 )
-def test_ipython_support_interactive(tmp_path: Path) -> None:
+@pytest.mark.parametrize("unit, timestamp", [("ns", "1.00ns"), ("ps", "1000.00ps")])
+def test_ipython_support_interactive(tmp_path: Path, unit: str, timestamp: str) -> None:
     env = os.environ.copy()
     env.update(
         {
             "COCOTB_ANSI_OUTPUT": "0",
             "COCOTB_TEST_MODULES": "cocotb_tools.ipython_support",
+            "COCOTB_SIMTIME_REPORT_PRECISION": unit,
             "IPYTHONDIR": str(tmp_path / "ipython"),
             "PATH": os.pathsep.join(
                 [str(Path(sys.executable).parent), os.environ.get("PATH", "")]
@@ -99,6 +101,7 @@ def test_ipython_support_interactive(tmp_path: Path) -> None:
         child.expect(r"In \[4\]:")
 
         child.sendline('await Timer(1, "ns")')
+        child.expect_exact(f"sim time: {timestamp}")
         child.expect(r"In \[5\]:")
 
         child.sendline("exit()")

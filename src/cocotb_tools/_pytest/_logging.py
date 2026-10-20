@@ -20,7 +20,8 @@ from _pytest.logging import DEFAULT_LOG_FORMAT, LoggingPlugin
 from pytest import Config, Session, hookimpl
 
 import cocotb
-from cocotb.simtime import TimeUnit, get_sim_time
+import cocotb.simtime
+from cocotb.simtime import get_sim_time
 
 COCOTB_LOG_FORMAT: str = (
     "%(sim_time_str)8s%(sim_time_unit)s %(levelname)-8s %(name)s %(message)s"
@@ -42,20 +43,15 @@ def get_level(name: str) -> int:
 class SimContextFilter(Filter):
     """Attach information about simulation to log record using log filter."""
 
-    def __init__(self, config: Config) -> None:
-        """Create new instance of simulation context filter.
-
-        Args:
-            config: The pytest configuration object.
-        """
-        self._sim_time_unit: TimeUnit = config.option.cocotb_sim_time_unit
+    def __init__(self) -> None:
+        """Create new instance of simulation context filter."""
         self._is_simulation: bool = getattr(cocotb, "is_simulation", False)
 
     def filter(self, record: LogRecord) -> bool:
         """Attach information about simulation to log record."""
         if not hasattr(record, "sim_time"):
             sim_time: int | float | None = self._get_sim_time()
-            record.sim_time_unit = self._sim_time_unit
+            record.sim_time_unit = cocotb.simtime.report_precision
 
             if sim_time is None:
                 record.sim_time = 0
@@ -69,7 +65,7 @@ class SimContextFilter(Filter):
     def _get_sim_time(self) -> int | float | None:
         if self._is_simulation:
             try:
-                return get_sim_time(self._sim_time_unit)
+                return get_sim_time(cocotb.simtime.report_precision)
             except RecursionError:
                 pass  # If get_sim_time will try to log
 
@@ -81,7 +77,7 @@ class Logging:
 
     def __init__(self, config: Config) -> None:
         """Create new instance of logging plugin."""
-        self._filter: Filter = SimContextFilter(config)
+        self._filter: Filter = SimContextFilter()
         option = config.option
 
         if not option.log_format and config.getini("log_format") is DEFAULT_LOG_FORMAT:

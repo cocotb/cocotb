@@ -260,8 +260,8 @@ def _simtime_fmt(record: logging.LogRecord, unit: TimeUnit) -> str:
     sim_time = getattr(record, "created_sim_time", None)
     if sim_time is None:
         return f"-.--{unit}"
-    time_ns = get_time_from_sim_steps(sim_time, unit)
-    return f"{time_ns:.2f}{unit}"
+    time = get_time_from_sim_steps(sim_time, unit)
+    return f"{time:.2f}{unit}"
 
 
 class SimLogFormatter(logging.Formatter):
@@ -318,7 +318,7 @@ class SimLogFormatter(logging.Formatter):
         )
 
         if not prefix_format:
-            prefix_format = "{simtime_fmt(record,'ns'):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
+            prefix_format = "{simtime_fmt(record, simtime.report_precision):>11} {level_color_start}{record.levelname:<8}{level_color_end} {ljust(record.name, 34)} "
             if not self._reduced_log_fmt:
                 prefix_format = (
                     prefix_format

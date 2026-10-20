@@ -16,6 +16,7 @@ import pytest
 from common import assert_takes
 
 import cocotb
+import cocotb.simtime
 from cocotb._base_triggers import NullTrigger
 from cocotb.clock import Clock
 from cocotb.handle import Immediate
@@ -43,8 +44,18 @@ async def test_clock_with_units(dut, impl: str) -> None:
     assert clk_1mhz.unit == "us"
     assert clk_1mhz.impl == impl
 
-    assert str(clk_1mhz) == f"<Clock, {dut.clk._path} @ 1.0 MHz>"
-    assert str(clk_250mhz) == f"<Clock, {dut.clk._path} @ 250.0 MHz>"
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(cocotb.simtime, "report_precision", "ns")
+        assert str(clk_1mhz) == f"<Clock, {dut.clk._path} @ 1.000MHz>"
+        assert str(clk_250mhz) == f"<Clock, {dut.clk._path} @ 250.000MHz>"
+
+        monkeypatch.setattr(cocotb.simtime, "report_precision", "sec")
+        assert str(clk_1mhz) == f"<Clock, {dut.clk._path} @ 1000000.000Hz>"
+        assert str(clk_250mhz) == f"<Clock, {dut.clk._path} @ 250000000.000Hz>"
+
+        monkeypatch.setattr(cocotb.simtime, "report_precision", "step")
+        clk_steps = Clock(dut.clk, 10, unit="step", impl=impl)
+        assert str(clk_steps) == f"<Clock, {dut.clk._path} @ 10 steps>"
 
     clk_1mhz.start()
 

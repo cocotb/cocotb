@@ -38,7 +38,9 @@ from pytest import (
 
 import cocotb
 import cocotb.handle
+import cocotb.simtime
 from cocotb.handle import SimHandleBase
+from cocotb_tools import _env
 from cocotb_tools._pytest import hookspecs
 from cocotb_tools._pytest._compat import (
     cocotb_decorator_as_pytest_marks,
@@ -115,8 +117,10 @@ _OPTIONS: tuple[Option, ...] = (
     Option(
         "cocotb_sim_time_unit",
         choices=("step", "fs", "ps", "ns", "us", "ms", "sec"),
-        default="ns",
-        description="Simulation time unit that will be used during tests reporting.",
+        default=_env.get_str(
+            "COCOTB_SIMTIME_REPORT_PRECISION", cocotb.simtime.report_precision
+        ),
+        description="Initial value of cocotb.simtime.report_precision for simulation time reporting.",
     ),
     Option(
         "cocotb_gui",
@@ -645,6 +649,7 @@ def pytest_configure(config: Config) -> None:
 
     _register_markers(config)
     populate_ini_to_options(config, _OPTIONS)
+    cocotb.simtime.report_precision = option.cocotb_sim_time_unit
 
     if not option.cocotb_timescale:
         option.cocotb_timescale = None
@@ -754,7 +759,7 @@ def pytest_terminal_summary(
         return
 
     terminalreporter.section("cocotb test summary info", cyan=True, bold=True)
-    sim_time_unit: str = config.option.cocotb_sim_time_unit
+    sim_time_unit = cocotb.simtime.report_precision
 
     summary: tuple[list[str], ...] = (
         ["TEST"],
@@ -799,7 +804,13 @@ def pytest_terminal_summary(
                     count[test_status] += 1
                     tests += 1
 
-                    sim_time: float = getattr(item, "sim_time_duration", 0)
+                    sim_time: float = getattr(item, "sim_time_duration_steps", 0)
+                    if sim_time_unit != "step":
+                        sim_time = cocotb.simtime._ldexp10(
+                            sim_time,
+                            item.sim_time_precision
+                            - cocotb.simtime._get_log_time_scale(sim_time_unit),
+                        )
                     real_time: float = getattr(item, "duration", 0)
                     ratio: float = sim_time / real_time if real_time else 0
 
