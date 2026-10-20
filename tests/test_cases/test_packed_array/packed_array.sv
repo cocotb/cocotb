@@ -74,6 +74,16 @@ module packed_array (
     input  noc_hdr_t i_pkt_arr2d_unpk[1:0][3:0]
 );
 
+  noc_hdr_t pkt_var;
+
+  initial begin
+    pkt_var.seq_idx    = 12'b110010011100;
+    pkt_var.dst.pkg_id = 2'b01;
+    pkt_var.dst.die    = 1'b1;
+    pkt_var.dst.tile   = 2'b00;
+    pkt_var.dst_local  = 5'b11010;
+  end
+
   assign o_packed       = i_packed;
   assign o_packed_3d    = i_packed_3d;
   assign o_packed_mixed = i_packed_mixed;

@@ -20,7 +20,7 @@ from cocotb.triggers import (
     Timer,
     ValueChange,
 )
-from cocotb.types import Logic
+from cocotb.types import Logic, LogicArray, Range
 from cocotb_tools.sim_versions import VerilatorVersion
 
 xfail_without_packed_indexing = cocotb.xfail(
@@ -421,3 +421,72 @@ async def edge_storm_3d(dut):
     for _ in range(ITERATIONS):
         await RisingEdge(sig_o)
         await FallingEdge(sig_o)
+
+
+PKT_VAR_PATTERN = "".join(
+    [
+        "110010011100",
+        "01",
+        "1",
+        "00",
+        "11010",
+    ]
+)
+
+FLATTENS_PACKED_STRUCT = cocotb.SIM_NAME.lower().startswith(("icarus", "verilator"))
+
+
+@cocotb.test(expect_error=() if FLATTENS_PACKED_STRUCT else RuntimeError)
+async def packed_struct_var_range(dut):
+    """A packed struct variable has no range of its own"""
+
+    assert dut.pkt_var.range == Range(21, "downto", 0)
+
+
+@cocotb.test()
+async def packed_struct_var_len(dut):
+    """len() of a packed struct variable comes from its size"""
+
+    assert len(dut.pkt_var) == 22
+
+
+@cocotb.test()
+async def packed_vector_range(dut):
+    """A plain packed vector does report a range"""
+
+    assert dut.i_packed_32.range == Range(0, "to", 0)
+    assert dut.i_packed_32[0].range == Range(31, "downto", 0)
+
+
+@cocotb.test()
+async def packed_struct_var_read(dut):
+    """Read a whole packed struct variable"""
+
+    await Timer(1)
+    assert str(dut.pkt_var.value) == PKT_VAR_PATTERN
+
+
+@cocotb.test()
+async def packed_struct_var_index(dut):
+    """Index every bit of a packed struct variable"""
+
+    await Timer(1)
+    for i, bit in enumerate(PKT_VAR_PATTERN):
+        assert str(dut.pkt_var[21 - i].value) == bit, f"mismatch at index {21 - i}"
+
+    with pytest.raises(IndexError):
+        dut.pkt_var[22]
+
+
+@cocotb.test()
+async def packed_struct_var_write(dut):
+    """Write a whole packed struct variable"""
+
+    await Timer(1)
+    dut.pkt_var.value = LogicArray("0001110001110001110001")
+    await Timer(1)
+    assert str(dut.pkt_var.value) == "0001110001110001110001"
+
+    dut.pkt_var.value = 0
+    await Timer(1)
+    assert str(dut.pkt_var.value) == "0" * 22

@@ -16,9 +16,23 @@ VpiSignalObjHdl::~VpiSignalObjHdl() {
     vpi_free_object(get_handle<vpiHandle>());
 }
 
+static bool may_lack_range(int32_t type) {
+    switch (type) {
+        case vpiStructVar:
+        case vpiStructNet:
+        case vpiUnionVar:
+        case vpiUnionNet:
+            return true;
+        default:
+            return false;
+    }
+}
+
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
+    bool rangeless_ok = may_lack_range(type);
+    bool unknown_range = false;
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
         (vpiIntegerNet == type)) {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
@@ -49,13 +63,19 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         DEFER(vpi_free_object(iter));
                         DEFER(vpi_free_object(rangeHdl));
 
-                        int res = get_range_bounds(rangeHdl, m_range_left,
-                                                   m_range_right);
-                        // LCOV_EXCL_START
+                        int res =
+                            get_range_bounds(rangeHdl, m_range_left,
+                                             m_range_right, !rangeless_ok);
                         if (res) {
-                            return -1;
+                            // LCOV_EXCL_START
+                            if (!rangeless_ok) {
+                                return -1;
+                            }
+                            // LCOV_EXCL_STOP
+                            unknown_range = true;
                         }
-                        // LCOV_EXCL_STOP
+                    } else if (rangeless_ok) {
+                        unknown_range = true;
                     }
                     // LCOV_EXCL_START
                     else {
@@ -65,28 +85,43 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         return -1;
                     }
                     // LCOV_EXCL_STOP
-                } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
-                           0) {
-                    // TODO is this the best behavior? Do simulators actually
-                    // hit this case?
-                    LOG_WARN(
-                        "VPI: Cannot discover range bounds, guessing based "
-                        "on elements");
-                    m_range_left = 0;
-                    m_range_right = m_num_elems - 1;
+                } else if (get_range_bounds(hdl, m_range_left, m_range_right,
+                                            !rangeless_ok) < 0) {
+                    if (rangeless_ok) {
+                        unknown_range = true;
+                    } else {
+                        // TODO is this the best behavior? Do simulators
+                        // actually hit this case?
+                        LOG_WARN(
+                            "VPI: Cannot discover range bounds, guessing based "
+                            "on elements");
+                        m_range_left = 0;
+                        m_range_right = m_num_elems - 1;
+                    }
                 }
 
-                LOG_DEBUG(
-                    "VPI: Indexable object initialized with range [%d:%d] and "
-                    "length >%d<",
-                    m_range_left, m_range_right, m_num_elems);
+                if (unknown_range) {
+                    m_range_left = -1;
+                    m_range_right = -1;
+                    LOG_DEBUG("VPI: %s has no range, it is a %s of %d elements",
+                              name.c_str(), vpi_get_str(vpiType, hdl),
+                              m_num_elems);
+                } else {
+                    LOG_DEBUG(
+                        "VPI: Indexable object initialized with range [%d:%d] "
+                        "and length >%d<",
+                        m_range_left, m_range_right, m_num_elems);
+                }
             } else {
                 m_range_left = 0;
                 m_range_right = m_num_elems - 1;
             }
         }
     }
-    m_range_dir = m_range_left > m_range_right ? GPI_RANGE_DOWN : GPI_RANGE_UP;
+    if (!unknown_range) {
+        m_range_dir =
+            m_range_left > m_range_right ? GPI_RANGE_DOWN : GPI_RANGE_UP;
+    }
     LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(),
               m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);
