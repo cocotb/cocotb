@@ -395,8 +395,8 @@ async def test_task_repr(_) -> None:
     assert re.match(
         (
             r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\("
-            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>, "
-            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>"
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1.00ns at \w+>>, "
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1.00ns at \w+>>"
             r"\)>"
         ),
         repr(coro_task),
@@ -426,7 +426,7 @@ async def test_task_repr(_) -> None:
         (
             r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
             r"<Task \d+ scheduled coro=coroutine_wait\(\)>, "
-            r"<Timer of 2000.00ps at \w+>"
+            r"<Timer of 2.00ns at \w+>"
             r"\)>"
         ),
         repr(coro_task),
@@ -438,8 +438,8 @@ async def test_task_repr(_) -> None:
     assert re.match(
         (
             r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\("
-            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1000.00ps at \w+>>, "
-            r"<Timer of 2000.00ps at \w+>"
+            r"<Task \d+ pending coro=coroutine_wait\(\) trigger=<Timer of 1.00ns at \w+>>, "
+            r"<Timer of 2.00ns at \w+>"
             r"\)>"
         ),
         repr(coro_task),
@@ -454,7 +454,7 @@ async def test_task_repr(_) -> None:
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
     assert re.match(
-        r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>",
+        r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1.00ns at \w+>>",
         repr(coro_task),
     )
 

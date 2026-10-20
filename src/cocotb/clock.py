@@ -18,6 +18,7 @@ from logging import Logger
 from typing import ClassVar, Literal
 
 import cocotb
+import cocotb.simtime
 import cocotb.simulator
 from cocotb.handle import (
     Deposit,
@@ -401,13 +402,30 @@ class Clock:
             await edge_type(self._signal)
 
     def __repr__(self) -> str:
-        freq_mhz = 1 / get_time_from_sim_steps(
-            get_sim_steps(self._period, self._unit), "us"
-        )
-        return f"<{type(self).__qualname__}, {self._signal._path} @ {freq_mhz} MHz>"
+        if cocotb.simtime.report_precision == "step":
+            freq = f"{get_sim_steps(self._period, self._unit)} steps"
+        else:
+            freq_scalar = 1 / get_time_from_sim_steps(
+                get_sim_steps(self._period, self._unit), cocotb.simtime.report_precision
+            )
+            if cocotb.simtime.report_precision == "sec":
+                freq = f"{freq_scalar:.3f}Hz"
+            else:
+                freq = f"{1000 * freq_scalar:.3f}{_time_to_freq[cocotb.simtime.report_precision]}"
+        return f"<{type(self).__qualname__}, {self._signal._path} @ {freq}>"
 
     @cached_property
     def _log(self) -> Logger:
         return logging.getLogger(
             f"cocotb.{type(self).__qualname__}.{self._signal._name}"
         )
+
+
+# These are offset by 1000 to match the offset applied in the frequency calculation in __repr__.
+_time_to_freq = {
+    "fs": "THz",
+    "ps": "GHz",
+    "ns": "MHz",
+    "us": "kHz",
+    "ms": "Hz",
+}

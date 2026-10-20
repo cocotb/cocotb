@@ -601,6 +601,19 @@ Simulation Time Utilities
 
     .. versionadded:: 2.2
 
+.. envvar:: COCOTB_SIMTIME_REPORT_PRECISION
+
+    Type: :ref:`env-string`
+
+    Sets :data:`cocotb.simtime.report_precision`, the unit used for reporting simulation time.
+    Defaults to ``ns``.
+    Valid values are ``fs``, ``ps``, ``ns``, ``us``, ``ms``, and ``sec``.
+
+    When using the pytest plugin, ``--cocotb-sim-time-unit`` and its configuration-file
+    and environment equivalents override this initial value.
+
+    .. versionadded:: 2.2
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource

@@ -27,6 +27,7 @@ import cocotb
 import cocotb._event_loop
 import cocotb._shutdown as shutdown
 import cocotb.handle
+import cocotb.simtime
 import cocotb.simulator
 import cocotb.types._resolve
 from cocotb import logging as cocotb_logging
@@ -38,7 +39,7 @@ from cocotb._test_manager import TestManager, TestSuccess
 from cocotb._utils import DocEnum, safe_divide
 from cocotb._xunit_reporter import Status, XUnitReporter
 from cocotb.logging import ANSI
-from cocotb.simtime import get_sim_time
+from cocotb.simtime import convert, get_sim_time
 from cocotb_tools import _env
 
 __all__ = (
@@ -166,16 +167,19 @@ class _TestResults:
         test_fullname: str,
         outcome: _TestOutcome,
         wall_time_s: float,
-        sim_time_ns: float,
+        sim_time_steps: int,
     ) -> None:
         self.test_fullname = test_fullname
         self.outcome = outcome
         self.wall_time_s = wall_time_s
-        self.sim_time_ns = sim_time_ns
+        self.sim_time_steps = sim_time_steps
 
     @property
     def ratio(self) -> float:
-        return safe_divide(self.sim_time_ns, self.wall_time_s)
+        return safe_divide(
+            convert(self.sim_time_steps, "step", to=cocotb.simtime.report_precision),
+            self.wall_time_s,
+        )
 
 
 class RegressionManager:
@@ -386,7 +390,7 @@ class RegressionManager:
 
             # if the test is skipped, record and continue
             if self._test.skip and self._mode != RegressionMode.TESTCASE:
-                current_sim_time = get_sim_time("ns")
+                current_sim_time = get_sim_time()
                 self._record_test_skipped(
                     wall_time_s=0,
                     sim_time_start=current_sim_time,
@@ -447,7 +451,7 @@ class RegressionManager:
         cocotb.types._resolve._randomResolveRng.seed(test_seed)
         cocotb.RANDOM_SEED = test_seed
 
-        self._start_sim_time = get_sim_time("ns")
+        self._start_sim_time = get_sim_time()
         self._start_time = time.monotonic()
 
         self._running_test.start()
@@ -483,7 +487,7 @@ class RegressionManager:
         # compute wall time
         wall_time = time.monotonic() - self._start_time
         sim_time_start = self._start_sim_time
-        sim_time_stop = get_sim_time("ns")
+        sim_time_stop = get_sim_time()
 
         # restore random number generators state
         cocotb.RANDOM_SEED = self._regression_seed
@@ -512,8 +516,8 @@ class RegressionManager:
         self,
         exc: BaseException | None,
         wall_time_s: float,
-        sim_time_start: float,
-        sim_time_stop: float,
+        sim_time_start: int,
+        sim_time_stop: int,
     ) -> None:
         test = self._test
 
@@ -672,8 +676,8 @@ class RegressionManager:
     def _record_test_skipped(
         self,
         wall_time_s: float,
-        sim_time_start: float,
-        sim_time_stop: float,
+        sim_time_start: int,
+        sim_time_stop: int,
         msg: str | None,
     ) -> None:
         """Called by :meth:`_execute` when a test is skipped."""
@@ -717,7 +721,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 outcome=_TestOutcome.SKIP,
-                sim_time_ns=sim_time_duration,
+                sim_time_steps=sim_time_duration,
                 wall_time_s=wall_time_s,
             )
         )
@@ -764,7 +768,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 outcome=_TestOutcome.FAIL,
-                sim_time_ns=0,
+                sim_time_steps=0,
                 wall_time_s=0,
             )
         )
@@ -776,8 +780,8 @@ class RegressionManager:
     def _record_test_xfail(
         self,
         wall_time_s: float,
-        sim_time_start: float,
-        sim_time_stop: float,
+        sim_time_start: int,
+        sim_time_stop: int,
         result: BaseException | None,
         msg: str | None,
     ) -> None:
@@ -817,7 +821,8 @@ class RegressionManager:
             exc_info=result,
         )
 
-        sim_time_duration = sim_time_stop - sim_time_start
+        unit = cocotb.simtime.report_precision
+        sim_time_duration = convert(sim_time_stop - sim_time_start, "step", to=unit)
 
         # write out xunit results
         self.xunit.add_testcase(
@@ -833,9 +838,9 @@ class RegressionManager:
                 "random_seed": self._regression_seed,
                 "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
-                "sim_time_unit": "ns",
-                "sim_time_start": sim_time_start,
-                "sim_time_stop": sim_time_stop,
+                "sim_time_unit": unit,
+                "sim_time_start": convert(sim_time_start, "step", to=unit),
+                "sim_time_stop": convert(sim_time_stop, "step", to=unit),
                 "sim_time_duration": sim_time_duration,
                 "sim_time_ratio": safe_divide(sim_time_duration, wall_time_s),
             },
@@ -849,7 +854,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 outcome=outcome,
-                sim_time_ns=sim_time_duration,
+                sim_time_steps=sim_time_stop - sim_time_start,
                 wall_time_s=wall_time_s,
             )
         )
@@ -857,8 +862,8 @@ class RegressionManager:
     def _record_test_passed(
         self,
         wall_time_s: float,
-        sim_time_start: float,
-        sim_time_stop: float,
+        sim_time_start: int,
+        sim_time_stop: int,
     ) -> None:
         start_hilight = "" if cocotb_logging.strip_ansi else self.COLOR_PASSED
         stop_hilight = "" if cocotb_logging.strip_ansi else ANSI.DEFAULT
@@ -869,7 +874,8 @@ class RegressionManager:
             stop_hilight,
         )
 
-        sim_time_duration = sim_time_stop - sim_time_start
+        unit = cocotb.simtime.report_precision
+        sim_time_duration = convert(sim_time_stop - sim_time_start, "step", to=unit)
 
         # write out xunit results
         self.xunit.add_testcase(
@@ -884,9 +890,9 @@ class RegressionManager:
                 "random_seed": self._regression_seed,
                 "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
-                "sim_time_unit": "ns",
-                "sim_time_start": sim_time_start,
-                "sim_time_stop": sim_time_stop,
+                "sim_time_unit": unit,
+                "sim_time_start": convert(sim_time_start, "step", to=unit),
+                "sim_time_stop": convert(sim_time_stop, "step", to=unit),
                 "sim_time_duration": sim_time_duration,
                 "sim_time_ratio": safe_divide(sim_time_duration, wall_time_s),
             },
@@ -901,7 +907,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 outcome=_TestOutcome.PASS,
-                sim_time_ns=sim_time_duration,
+                sim_time_steps=sim_time_stop - sim_time_start,
                 wall_time_s=wall_time_s,
             )
         )
@@ -909,8 +915,8 @@ class RegressionManager:
     def _record_test_failed(
         self,
         wall_time_s: float,
-        sim_time_start: float,
-        sim_time_stop: float,
+        sim_time_start: int,
+        sim_time_stop: int,
         result: BaseException | None,
         msg: str | None,
     ) -> None:
@@ -930,7 +936,8 @@ class RegressionManager:
             exc_info=result,
         )
 
-        sim_time_duration = sim_time_stop - sim_time_start
+        unit = cocotb.simtime.report_precision
+        sim_time_duration = convert(sim_time_stop - sim_time_start, "step", to=unit)
 
         # write out xunit results
         self.xunit.add_testcase(
@@ -947,9 +954,9 @@ class RegressionManager:
                 "random_seed": self._regression_seed,
                 "file": self.xunit.normalize_path(inspect.getfile(self._test.func)),
                 "line": self._get_lineno(self._test),
-                "sim_time_unit": "ns",
-                "sim_time_start": sim_time_start,
-                "sim_time_stop": sim_time_stop,
+                "sim_time_unit": unit,
+                "sim_time_start": convert(sim_time_start, "step", to=unit),
+                "sim_time_stop": convert(sim_time_stop, "step", to=unit),
                 "sim_time_duration": sim_time_duration,
                 "sim_time_ratio": safe_divide(sim_time_duration, wall_time_s),
             },
@@ -964,7 +971,7 @@ class RegressionManager:
             _TestResults(
                 test_fullname=self._test.fullname,
                 outcome=_TestOutcome.FAIL,
-                sim_time_ns=sim_time_duration,
+                sim_time_steps=sim_time_stop - sim_time_start,
                 wall_time_s=wall_time_s,
             )
         )
@@ -982,17 +989,18 @@ class RegressionManager:
     def _log_test_summary(self) -> None:
         """Called by :meth:`_tear_down` to log the test summary."""
         real_time = time.monotonic() - self._regression_start_time
-        sim_time_ns = get_sim_time("ns")
-        ratio_time = safe_divide(sim_time_ns, real_time)
+        unit = cocotb.simtime.report_precision
+        sim_time = get_sim_time(unit)
+        ratio_time = safe_divide(sim_time, real_time)
 
         if len(self._test_results) == 0:
             return
 
         TEST_FIELD = "TEST"
         RESULT_FIELD = "STATUS"
-        SIM_FIELD = "SIM TIME (ns)"
+        SIM_FIELD = f"SIM TIME ({unit})"
         REAL_FIELD = "REAL TIME (s)"
-        RATIO_FIELD = "RATIO (ns/s)"
+        RATIO_FIELD = f"RATIO ({unit}/s)"
         TOTAL_NAME = f"TESTS={self.total_tests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
         if preview.is_enabled(preview.Feature.XFAIL_IN_RESULTS):
@@ -1076,7 +1084,7 @@ class RegressionManager:
             test_dict = {
                 "a": result.test_fullname,
                 "b": pass_fail_str,
-                "c": result.sim_time_ns,
+                "c": convert(result.sim_time_steps, "step", to=unit),
                 "d": result.wall_time_s,
                 "e": ratio,
                 "a_len": TEST_FIELD_LEN,
@@ -1095,7 +1103,7 @@ class RegressionManager:
         summary += test_line.format(
             a=TOTAL_NAME,
             b="",
-            c=sim_time_ns,
+            c=sim_time,
             d=real_time,
             e=format(ratio_time, "0.2f"),
             a_len=TEST_FIELD_LEN,
