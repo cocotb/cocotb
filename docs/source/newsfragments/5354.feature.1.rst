@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_SIMTIME_REPORT_PRECISION` to control the unit used for reporting simulation time in logs.
