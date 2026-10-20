@@ -19,21 +19,19 @@ VpiObjHdl::~VpiObjHdl() {
     if (m_type != GPI_GENARRAY) vpi_free_object(get_handle<vpiHandle>());
 }
 
-int get_range_bounds(vpiHandle obj, int &left, int &right, bool log_errors) {
+int get_range_bounds(vpiHandle obj, int &left, int &right) {
     s_vpi_value val;
     val.format = vpiIntVal;
 
     vpiHandle leftRange = vpi_handle(vpiLeftRange, obj);
+    // LCOV_EXCL_START
     if (leftRange == NULL) {
-        // LCOV_EXCL_START
-        if (log_errors) {
-            LOG_ERROR("Unable to get left range for object: %s",
-                      vpi_get_str(vpiName, obj));
-        }
-        // LCOV_EXCL_STOP
+        LOG_ERROR("Unable to get left range for object: %s",
+                  vpi_get_str(vpiName, obj));
         check_vpi_error();
         return -1;
     }
+    // LCOV_EXCL_STOP
     vpi_get_value(leftRange, &val);
     left = val.value.integer;
     vpi_free_object(leftRange);
@@ -41,10 +39,8 @@ int get_range_bounds(vpiHandle obj, int &left, int &right, bool log_errors) {
     vpiHandle rightRange = vpi_handle(vpiRightRange, obj);
     // LCOV_EXCL_START
     if (rightRange == NULL) {
-        if (log_errors) {
-            LOG_ERROR("Unable to get right range for object: %s",
-                      vpi_get_str(vpiName, obj));
-        }
+        LOG_ERROR("Unable to get right range for object: %s",
+                  vpi_get_str(vpiName, obj));
         check_vpi_error();
         return -1;
     }

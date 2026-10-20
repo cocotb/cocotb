@@ -70,8 +70,7 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
 
 // Borrows obj and releases the bound handles.
 // Returns 0 on success, -1 on failure.
-int get_range_bounds(vpiHandle obj, int &left, int &right,
-                     bool log_errors = true);
+int get_range_bounds(vpiHandle obj, int &left, int &right);
 
 #define check_vpi_error()                                \
     do {                                                 \

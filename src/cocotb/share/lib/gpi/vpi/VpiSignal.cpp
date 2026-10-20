@@ -63,9 +63,8 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         DEFER(vpi_free_object(iter));
                         DEFER(vpi_free_object(rangeHdl));
 
-                        int res =
-                            get_range_bounds(rangeHdl, m_range_left,
-                                             m_range_right, !rangeless_ok);
+                        int res = get_range_bounds(rangeHdl, m_range_left,
+                                                   m_range_right);
                         if (res) {
                             // LCOV_EXCL_START
                             if (!rangeless_ok) {
@@ -85,8 +84,8 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         return -1;
                     }
                     // LCOV_EXCL_STOP
-                } else if (get_range_bounds(hdl, m_range_left, m_range_right,
-                                            !rangeless_ok) < 0) {
+                } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
+                           0) {
                     if (rangeless_ok) {
                         unknown_range = true;
                     } else {
