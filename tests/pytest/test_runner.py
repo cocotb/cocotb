@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import contextlib
 import os
 import sys
 from pathlib import Path
@@ -141,24 +140,16 @@ def test_runner(parameters, pre_cmd, clean_build, static_build_dir):
         build_dir.mkdir(parents=True, exist_ok=True)
         (build_dir / "clean_test_file").touch()
 
-    expect_warning = clean_build and build_dir is None
-    ctx = (
-        pytest.warns(UserWarning, match="Ignoring")
-        if expect_warning
-        else contextlib.nullcontext()
+    runner.build(
+        sources=sources,
+        hdl_toplevel="runner",
+        parameters=parameters,
+        defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
+        includes=[basic_hierarchy_module_dir],
+        build_args=compile_args,
+        clean=clean_build,
+        build_dir=build_dir,
     )
-
-    with ctx:
-        runner.build(
-            sources=sources,
-            hdl_toplevel="runner",
-            parameters=parameters,
-            defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
-            includes=[basic_hierarchy_module_dir],
-            build_args=compile_args,
-            clean=clean_build,
-            build_dir=build_dir,
-        )
 
     runner.test(
         hdl_toplevel="runner",

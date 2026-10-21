@@ -423,9 +423,9 @@ class Runner(ABC):
             :func:`~cocotb_tools.runner.as_sv_literal` to convert Python values to HDL literals.
 
         .. versionchanged:: 2.2
-            :meth:`~cocotb_tools.runner.Runner.build` now creates a temporary directory in the current working directory,
-            named ``sim_build_`` followed by random characters, when the ``build_dir`` parameter is not set.
-            To restore the previous behavior, pass ``build_dir="sim_build"``.
+            :meth:`~cocotb_tools.runner.Runner.build` now creates a new, uniquely named temporary directory with the
+            prefix ``sim_build_`` in the default temporary directory (see :func:`tempfile.gettempdir`) when the
+            ``build_dir`` parameter is not set. To restore the previous behavior, pass ``build_dir="sim_build"``.
         """
         # We don't get anything by printing this if the build fails
         __tracebackhide__ = True
@@ -476,13 +476,7 @@ class Runner(ABC):
                 self.always = True
             self.build_dir.mkdir(parents=True, exist_ok=True)
         else:
-            if self.clean:
-                warnings.warn(
-                    "Ignoring the *clean* parameter since no build steps were previously run.",
-                    stacklevel=2,
-                )
-                self.always = True
-            self.build_dir = Path(tempfile.mkdtemp(prefix="sim_build_", dir=Path.cwd()))
+            self.build_dir = Path(tempfile.mkdtemp(prefix="sim_build_"))
 
         self.cwd = self.build_dir if cwd is None else cwd
         cmds: Sequence[_Command] = self._build_command()
