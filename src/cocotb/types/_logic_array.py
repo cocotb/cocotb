@@ -11,12 +11,12 @@ from math import ceil
 from typing import Any, Literal, cast, overload
 
 from cocotb._deprecation import deprecated
-from cocotb.preview import Feature, is_enabled
 from cocotb.types._abstract_array import AbstractMutableArray
 from cocotb.types._indexing import IndexingChangedWarning
 from cocotb.types._logic import Logic, LogicConstructibleT
 from cocotb.types._range import Range
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+from cocotb_previews import Feature, is_enabled
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias

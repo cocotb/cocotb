@@ -29,8 +29,8 @@ import cocotb._shutdown as shutdown
 import cocotb.handle
 import cocotb.simulator
 import cocotb.types._resolve
+import cocotb_previews
 from cocotb import logging as cocotb_logging
-from cocotb import preview
 from cocotb._decorators import Test, TestGenerator
 from cocotb._gpi_triggers import Timer
 from cocotb._test_factory import TestFactory
@@ -783,7 +783,7 @@ class RegressionManager:
     ) -> None:
         status: Status
 
-        if preview.is_enabled(preview.Feature.XFAIL_IN_RESULTS):
+        if cocotb_previews.is_enabled(cocotb_previews.Feature.XFAIL_IN_RESULTS):
             # Use the XFAIL status for xfailed tests (like pytest)
             outcome = _TestOutcome.XFAIL
             color = self.COLOR_XFAILED
@@ -995,7 +995,7 @@ class RegressionManager:
         RATIO_FIELD = "RATIO (ns/s)"
         TOTAL_NAME = f"TESTS={self.total_tests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
-        if preview.is_enabled(preview.Feature.XFAIL_IN_RESULTS):
+        if cocotb_previews.is_enabled(cocotb_previews.Feature.XFAIL_IN_RESULTS):
             TOTAL_NAME += f" XFAIL={self.xfailed}"
 
         TEST_FIELD_LEN = max(
