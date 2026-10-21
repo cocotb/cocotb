@@ -7,8 +7,8 @@ import sys
 from functools import cache
 from typing import ClassVar, Union
 
-from cocotb.preview import Feature, is_enabled
 from cocotb.types._resolve import RESOLVE_X, ResolverLiteral, get_str_resolver
+from cocotb_previews import Feature, is_enabled
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias

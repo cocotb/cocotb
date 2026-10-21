@@ -1,101 +1,45 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-"""Enable or disable previews of upcoming cocotb behavior."""
+"""Deprecated alias of :mod:`cocotb_previews`.
+
+.. deprecated:: 2.2
+    Use :mod:`cocotb_previews` instead.
+"""
 
 from __future__ import annotations
 
-import os
-from collections.abc import Iterable
+import sys
+import types
+import warnings
 
-from cocotb._utils import DocStrEnum
-from cocotb_tools import _env
-
-
-class Feature(DocStrEnum):
-    """Preview features that can be enabled.
-
-    .. versionadded:: 2.1
-    """
-
-    XFAIL_IN_RESULTS = (
-        "xfail_in_results",
-        "Use the ``XFAIL`` status in the terminal results summary and the ``skipped`` XML element in the generated JUnit XML file for xfailed tests",
-    )
-    STRICT_RESOLVE = (
-        "strict_resolve",
-        "`Logic.resolve()` and `LogicArray.resolve()` return `Bit` or 0/1-only `LogicArray`, respectively",
-    )
-    HANDLE_LEN_IS_SUBELEMENTS = (
-        "handle_len_is_subelements",
-        "Make ``len()`` on packed objects return the number of elements in the outermost dimension instead of the number of bits",
-    )
+import cocotb_previews
 
 
-_feature_strs = {feature.value for feature in Feature}
+class _DeprecatedModule(types.ModuleType):
+    def __getattr__(self, name: str) -> object:
+        if (name.startswith("__") and name.endswith("__")) or not hasattr(
+            cocotb_previews, name
+        ):
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        warnings.warn(
+            "`cocotb.preview` has been moved to `cocotb_previews`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return getattr(cocotb_previews, name)
 
-_enabled_features: set[Feature] = set()
-
-
-def enable(feature: Feature) -> None:
-    """Enable a preview feature.
-
-    Args:
-        feature: Preview feature to enable.
-
-    .. versionadded:: 2.1
-    """
-    _enabled_features.add(feature)
-
-
-def disable(feature: Feature) -> None:
-    """Disable a preview feature.
-
-    Args:
-        feature: Preview feature to disable.
-
-    .. versionadded:: 2.1
-    """
-    _enabled_features.discard(feature)
-
-
-def is_enabled(feature: Feature) -> bool:
-    """Check if a preview feature is enabled.
-
-    Args:
-        feature: Preview feature to check.
-
-    Returns:
-        :data:`True` if the feature is enabled, otherwise :data:`False`.
-
-    .. versionadded:: 2.1
-    """
-    return feature in _enabled_features
-
-
-def _parse_features(features: str) -> Iterable[Feature]:
-    for value in features.split(","):
-        feature = value.strip()
-        if not feature:
-            continue
-        if feature not in _feature_strs:
-            raise ValueError(f"Unknown preview feature: {feature!r}")
-        yield Feature(feature)
-
-
-def _init() -> None:
-    features = os.getenv("COCOTB_PREVIEW")
-    if not features:
-        return
-
-    try:
-        bool_flag = _env.as_bool(features)
-    except ValueError:
-        # If not a bool, try parsing as a list of features.
-        requested_features = list(_parse_features(features))
-        _enabled_features.update(requested_features)
-    else:
-        # If this is a false bool flag, skip. If true, enable all features.
-        if not bool_flag:
+    def __setattr__(self, name: str, value: object) -> None:
+        if name.startswith("__") and name.endswith("__"):
+            super().__setattr__(name, value)
             return
-        _enabled_features.update(Feature)
+        warnings.warn(
+            "`cocotb.preview` has been moved to `cocotb_previews`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        setattr(cocotb_previews, name, value)
+
+
+# Module-level __setattr__ is not supported by the language, so this hacky approach is required.
+sys.modules[__name__].__class__ = _DeprecatedModule
