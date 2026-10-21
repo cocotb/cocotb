@@ -74,7 +74,7 @@ cmake.version = ">=3.18"
 build-dir = "build/{wheel_tag}"
 cmake.args = []
 build.verbose = false
-wheel.packages = ["src/cocotb", "src/cocotb_tools", "src/pygpi"]
+wheel.packages = ["src/cocotb", "src/cocotb_previews", "src/cocotb_tools", "src/pygpi"]
 
 [tool.scikit-build.metadata.version]
 provider = "setuptools_git_versioning.scikit_metadata"
@@ -208,6 +208,7 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = [
     "cocotb",
+    "cocotb_previews",
     "cocotb_tools",
     "pygpi",
 ]
@@ -276,8 +277,8 @@ patch = ["subprocess"]
 
 [tool.coverage.paths]
 source = [
-    "src/cocotb/",
-    ".nox/**/cocotb/",
+    "src/",
+    ".nox/**/site-packages/",
 ]
 
 [tool.coverage.report]
@@ -313,7 +314,7 @@ skip = ["*.svg"]
 
 [tool.mypy]
 python_version = "3.11"
-packages = ["cocotb", "pygpi", "cocotb_tools._pytest"]
+packages = ["cocotb", "cocotb_previews", "pygpi", "cocotb_tools._pytest"]
 modules = ["noxfile"]
 disallow_untyped_defs = true
 disallow_any_unimported = true

@@ -216,6 +216,7 @@ def dev_test_sim(
         "-v",
         "--doctest-modules",
         "--cov=cocotb",
+        "--cov=cocotb_previews",
         "--cov-branch",
         # Don't display coverage report here
         "--cov-report=",
@@ -231,6 +232,7 @@ def dev_test_sim(
         "-s",
         "-v",
         "--cov=cocotb",
+        "--cov=cocotb_previews",
         "--cov-branch",
         # Don't display coverage report here
         "--cov-report=",
@@ -306,6 +308,7 @@ def dev_test_nosim(session: nox.Session) -> None:
         "-s",
         "-v",
         "--cov=cocotb",
+        "--cov=cocotb_previews",
         "--cov-branch",
         # Don't display coverage report here
         "--cov-report=",
