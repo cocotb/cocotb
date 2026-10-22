@@ -8,6 +8,7 @@ from __future__ import annotations
 import enum
 import logging
 import re
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Sequence
 from functools import cache, cached_property
@@ -53,7 +54,10 @@ __all__ = (
     "IntegerObject",
     "LogicArrayObject",
     "LogicObject",
+    "PackedArrayObject",
     "PackedObject",
+    "PackedStructObject",
+    "PackedUnionObject",
     "RealObject",
     "Release",
     "SimHandleBase",
@@ -1369,51 +1373,58 @@ class _LogicArrayObjectBase(
 
 
 class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
-    """A packed Verilog struct, union, or vector simulation object.
+    """Base class of packed Verilog simulation objects.
+
+    Every packed Verilog object is one of :class:`PackedArrayObject`,
+    :class:`PackedStructObject`, or :class:`PackedUnionObject`.
+    Use ``isinstance(handle, PackedObject)`` to match any of them.
+
+    .. versionchanged:: 2.2
+        Became the abstract base class of :class:`PackedArrayObject`,
+        :class:`PackedStructObject`, and :class:`PackedUnionObject`.
+    """
+
+    @abstractmethod
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
+
+class PackedArrayObject(PackedObject[ChildObjectT], Generic[ChildObjectT]):
+    """A packed Verilog array or vector simulation object.
 
     Verilog types that map to this object:
 
-        * All packed arrays, structs, and unions
+        * All packed vectors, including packed vectors of packed structs, unions, and enums.
 
-    Packed arrays may be accessed by index.
+    For example, each of these SystemVerilog objects is presented as a :class:`!PackedArrayObject`:
+
+    .. code-block:: systemverilog
+
+        logic [7:0] my_vec;               // packed vector
+        logic [3:0][7:0] my_vec_2d;       // multi-dimensional packed vector
+        my_struct_t [1:0] my_struct_vec;  // packed vector of packed structs
+        my_union_t [1:0] my_union_vec;    // packed vector of packed unions
+
+    .. note::
+        Some Verilog simulators flatten packed objects into one-dimensional vectors.
+        Those simulators will present those packed objects as this type regardless whether they were structs, unions, vectors, or enums.
+
+    Elements of the outermost packed dimension may be accessed by index.
     An :class:`IndexError` is raised if no element exists at the given index.
 
     .. code-block:: python
 
         bit_0 = dut.my_vec[0]
 
-    Packed structs and unions have no range and cannot be indexed.
-    Accessing :attr:`range` or indexing them raises :exc:`TypeError`.
-    Simulators which flatten packed structs and unions into plain vectors
-    present them as packed arrays instead.
+    The :attr:`~ValueObjectBase.value` of this object is a :class:`.LogicArray`.
+    Setting the :attr:`!value` of this object can be done with a :class:`.LogicArray`,
+    :class:`str`, :class:`int`, or a :class:`.Logic` if the object represents a single bit.
 
-    Getting and setting :attr:`~ValueObjectBase.value` works the same as for :class:`LogicArrayObject`.
+    .. versionadded:: 2.2
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
-
-    # TODO split PackedObject into PackedArrayObject, PackedStructObject, and PackedUnionObject
-
-    @cached_property
-    def range(self) -> Range:
-        """Return a :class:`~cocotb.types.Range` over the indexes of the packed array.
-
-        Raises:
-            TypeError: If the object is a packed struct or union.
-        """
-        if not self._handle.get_indexable():
-            raise TypeError(
-                f"{self._path} is a packed struct or union and has no range"
-            )
-        return super().range
-
-    def __getitem__(self, index: int) -> ChildObjectT:
-        if not self._handle.get_indexable():
-            raise TypeError(
-                f"{self._path} is a packed struct or union and cannot be indexed"
-            )
-        return super().__getitem__(index)
 
     def __len__(self) -> int:
         if cocotb_previews.is_enabled(
@@ -1423,12 +1434,120 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
         return self.size
 
 
+class _PackedStructUnionObjectBase(PackedObject[ValueObjectBase[Any, Any]]):
+    """Base class of packed struct and union simulation objects."""
+
+    _kind: str
+
+    @abstractmethod
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
+    @property
+    def range(self) -> Range:
+        raise TypeError(f"{self._path} is a packed {self._kind} and has no range")
+
+    def get(self) -> LogicArray:
+        """Return the current value of the simulation object as a :class:`.LogicArray`."""
+        # The value is indexed [size-1:0], which always differs from the positional
+        # indexing of cocotb 1.x, so there is no HDL range to compare against.
+        return LogicArray._from_handle(value=self._handle.get_signal_val_binstr())
+
+    def __getitem__(self, index: int) -> ValueObjectBase[Any, Any]:
+        raise TypeError(f"{self._path} is a packed {self._kind} and cannot be indexed")
+
+    def __len__(self) -> int:
+        if cocotb_previews.is_enabled(
+            cocotb_previews.Feature.HANDLE_LEN_IS_SUBELEMENTS
+        ):
+            raise TypeError(f"{self._path} is a packed {self._kind} and has no length")
+        warnings.warn(
+            "`len(handle)` on packed structs and unions is deprecated. Use `handle.size` for the number of bits.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.size
+
+
+class PackedStructObject(_PackedStructUnionObjectBase):
+    """A packed Verilog struct simulation object.
+
+    SystemVerilog signals that are presented as a :class:`!PackedStructObject`:
+
+    .. code-block:: systemverilog
+
+        typedef struct packed {
+            logic [3:0] opcode;
+            logic [7:0] data;
+        } my_struct_t;
+
+        my_struct_t my_struct;             // Packed struct instance
+        my_struct_t my_struct_array[2];    // Vector of packed structs
+        my_struct_array[0];                // Elements of the vector are packed struct instances
+
+    The whole struct can be read and written as a :class:`.LogicArray` through :attr:`value`.
+    Setting the :attr:`!value` of this object can be done with a :class:`.LogicArray`,
+    :class:`str`, :class:`int`, or a :class:`.Logic` if the object is a single bit wide.
+
+    The :attr:`size` is its width in bits.
+    A packed struct has no range and cannot be indexed by position:
+    :attr:`range` and index access raise :exc:`TypeError`.
+
+    .. note::
+        Simulators which flatten packed structs into plain vectors present them as :class:`PackedArrayObject` instead.
+
+    .. versionadded:: 2.2
+    """
+
+    _kind = "struct"
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
+
+class PackedUnionObject(_PackedStructUnionObjectBase):
+    """A packed Verilog union simulation object.
+
+    SystemVerilog signals that are presented as a :class:`!PackedUnionObject`:
+
+    .. code-block:: systemverilog
+
+        typedef union packed {
+            logic [15:0] word;
+            logic [1:0][7:0] bytes;
+        } my_union_t;
+
+        my_union_t my_union;             // Packed union instance
+        my_union_t my_union_array[2];    // Vector of packed unions
+        my_union_array[0];               // Elements of the vector are packed union instances
+
+    The whole union is read and written as a :class:`.LogicArray` through :attr:`value`.
+    Setting the :attr:`!value` of this object can be done with a :class:`.LogicArray`,
+    :class:`str`, :class:`int`, or a :class:`.Logic` if the object is a single bit wide.
+
+    The :attr:`size` is its width in bits.
+    A packed union has no range and cannot be indexed by position:
+    :attr:`range` and index access raise :exc:`TypeError`.
+
+    .. note::
+        Simulators which flatten packed unions into plain vectors present them as :class:`PackedArrayObject` instead.
+
+    .. versionadded:: 2.2
+    """
+
+    _kind = "union"
+
+    def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
+        super().__init__(handle, path)
+
+
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
     """A logic array simulation object.
 
     Inherits from :class:`SimHandleBase` and :class:`ValueObjectBase`.
 
-    Verilog packed vectors, structs, and unions do not map to this type, but :class:`PackedObject`.
+    Verilog packed vectors map to :class:`PackedArrayObject`,
+    and packed structs and unions to :class:`PackedStructObject` and :class:`PackedUnionObject`.
     Unpacked vectors of type ``logic`` and ``bit`` map to :class:`ArrayObject`.
 
     VHDL types that map to this object:
@@ -1467,7 +1586,7 @@ class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
         Setting the simulation object's value with an :class:`int` value too large to fit in the vector results in a :exc:`ValueError` instead of an :exc:`OverflowError`.
 
     .. versionchanged:: 2.1
-        Verilog packed objects no longer map to this type, but :class:`PackedObject`.
+        Verilog packed objects no longer map to this type, but to :class:`PackedArrayObject`, :class:`PackedStructObject`, or :class:`PackedUnionObject` instead.
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
@@ -1818,7 +1937,9 @@ _ConcreteHandleTypes = Union[
     HierarchyArrayObject[SimHandleBase],
     LogicObject,
     LogicArrayObject,
-    PackedObject,
+    PackedArrayObject,
+    PackedStructObject,
+    PackedUnionObject,
     ArrayObject[Any, ValueObjectBase[Any, Any]],
     RealObject,
     IntegerObject,
@@ -1835,7 +1956,9 @@ _handle2obj: dict[
 _type2cls: dict[int, type[_ConcreteHandleTypes]] = {
     cocotb.simulator.MODULE: HierarchyObject,
     cocotb.simulator.STRUCTURE: HierarchyObject,
-    cocotb.simulator.PACKED: PackedObject,
+    cocotb.simulator.PACKED_ARRAY: PackedArrayObject,
+    cocotb.simulator.PACKED_STRUCT: PackedStructObject,
+    cocotb.simulator.PACKED_UNION: PackedUnionObject,
     cocotb.simulator.LOGIC: LogicObject,
     cocotb.simulator.LOGIC_ARRAY: LogicArrayObject,
     cocotb.simulator.NETARRAY: ArrayObject[Any, ValueObjectBase[Any, Any]],

@@ -295,7 +295,6 @@ async def access_constant_string_vhdl(dut):
     constant_string = dut.isample_module1.EXAMPLE_STRING
     assert isinstance(constant_string, FixedStringObject)
     assert constant_string.value == b"TESTING"
-    assert constant_string._type == "GPI_FIXED_STRING"
 
 
 # GHDL discovers strings as vpiNetArray (gh-2584)
@@ -446,39 +445,6 @@ async def custom_type(dut):
         assert inner_count == expected_inner
         outer_count += 1
     assert expected_outer == outer_count
-
-
-@cocotb.test(skip=LANGUAGE in ["vhdl"])
-async def type_check_verilog(dut):
-    """
-    Test if types are recognized
-    """
-
-    test_handles = [
-        (dut.stream_in_ready, "GPI_LOGIC"),
-        (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_PACKED"),
-        (dut.logic_b, "GPI_LOGIC"),
-        (dut.logic_c, "GPI_LOGIC"),
-        (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
-        (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_PACKED"),
-        (dut.and_output, "GPI_LOGIC"),
-        (dut.logic_a, "GPI_LOGIC"),
-    ]
-
-    # Verilator returns vpiReg rather than vpiNet
-    # Verilator (correctly) treats parameters with implicit type, that are assigned a string literal value, as an unsigned integer. See IEEE 1800-2017 Section 5.9 and Section 6.20.2
-    if SIM_NAME.startswith("verilator"):
-        test_handles.append((dut.STRING_PARAM, "GPI_LOGIC_ARRAY"))
-    else:
-        test_handles.append((dut.STRING_PARAM, "GPI_STRING"))
-
-    for handle, expected in test_handles:
-        if isinstance(expected, tuple):
-            assert handle._type in expected
-        else:
-            assert handle._type == expected
 
 
 # GHDL cannot find signal in "block" statement, may be related to (gh-2594)
