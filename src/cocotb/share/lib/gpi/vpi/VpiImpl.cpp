@@ -96,7 +96,7 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
                 // packed/unpacked
                 return GPI_LOGIC_ARRAY;
 #else
-                return GPI_PACKED;
+                return GPI_PACKED_ARRAY;
 #endif
             } else {
                 return GPI_LOGIC;
@@ -185,6 +185,27 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
                 const_type);
             return GPI_LOGIC_ARRAY;
     }
+}
+
+// A plain packed struct or union has no packed range of its own (IEEE
+// 1800-2023 37.16 and 37.17). A packed array of structs or unions does, even
+// when the simulator reports it with the element's vpiType.
+static bool has_packed_range(vpiHandle hdl) {
+    vpiHandle iter = vpi_iterate(vpiRange, hdl);
+    if (iter != NULL) {
+        int count = 0;
+        for (vpiHandle r = vpi_scan(iter); r != NULL; r = vpi_scan(iter)) {
+            vpi_free_object(r);
+            ++count;
+        }
+        return count > 0;
+    }
+    vpiHandle left = vpi_handle(vpiLeftRange, hdl);
+    if (left != NULL) {
+        vpi_free_object(left);
+        return true;
+    }
+    return false;
 }
 
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
@@ -302,7 +323,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto gpi_type = to_gpi_objtype(type, num_elements, is_vector);
             if ((type == vpiEnumVar || type == vpiEnumNet) &&
                 vpi_get(vpiPacked, new_hdl)) {
-                gpi_type = GPI_PACKED;
+                gpi_type = GPI_PACKED_ARRAY;
             }
             new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
             break;
@@ -330,17 +351,21 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiStructNet:
         case vpiUnionVar:
         case vpiUnionNet: {
-            auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
-                LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false);
+                gpi_objtype gpi_type;
+                if (has_packed_range(new_hdl)) {
+                    gpi_type = GPI_PACKED_ARRAY;
+                } else if (type == vpiStructVar || type == vpiStructNet) {
+                    gpi_type = GPI_PACKED_STRUCT;
+                } else {
+                    gpi_type = GPI_PACKED_UNION;
+                }
+                LOG_DEBUG("VPI: Found packed %s as %d",
+                          vpi_get_str(vpiType, new_hdl), gpi_type);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
                 break;
-            } else if (vpi_get(vpiVector, new_hdl)) {
-                is_vector = true;
             }
-            const auto num_elements = vpi_get(vpiSize, new_hdl);
-            new_obj = new VpiObjHdl(
-                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
+            new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         }
         case vpiModule:
@@ -553,7 +578,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC_ARRAY || obj_type == GPI_ARRAY ||
-               obj_type == GPI_STRING || obj_type == GPI_PACKED) {
+               obj_type == GPI_STRING || obj_type == GPI_PACKED_ARRAY) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
@@ -641,7 +666,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "VPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED "
+            "GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED_ARRAY "
             "to have an index.",
             parent->get_type_str());
         return NULL;

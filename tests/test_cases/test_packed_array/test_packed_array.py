@@ -14,9 +14,13 @@ import cocotb
 import cocotb.preview
 from cocotb.handle import (
     ArrayObject,
+    EnumObject,
     Immediate,
     LogicObject,
+    PackedArrayObject,
     PackedObject,
+    PackedStructObject,
+    PackedUnionObject,
 )
 from cocotb.triggers import (
     ClockCycles,
@@ -39,16 +43,16 @@ xfail_without_packed_indexing = cocotb.xfail(
 async def check_types(dut):
     """Check types"""
 
-    assert type(dut.i_packed) is PackedObject
-    assert type(dut.i_packed[0]) is PackedObject
+    assert type(dut.i_packed) is PackedArrayObject
+    assert type(dut.i_packed[0]) is PackedArrayObject
     assert type(dut.i_packed[0][0]) is LogicObject
     assert type(dut.i_unpacked) is ArrayObject
     assert type(dut.i_mixed) is ArrayObject
-    assert type(dut.i_short) is PackedObject
+    assert type(dut.i_short) is PackedArrayObject
     assert type(dut.i_bit) is LogicObject
-    assert type(dut.i_enum_arr2d) is PackedObject
-    assert type(dut.i_union_arr2d) is PackedObject
-    assert type(dut.i_pkt_arr2d) is PackedObject
+    assert type(dut.i_enum_arr2d) is PackedArrayObject
+    assert type(dut.i_union_arr2d) is PackedArrayObject
+    assert type(dut.i_pkt_arr2d) is PackedArrayObject
     assert type(dut.i_enum_arr2d_unpk) is ArrayObject
     assert type(dut.i_union_arr2d_unpk) is ArrayObject
     assert type(dut.i_pkt_arr2d_unpk) is ArrayObject
@@ -76,7 +80,12 @@ async def check_len_semantics(dut):
             cocotb.preview.disable(feature)
             assert len(dut.i_packed) == 32
             assert len(dut.i_packed[0]) == 4
-            assert len(dut.pkt_var) == 22
+            if FLATTENS_PACKED_STRUCT:
+                assert len(dut.pkt_var) == 22
+            else:
+                # On packed structs len() is a deprecated alias for size.
+                with pytest.warns(DeprecationWarning):
+                    assert len(dut.pkt_var) == 22
 
             # With the preview, len() is the number of elements in the outermost dimension.
             cocotb.preview.enable(feature)
@@ -494,6 +503,24 @@ async def packed_struct_var_size(dut):
     """The size of a packed struct variable is its width in bits"""
 
     assert dut.pkt_var.size == 22
+
+
+@cocotb.test()
+async def packed_struct_var_type(dut):
+    """A packed struct variable is a PackedStructObject where the simulator reports it"""
+
+    assert isinstance(dut.pkt_var, PackedObject)
+    if FLATTENS_PACKED_STRUCT:
+        assert type(dut.pkt_var) is PackedArrayObject
+        assert dut.pkt_var._type == "GPI_PACKED_ARRAY"
+    else:
+        assert type(dut.pkt_var) is PackedStructObject
+        assert dut.pkt_var._type == "GPI_PACKED_STRUCT"
+        assert type(dut.i_pkt_arr2d[0][0]) is PackedStructObject
+        assert type(dut.i_union_arr2d[0][0]) is PackedUnionObject
+        assert type(dut.i_enum_arr2d[0][0]) is EnumObject
+        with pytest.raises(TypeError):
+            _ = dut.pkt_var.left
 
 
 @cocotb.test()
