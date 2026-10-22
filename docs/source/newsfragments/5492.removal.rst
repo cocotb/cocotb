@@ -1,0 +1,1 @@
+``len()`` on :class:`~cocotb.handle.PackedStructObject` and :class:`~cocotb.handle.PackedUnionObject` is deprecated. Use the ``size`` property to get the number of bits.
