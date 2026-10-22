@@ -22,6 +22,7 @@ from typing import (
     cast,
 )
 
+import cocotb.preview
 import cocotb.simulator
 from cocotb._base_triggers import TriggerCallback
 from cocotb._deprecation import deprecated
@@ -1396,9 +1397,6 @@ class _LogicArrayObjectBase(
     def __str__(self) -> str:
         return str(self.value)
 
-    def __len__(self) -> int:
-        return self._handle.get_num_elems()
-
     def __getitem__(self, index: int) -> ChildObjectT:
         if isinstance(index, slice):
             raise TypeError("Slice indexing is not supported")
@@ -1487,6 +1485,11 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
                 f"{self._path} is a packed struct or union and cannot be indexed"
             )
         return super().__getitem__(index)
+
+    def __len__(self) -> int:
+        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN_IS_SUBELEMENTS):
+            return len(self.range)
+        return self.size
 
 
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
