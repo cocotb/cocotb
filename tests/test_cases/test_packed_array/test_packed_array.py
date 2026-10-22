@@ -441,7 +441,7 @@ PKT_VAR_PATTERN = "".join(
 FLATTENS_PACKED_STRUCT = cocotb.SIM_NAME.lower().startswith(("icarus", "verilator"))
 
 
-@cocotb.test(expect_error=() if FLATTENS_PACKED_STRUCT else RuntimeError)
+@cocotb.test(expect_error=() if FLATTENS_PACKED_STRUCT else TypeError)
 async def packed_struct_var_range(dut):
     """A packed struct variable has no range of its own"""
 
@@ -473,14 +473,18 @@ async def packed_struct_var_read(dut):
 
 @cocotb.test()
 async def packed_struct_var_index(dut):
-    """Index every bit of a packed struct variable"""
+    """Bits of a packed struct variable cannot be indexed"""
 
     await Timer(1)
-    for i, bit in enumerate(PKT_VAR_PATTERN):
-        assert str(dut.pkt_var[21 - i].value) == bit, f"mismatch at index {21 - i}"
-
-    with pytest.raises(IndexError):
-        dut.pkt_var[22]
+    if FLATTENS_PACKED_STRUCT:
+        # These simulators present the struct as a plain vector.
+        for i, bit in enumerate(PKT_VAR_PATTERN):
+            assert str(dut.pkt_var[21 - i].value) == bit, f"mismatch at index {21 - i}"
+        with pytest.raises(IndexError):
+            dut.pkt_var[22]
+    else:
+        with pytest.raises(TypeError):
+            dut.pkt_var[0]
 
 
 @cocotb.test()

@@ -1450,16 +1450,43 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
 
         * All packed arrays, structs, and unions
 
-    May be accessed by index.
-    An :class:`IndexError` is raised if no bit exists at the given index.
+    Packed arrays may be accessed by index.
+    An :class:`IndexError` is raised if no element exists at the given index.
 
     .. code-block:: python
 
         bit_0 = dut.my_vec[0]
+
+    Packed structs and unions have no range and cannot be indexed.
+    Accessing :attr:`range` or indexing them raises :exc:`TypeError`.
+    Simulators which flatten packed structs and unions into plain vectors
+    present them as packed arrays instead.
     """
 
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
+
+    # TODO split PackedObject into PackedArrayObject, PackedStructObject, and PackedUnionObject
+
+    @cached_property
+    def range(self) -> Range:
+        """Return a :class:`~cocotb.types.Range` over the indexes of the packed array.
+
+        Raises:
+            TypeError: If the object is a packed struct or union.
+        """
+        if not self._handle.get_indexable():
+            raise TypeError(
+                f"{self._path} is a packed struct or union and has no range"
+            )
+        return super().range
+
+    def __getitem__(self, index: int) -> ChildObjectT:
+        if not self._handle.get_indexable():
+            raise TypeError(
+                f"{self._path} is a packed struct or union and cannot be indexed"
+            )
+        return super().__getitem__(index)
 
 
 class LogicArrayObject(_LogicArrayObjectBase[LogicObject]):
