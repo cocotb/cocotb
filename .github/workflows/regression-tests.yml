@@ -32,6 +32,11 @@ on:
         required: false
         type: string
         description: Which Github Action to setup Python
+      branch:
+        required: false
+        type: string
+        default: ""
+        description: Branch to check out. Leave empty to use the ref that triggered the workflow.
 
 jobs:
 
@@ -40,6 +45,8 @@ jobs:
     name: Generate a list of environments to run tests against
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        ref: ${{ inputs.branch }}
     - run: ./.github/generate-envs.py --output-format=gha --gha-output-file="$GITHUB_OUTPUT" --group="${{inputs.group}}"
       id: run_generate_script
     outputs:
@@ -70,6 +77,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
+        ref: ${{ inputs.branch }}
         # GitHub PR's create a merge commit, and Actions are run on that commit.
         # Codecov's uploader needs the previous commit (tip of PR branch) to associate coverage correctly.
         # A fetch depth of 2 provides enough information without fetching the entire history.

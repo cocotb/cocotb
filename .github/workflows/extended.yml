@@ -12,6 +12,11 @@ on:
     - cron: '0 2 * * 0'
   # Allow triggering a CI run from the web UI.
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to test.
+        required: false
+        default: master
 
 jobs:
   test_dev:
@@ -22,3 +27,4 @@ jobs:
       test_task: dev_test
       group: extended
       max_parallel: 5
+      branch: ${{ inputs.branch }}

@@ -18,6 +18,15 @@ on:
     - cron: '0 0 * * *'
   # Allow triggering a CI run from the web UI.
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to test.
+        required: false
+        default: master
+
+env:
+  # Scheduled runs have no inputs, so fall back to master.
+  COCOTB_BRANCH: ${{ inputs.branch || 'master' }}
 
 jobs:
   cocotb-coverage:
@@ -48,7 +57,7 @@ jobs:
         run: pip install ./cocotb-coverage
 
       - name: Install the development version of cocotb
-        run: pip install git+https://github.com/cocotb/cocotb.git
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
 
       - name: Run tests
         if: ${{ matrix.cocotb-coverage-version }} == '2.0'
@@ -95,7 +104,7 @@ jobs:
         run: pip install ./pyuvm
 
       - name: Install the development version of cocotb
-        run: pip install git+https://github.com/cocotb/cocotb.git
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
 
       - name: Run tests
         if: ${{ matrix.pyuvm-version }} == '4.0.1'
@@ -136,7 +145,7 @@ jobs:
         run: pip install ./forastero
 
       - name: Install the development version of cocotb
-        run: pip install git+https://github.com/cocotb/cocotb.git
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
 
       - name: Run tests
         working-directory: forastero
