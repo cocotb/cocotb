@@ -122,13 +122,18 @@ int VhpiImpl::get_simulator_args(int *argc, char const *const **argv) {
     if (m_argv == nullptr) {
         auto tool = vhpi_handle(vhpiTool, NULL);
         if (tool) {
-            m_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
-            m_argv = new char const *[m_argc];
+            size_t tool_argc = vhpi_get(vhpiArgcP, tool);
+            m_argc = static_cast<int>(tool_argc);
+            m_argv = new char const *[tool_argc];
 
             auto argv_iter = vhpi_iterator(vhpiArgvs, tool);
             if (argv_iter) {
                 vhpiHandleT argv_hdl;
                 for (size_t i = 0; (argv_hdl = vhpi_scan(argv_iter)); i++) {
+                    if (i >= tool_argc) {
+                        LOG_ERROR("More arguments returned than expected");
+                        break;
+                    }
                     m_argv[i] = const_cast<char *>(static_cast<const char *>(
                         vhpi_get_str(vhpiStrValP, argv_hdl)));
                 }

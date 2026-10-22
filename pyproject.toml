@@ -241,6 +241,9 @@ environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O
 # and Ubuntu 20.04+ (with system Python).
 manylinux-x86_64-image = "manylinux2014"
 
+[tool.cibuildwheel.macos]
+environment = {CFLAGS = "-O2 -g -flto", CPPFLAGS = "-O2 -g -flto", LDFLAGS = "-O2 -g -flto", MACOSX_DEPLOYMENT_TARGET = "11.0"}
+
 # Build with optimizations and debugging (Windows)
 # /O2   Enables reasonable optimizations.
 # /Z7   Enables debugging and places info in the binary (/Zi puts debug info in a different file).
