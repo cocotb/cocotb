@@ -20,7 +20,7 @@ if(MSVC)
     message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -47,7 +47,7 @@ else()
     )
     set(CXX_WARNS ${BASE_WARNS} "-Wnon-virtual-dtor" "-Woverloaded-virtual")
     set(EXTRA_CXX_FLAGS
-        "-std=c++11" "-fvisibility=hidden" "-fvisibility-inlines-hidden"
+        "-fvisibility=hidden" "-fvisibility-inlines-hidden"
         ${CXX_WARNS}
     )
     if(NOT WIN32)
