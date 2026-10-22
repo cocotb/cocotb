@@ -46,7 +46,7 @@ Verilator
           $(cocotb-config --lib-entry vpi verilator) -rdynamic" \
       $(cocotb-config --share)/lib/verilator/verilator.cpp
 
-* Run Verilator's makefile as follows: ``CPPFLAGS="-std=c++11" make -f Vtop.mk``
+* Run Verilator's makefile as follows: ``CPPFLAGS="-std=c++17" make -f Vtop.mk``
 * Set :envvar:`GPI_IMPL` to ``$(cocotb-config --gpi-impl verilator vpi)`` before running the model.
 
 .. note::
