@@ -20,7 +20,7 @@ async def write_flat_2d(dut):
 @cocotb.test()
 async def read_flat_2d(dut):
     """Repeatedly read 2-D packed array."""
-    n = len(dut.i_wide_2d)
+    n = dut.i_wide_2d.size
     dut.i_wide_2d.value = (1 << n) - 1
     await Timer(1)
     for _ in range(ITERATIONS):
