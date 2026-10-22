@@ -111,6 +111,7 @@ int VpiArrayObjHdl::initialise(const std::string &name,
         if (res) {
             LOG_ERROR("Unable to get range bounds for indexable array: %s",
                       name.c_str());
+            check_vpi_error();
             return -1;
         }
         // LCOV_EXCL_STOP
