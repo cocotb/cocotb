@@ -218,9 +218,11 @@ typedef enum gpi_objtype_e {
     GPI_FIXED_STRING = 12,
     GPI_GENARRAY = 13,
     GPI_PACKAGE = 14,
-    GPI_PACKED = 15,
+    GPI_PACKED_ARRAY = 15,
     GPI_LOGIC = 16,
     GPI_LOGIC_ARRAY = 17,
+    GPI_PACKED_STRUCT = 18,
+    GPI_PACKED_UNION = 19,
 } gpi_objtype;
 
 /** Direction of range constraint of an object. */
@@ -261,7 +263,10 @@ GPI_EXPORT int gpi_is_constant(gpi_sim_hdl obj_hdl);
 
 /** Determine whether an object is indexable.
  *
- * @return `1` if the object value is indexable, `0` otherwise.
+ * An object is indexable when it has an outer dimension whose elements can be
+ * retrieved with gpi_get_handle_by_index().
+ *
+ * @return `1` if the object is indexable, `0` otherwise.
  */
 GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl obj_hdl);
 
