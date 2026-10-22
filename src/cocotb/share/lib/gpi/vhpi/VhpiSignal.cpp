@@ -558,6 +558,9 @@ GpiCbHdl *VhpiSignalObjHdl::register_value_change_callback(
 int VhpiSignalObjHdl::get_signed() {
     if (m_type == GPI_INTEGER) {
         return 1;
+    } else if (m_type == GPI_ENUM) {
+        // VHDL enum values are positions, which are never negative.
+        return 0;
     } else {
         return -1;
     }

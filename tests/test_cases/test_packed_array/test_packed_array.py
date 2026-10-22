@@ -49,7 +49,12 @@ async def check_types(dut):
     assert type(dut.i_pkt_arr2d_unpk) is ArrayObject
     assert isinstance(dut.i_packed[0], PackedObject)
     assert isinstance(dut.i_packed[0][0], LogicObject)
-    assert len(dut.i_packed) == 32
+    assert dut.i_packed.size == 32
+    assert dut.i_packed[0].size == 4
+    assert dut.i_packed[0][0].size == 1
+    assert dut.i_enum_arr2d.size == 16
+    assert dut.i_union_arr2d.size == 128
+    assert dut.i_pkt_arr2d.size == 176
 
 
 @cocotb.test()
@@ -253,7 +258,7 @@ async def iterate_2d(dut):
 async def read_write_enum_2d_element(dut):
     """Read/write enum"""
 
-    assert len(dut.i_enum_arr2d) == 16
+    assert dut.i_enum_arr2d.size == 16
     expected = 3  # WHITE
     dut.i_enum_arr2d[1][2].value = expected
     await Timer(1)
@@ -265,7 +270,7 @@ async def read_write_enum_2d_element(dut):
 async def read_write_union_2d_element(dut):
     """Read/write union"""
 
-    assert len(dut.o_union_arr2d) == 128
+    assert dut.o_union_arr2d.size == 128
     expected = 0xABCD
     dut.i_union_arr2d[1][2].value = expected
     await Timer(1)
@@ -277,7 +282,7 @@ async def read_write_union_2d_element(dut):
 async def read_write_struct_2d_element(dut):
     """Read/write struct"""
 
-    assert len(dut.o_pkt_arr2d) == 176
+    assert dut.o_pkt_arr2d.size == 176
     expected = 0x2AAAAA
     dut.i_pkt_arr2d[1][2].value = expected
     await Timer(1)
@@ -444,10 +449,10 @@ async def packed_struct_var_range(dut):
 
 
 @cocotb.test()
-async def packed_struct_var_len(dut):
-    """len() of a packed struct variable comes from its size"""
+async def packed_struct_var_size(dut):
+    """The size of a packed struct variable is its width in bits"""
 
-    assert len(dut.pkt_var) == 22
+    assert dut.pkt_var.size == 22
 
 
 @cocotb.test()

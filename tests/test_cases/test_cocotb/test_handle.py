@@ -263,6 +263,7 @@ async def test_assign_LogicArray_9value(dut):
 @cocotb.test
 async def test_assign_string(dut):
     assert len(dut.stream_in_data) == 8
+    assert dut.stream_in_data.size == 8
     cocotb.log.info("dut.stream_in_data type is %s", dut.stream_in_data._type)
     dut.stream_in_data.value = "10101010"
     await Timer(1, "ns")
@@ -469,7 +470,7 @@ async def test_handle_str_with_separators(dut: Any) -> None:
 async def test_edge_on_vectors(dut: Any) -> None:
     """Test that RisingEdge/FallingEdge works on 1-bit LogicArrayObject and fails on multi-bit LogicArrayObject."""
 
-    assert len(dut.stream_in_data) > 1
+    assert dut.stream_in_data.size > 1
     with pytest.raises(TypeError):
         # RisingEdge on multi-bit signal
         await cocotb.triggers.RisingEdge(dut.stream_in_data)
@@ -477,7 +478,7 @@ async def test_edge_on_vectors(dut: Any) -> None:
         # FallingEdge on multi-bit signal
         await cocotb.triggers.FallingEdge(dut.stream_in_data)
 
-    assert len(dut.one_bit_vector) == 1
+    assert dut.one_bit_vector.size == 1
 
     cocotb.clock.Clock(dut.one_bit_vector, 10, "ns").start()
 

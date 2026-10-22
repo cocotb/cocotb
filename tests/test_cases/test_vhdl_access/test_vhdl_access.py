@@ -26,7 +26,14 @@ async def check_enum_object(dut):
 
     TODO: Implement an EnumObject class and detect valid string mappings
     """
-    assert isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject)
+    handle = dut.inst_ram_ctrl.write_ram_fsm
+    assert isinstance(handle, EnumObject)
+
+    with pytest.warns(DeprecationWarning):
+        assert len(handle) == handle.size
+
+    with pytest.warns(DeprecationWarning):
+        assert int(handle) == handle.value
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
