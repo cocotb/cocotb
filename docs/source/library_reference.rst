@@ -812,6 +812,24 @@ Simulator Objects
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 
+.. autoclass:: PackedObject
+
+.. autoclass:: PackedArrayObject
+    :members:
+    :member-order: bysource
+    :special-members: __len__
+    :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
+
+.. autoclass:: PackedStructObject
+    :members:
+    :member-order: bysource
+    :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
+
+.. autoclass:: PackedUnionObject
+    :members:
+    :member-order: bysource
+    :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
+
 .. autoclass:: StringObject
     :members:
     :member-order: bysource

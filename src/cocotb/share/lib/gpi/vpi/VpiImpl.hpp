@@ -348,10 +348,9 @@ class VpiImpl : public GpiImplInterface {
     GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) override;
     static const char *reason_to_string(int reason);
-    GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl,
-                                          const std::string &name,
-                                          const std::string &fq_name,
-                                          bool owns_handle = true);
+    GpiObjHdl *create_gpi_obj_from_handle(
+        vpiHandle new_hdl, const std::string &name, const std::string &fq_name,
+        bool owns_handle = true, gpi_objtype packed_kind_hint = GPI_UNKNOWN);
 
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);

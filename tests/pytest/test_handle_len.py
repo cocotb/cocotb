@@ -15,7 +15,8 @@ from cocotb.handle import (
     EnumObject,
     IntegerObject,
     LogicObject,
-    PackedObject,
+    PackedArrayObject,
+    PackedStructObject,
     RealObject,
 )
 
@@ -31,26 +32,22 @@ def isolate_previews() -> Generator[None, None, None]:
     cocotb.preview._enabled_features.update(enabled_features)
 
 
-def _packed_array() -> PackedObject:
+def _packed_array() -> PackedArrayObject:
     """A fake ``logic [7:0][3:0]`` packed array."""
-    handle = object.__new__(PackedObject)
+    handle = object.__new__(PackedArrayObject)
     handle._path = "dut.arr"
     handle._handle = SimpleNamespace(
-        get_indexable=lambda: 1,
         get_num_elems=lambda: 32,
         get_range=lambda: (7, 0, cocotb.simulator.RANGE_DOWN),
     )
     return handle
 
 
-def _packed_struct() -> PackedObject:
+def _packed_struct() -> PackedStructObject:
     """A fake 22-bit packed struct."""
-    handle = object.__new__(PackedObject)
+    handle = object.__new__(PackedStructObject)
     handle._path = "dut.pkt"
-    handle._handle = SimpleNamespace(
-        get_indexable=lambda: 0,
-        get_num_elems=lambda: 22,
-    )
+    handle._handle = SimpleNamespace(get_num_elems=lambda: 22)
     return handle
 
 
@@ -111,11 +108,10 @@ def test_packed_array_len_is_range_with_preview() -> None:
     assert handle.size == 32
 
 
-def test_packed_struct_len_is_size_without_preview() -> None:
+def test_packed_struct_len_is_deprecated_without_preview() -> None:
     handle = _packed_struct()
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", DeprecationWarning)
+    with pytest.warns(DeprecationWarning):
         assert len(handle) == 22
 
 
