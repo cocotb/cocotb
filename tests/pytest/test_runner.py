@@ -110,7 +110,8 @@ async def cocotb_runner_test(dut):
 )
 @pytest.mark.parametrize("clean_build", [False, True])
 @pytest.mark.parametrize("pre_cmd", [["touch pre_cmd_test_file;"], None])
-def test_runner(parameters, pre_cmd, clean_build):
+@pytest.mark.parametrize("static_build_dir", [False, True])
+def test_runner(parameters, pre_cmd, clean_build, static_build_dir):
     if sim not in pre_cmd_sims and pre_cmd is not None:
         pytest.skip("This simulator does not support pre_cmd")
 
@@ -127,15 +128,17 @@ def test_runner(parameters, pre_cmd, clean_build):
     runner = get_runner(sim)
     compile_args = [VHDL("-v93")] if sim == "xcelium" else []
 
-    # Pre-make build directory and test file for clean build assertions
-    build_dir_name = (
-        "_".join(f"{key}={value}" for key, value in parameters.items())
-        + ("_pre_cmd" if pre_cmd is not None else "")
-        + ("_clean" if clean_build else "")
-    )
-    build_dir = sim_build / "test_runner" / build_dir_name
-    build_dir.mkdir(parents=True, exist_ok=True)
-    (build_dir / "clean_test_file").touch()
+    build_dir = None
+    if static_build_dir:
+        # Pre-make build directory and test file for clean build assertions
+        build_dir_name = (
+            "_".join(f"{key}={value}" for key, value in parameters.items())
+            + ("_pre_cmd" if pre_cmd is not None else "")
+            + ("_clean" if clean_build else "")
+        )
+        build_dir = sim_build / "test_runner" / build_dir_name
+        build_dir.mkdir(parents=True, exist_ok=True)
+        (build_dir / "clean_test_file").touch()
 
     runner.build(
         sources=sources,
@@ -159,16 +162,16 @@ def test_runner(parameters, pre_cmd, clean_build):
     # Assert pre_cmd result. Questa flows only, at the moment
     if sim in pre_cmd_sims:
         if pre_cmd is not None:
-            assert (build_dir / "pre_cmd_test_file").is_file()
+            assert (runner.build_dir / "pre_cmd_test_file").is_file()
         else:
-            assert not (build_dir / "pre_cmd_test_file").is_file()
+            assert not (runner.build_dir / "pre_cmd_test_file").is_file()
 
     # In case clean_build runner.build() must purge test directory completely,
     # with the test file inside
-    if clean_build:
-        assert not (build_dir / "clean_test_file").is_file()
-    else:
-        assert (build_dir / "clean_test_file").is_file()
+    if clean_build and static_build_dir:
+        assert not (runner.build_dir / "clean_test_file").is_file()
+    elif static_build_dir:
+        assert (runner.build_dir / "clean_test_file").is_file()
 
 
 def test_missing_libpython(monkeypatch):

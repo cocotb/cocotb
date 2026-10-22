@@ -20,7 +20,7 @@ def test_log_prefix() -> None:
 
     pwd = Path(__file__).parent.absolute()
 
-    build_dir = runner.build_dir
+    build_dir = Path("sim_build")
     runner.build(
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",

@@ -1,0 +1,1 @@
+:meth:`~cocotb_tools.runner.Runner.build` now creates a new, uniquely named temporary directory with the prefix ``sim_build_`` in the default temporary directory (see :func:`tempfile.gettempdir`) when the ``build_dir`` parameter is not set. To restore the previous behavior, pass ``build_dir="sim_build"``.
