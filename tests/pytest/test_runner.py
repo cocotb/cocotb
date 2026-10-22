@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import find_libpython
 import pytest
 
 import cocotb
+import cocotb_previews
 from cocotb.triggers import Timer
 from cocotb.types import Logic, LogicArray
 from cocotb_tools.runner import (
@@ -39,6 +41,18 @@ pre_cmd_sims = {
     "questa",
     "questa-qisqrun",
 }
+
+
+@pytest.fixture(params=[False, True])
+def temp_build_dir_preview(request, monkeypatch):
+    monkeypatch.setattr(
+        cocotb_previews, "_enabled_features", cocotb_previews._enabled_features.copy()
+    )
+    if request.param:
+        cocotb_previews.enable(cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR)
+    else:
+        cocotb_previews.disable(cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR)
+    return request.param
 
 
 def test_empty_string():
@@ -111,9 +125,20 @@ async def cocotb_runner_test(dut):
 @pytest.mark.parametrize("clean_build", [False, True])
 @pytest.mark.parametrize("pre_cmd", [["touch pre_cmd_test_file;"], None])
 @pytest.mark.parametrize("static_build_dir", [False, True])
-def test_runner(parameters, pre_cmd, clean_build, static_build_dir):
+def test_runner(
+    parameters,
+    pre_cmd,
+    clean_build,
+    static_build_dir,
+    temp_build_dir_preview,
+    monkeypatch,
+    tmp_path,
+):
     if sim not in pre_cmd_sims and pre_cmd is not None:
         pytest.skip("This simulator does not support pre_cmd")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
 
     hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
@@ -150,6 +175,14 @@ def test_runner(parameters, pre_cmd, clean_build, static_build_dir):
         clean=clean_build,
         build_dir=build_dir,
     )
+
+    if static_build_dir:
+        assert runner.build_dir == build_dir
+    elif temp_build_dir_preview:
+        assert runner.build_dir.parent == tmp_path
+        assert runner.build_dir.name.startswith("sim_build_")
+    else:
+        assert runner.build_dir == tmp_path / "sim_build"
 
     runner.test(
         hdl_toplevel="runner",

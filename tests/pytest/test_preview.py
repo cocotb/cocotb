@@ -97,13 +97,14 @@ def test_envvar_false(monkeypatch: pytest.MonkeyPatch, false_value: str) -> None
     assert none_enabled()
 
 
-def test_envvar_by_feature(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("COCOTB_PREVIEW", "xfail_in_results")
+@pytest.mark.parametrize("feature", list(Feature))
+def test_envvar_by_feature(monkeypatch: pytest.MonkeyPatch, feature: Feature) -> None:
+    monkeypatch.setenv("COCOTB_PREVIEW", feature.value)
     cocotb_previews._init()
-    assert is_enabled(Feature.XFAIL_IN_RESULTS)
-    # Ensure XFAIL_IN_RESULTS is the only enabled feature.
-    disable(Feature.XFAIL_IN_RESULTS)
-    assert not is_enabled(Feature.XFAIL_IN_RESULTS)
+    assert is_enabled(feature)
+    # Ensure this is the only enabled feature.
+    disable(feature)
+    assert none_enabled()
 
 
 def test_envvar_empty_feature(monkeypatch: pytest.MonkeyPatch) -> None:

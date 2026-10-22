@@ -27,6 +27,7 @@ class Feature(StrEnum):
     """Preview features that can be enabled.
 
     .. versionadded:: 2.1
+
     .. versionchanged:: 2.2
         Moved from ``cocotb.preview`` to ``cocotb_previews``.
     """
@@ -50,6 +51,10 @@ class Feature(StrEnum):
     HANDLE_LEN_IS_SUBELEMENTS = (
         "handle_len_is_subelements",
         "Make ``len()`` on packed objects return the number of elements in the outermost dimension instead of the number of bits",
+    )
+    RUNNER_TEMP_BUILD_DIR = (
+        "runner_temp_build_dir",
+        "Use a randomly-named temporary build directory prefixed with `sim_build_` as the default build directory in the Python runner",
     )
 
 
