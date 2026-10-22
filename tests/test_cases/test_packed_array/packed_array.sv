@@ -75,6 +75,7 @@ module packed_array (
 );
 
   noc_hdr_t pkt_var;
+  noc_hdr_t pkt_var_uncached;
 
   initial begin
     pkt_var.seq_idx    = 12'b110010011100;
@@ -82,6 +83,8 @@ module packed_array (
     pkt_var.dst.die    = 1'b1;
     pkt_var.dst.tile   = 2'b00;
     pkt_var.dst_local  = 5'b11010;
+
+    pkt_var_uncached   = '0;
   end
 
   assign o_packed       = i_packed;

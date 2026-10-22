@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import logging
 import warnings
 
 import pytest
@@ -538,3 +540,37 @@ async def packed_struct_var_write(dut):
     dut.pkt_var.value = 0
     await Timer(1)
     assert str(dut.pkt_var.value) == "0" * 22
+
+
+class _GpiRecordCollector(logging.Handler):
+    def __init__(self):
+        super().__init__(logging.WARNING)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+@contextlib.contextmanager
+def _collect_gpi_records():
+    handler = _GpiRecordCollector()
+    logger = logging.getLogger("gpi")
+    old_level = logger.level
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(handler)
+    try:
+        yield handler.records
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(old_level)
+
+
+@cocotb.test()
+async def packed_struct_var_discovery_is_quiet(dut):
+    """Discovering a packed struct variable logs nothing at WARNING or above"""
+
+    with _collect_gpi_records() as records:
+        handle = dut.pkt_var_uncached
+
+    assert isinstance(handle, PackedObject)
+    assert records == [], "\n".join(r.getMessage() for r in records)
