@@ -277,9 +277,9 @@ class VpiIterator : public GpiIterator {
     vpiHandle m_iterator;
     int64_t m_next_index = 0;
     static std::map<int32_t, std::vector<int32_t>>
-        iterate_over;                         /* Possible mappings */
-    std::vector<int32_t> *selected = nullptr; /* Mapping currently in use */
-    std::vector<int32_t>::iterator one2many;
+        iterate_over;                                // Possible mappings
+    const std::vector<int32_t> *selected = nullptr;  // Mapping currently in use
+    std::vector<int32_t>::const_iterator one2many;
 };
 
 // Base class for simple iterator that only iterates over a single type

@@ -29,6 +29,12 @@ typedef struct packed {
   logic [4:0]  dst_local;
 } noc_hdr_t;  // width 12 + 5 + 5 = 22
 
+typedef struct packed {
+  logic value;
+  logic val_a;
+  logic val_b;
+} value_named_t;
+
 
 module packed_array (
     input logic clk,
@@ -76,6 +82,7 @@ module packed_array (
 
   noc_hdr_t pkt_var;
   noc_hdr_t pkt_var_uncached;
+  value_named_t pkt_value_name_collision;
 
   initial begin
     pkt_var.seq_idx    = 12'b110010011100;
@@ -85,6 +92,10 @@ module packed_array (
     pkt_var.dst_local  = 5'b11010;
 
     pkt_var_uncached   = '0;
+
+    pkt_value_name_collision.value = 1'b1;
+    pkt_value_name_collision.val_a = 1'b0;
+    pkt_value_name_collision.val_b = 1'b1;
   end
 
   assign o_packed       = i_packed;

@@ -923,7 +923,7 @@ class ValueObjectBase(SimHandleBase, Generic[ValueGetT, ValueSetT]):
         .. deprecated:: 2.2
             Use :attr:`value` instead.
         """
-        return self.value
+        return self._get_value()
 
     @deprecated(
         "`handle.set(value)` is deprecated. Use `handle.value = value` instead."
@@ -1241,25 +1241,16 @@ class _SizedObjectMixin(SimHandleBase):
         return self._handle.get_num_elems()
 
 
-class _LogicArrayObjectBase(
+class _LogicVectorObjectBase(
     _NonIndexableValueObjectBase[LogicArray, Union[LogicArray, Logic, int, str]],
-    _RangeableObjectMixin,
     _SignednessObjectMixin,
     _SizedObjectMixin,
-    Generic[ChildObjectT],
 ):
-    """Base class for logic array simulation objects."""
+    """Base class for simulation objects whose value is a :class:`.LogicArray`."""
 
     @abstractmethod
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
-
-    @cached_property
-    def _sub_handles(self) -> dict[int, ChildObjectT]:
-        # Here lazily creating this is meaningful, as with HierarchyArrayObject and ArrayObject,
-        # users are likely to index into the object, meaning the cache will be used.
-        # This does not hold for *every* LogicArrayObject (std_logic_vector or packed array).
-        return {}
 
     def _set_value(
         self,
@@ -1328,21 +1319,6 @@ class _LogicArrayObjectBase(
     def __str__(self) -> str:
         return str(self.value)
 
-    def __getitem__(self, index: int) -> ChildObjectT:
-        if isinstance(index, slice):
-            raise TypeError("Slice indexing is not supported")
-        try:
-            return self._sub_handles[index]
-        except KeyError:
-            pass
-        handle = self._handle.get_handle_by_index(index)
-        if handle is None:
-            raise IndexError(f"{self._path} contains no object at index {index}")
-        path = f"{self._path}[{index}]"
-        res = cast("ChildObjectT", _make_sim_object(handle, path))
-        self._sub_handles[index] = res
-        return res
-
     @property
     def _min_val(self) -> int:
         # Backwards compatibility. Always wrap negative values.
@@ -1372,7 +1348,31 @@ class _LogicArrayObjectBase(
         return FallingEdge._make(cast("LogicArrayObject | PackedObject[Any]", self))
 
 
-class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
+class _LogicArrayObjectBase(
+    _LogicVectorObjectBase, _RangeableObjectMixin, Generic[ChildObjectT]
+):
+    @cached_property
+    def _sub_handles(self) -> dict[int, ChildObjectT]:
+        # Lazily create this as it's unlikely that users will access children of logic arrays or vectors directly.
+        return {}
+
+    def __getitem__(self, index: int) -> ChildObjectT:
+        if isinstance(index, slice):
+            raise TypeError("Slice indexing is not supported")
+        try:
+            return self._sub_handles[index]
+        except KeyError:
+            pass
+        handle = self._handle.get_handle_by_index(index)
+        if handle is None:
+            raise IndexError(f"{self._path} contains no object at index {index}")
+        path = f"{self._path}[{index}]"
+        res = cast("ChildObjectT", _make_sim_object(handle, path))
+        self._sub_handles[index] = res
+        return res
+
+
+class PackedObject(_LogicVectorObjectBase, Generic[ChildObjectT]):
     """Base class of packed Verilog simulation objects.
 
     Every packed Verilog object is one of :class:`PackedArrayObject`,
@@ -1389,7 +1389,11 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
         super().__init__(handle, path)
 
 
-class PackedArrayObject(PackedObject[ChildObjectT], Generic[ChildObjectT]):
+class PackedArrayObject(
+    PackedObject[ChildObjectT],
+    _LogicArrayObjectBase[ChildObjectT],
+    Generic[ChildObjectT],
+):
     """A packed Verilog array or vector simulation object.
 
     Verilog types that map to this object:
@@ -1434,7 +1438,7 @@ class PackedArrayObject(PackedObject[ChildObjectT], Generic[ChildObjectT]):
         return self.size
 
 
-class _PackedStructUnionObjectBase(PackedObject[ValueObjectBase[Any, Any]]):
+class _PackedStructUnionObjectBase(PackedObject[ChildObjectT], Generic[ChildObjectT]):
     """Base class of packed struct and union simulation objects."""
 
     _kind: str
@@ -1443,18 +1447,107 @@ class _PackedStructUnionObjectBase(PackedObject[ValueObjectBase[Any, Any]]):
     def __init__(self, handle: cocotb.simulator.sim_obj, path: str | None) -> None:
         super().__init__(handle, path)
 
+    @cached_property
+    def _members(self) -> dict[str, ChildObjectT]:
+        members: dict[str, ChildObjectT] = {}
+        for thing in self._handle.iterate(cocotb.simulator.OBJECTS):
+            name = thing.get_name_string()
+            path = f"{self._path}.{name}"
+            try:
+                hdl = _make_sim_object(thing, path)
+            except NotImplementedError:
+                self._log.exception(
+                    "Unable to construct a SimHandle object for %s", path
+                )
+                continue
+            members[name] = cast("ChildObjectT", hdl)
+        return members
+
     @property
     def range(self) -> Range:
         raise TypeError(f"{self._path} is a packed {self._kind} and has no range")
 
-    def get(self) -> LogicArray:
-        """Return the current value of the simulation object as a :class:`.LogicArray`."""
-        # The value is indexed [size-1:0], which always differs from the positional
-        # indexing of cocotb 1.x, so there is no HDL range to compare against.
-        return LogicArray._from_handle(value=self._handle.get_signal_val_binstr())
+    @property
+    def left(self) -> int:
+        raise TypeError(f"{self._path} is a packed {self._kind} and has no range")
 
-    def __getitem__(self, index: int) -> ValueObjectBase[Any, Any]:
-        raise TypeError(f"{self._path} is a packed {self._kind} and cannot be indexed")
+    @property
+    def right(self) -> int:
+        raise TypeError(f"{self._path} is a packed {self._kind} and has no range")
+
+    @property
+    def direction(self) -> str:
+        raise TypeError(f"{self._path} is a packed {self._kind} and has no range")
+
+    def _keys(self) -> Iterable[str]:
+        """Iterate over the names of the members.
+
+        :meta public:
+        """
+        return self._members.keys()
+
+    def _values(self) -> Iterable[ChildObjectT]:
+        """Iterate over the member objects.
+
+        :meta public:
+        """
+        return self._members.values()
+
+    def _items(self) -> Iterable[tuple[str, ChildObjectT]]:
+        """Iterate over ``(name, object)`` tuples of the members.
+
+        :meta public:
+        """
+        return self._members.items()
+
+    def __setattr__(self, name: str, value: object) -> None:
+        # private attributes and data descriptors such as ``value`` pass through
+        if name.startswith("_") or hasattr(getattr(type(self), name, None), "__set__"):
+            return object.__setattr__(self, name, value)
+
+        try:
+            getattr(self, name)
+        except AttributeError:
+            raise AttributeError(
+                f"Cannot set attribute {name!r} on simulation object {self._path}. No such member exists."
+            ) from None
+        else:
+            raise AttributeError(
+                f"Cannot set attribute {name!r} on simulation object {self._path}. Did you forget to add `.value`?"
+            )
+
+    def __getattr__(self, name: str) -> ChildObjectT:
+        if name.startswith("_"):
+            return object.__getattribute__(self, name)
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(
+                f"{self._path} contains no member named {name}"
+            ) from None
+
+    def __getitem__(self, key: str) -> ChildObjectT:
+        if not isinstance(key, str):
+            raise TypeError(
+                f"{self._path} is a packed {self._kind} and cannot be indexed by position. Access members by name instead."
+            )
+        if (member := self._members.get(key)) is not None:
+            return member
+        new_handle = self._handle.get_handle_by_name(key)
+        if new_handle is None:
+            raise KeyError(f"{self._path} contains no member named {key}")
+        member = cast(
+            "ChildObjectT",
+            _make_sim_object(new_handle, f"{self._path}.{key}"),
+        )
+        self._members[key] = member
+        return member
+
+    def __iter__(self) -> Iterator[ChildObjectT]:
+        return iter(self._values())
+
+    def __dir__(self) -> Iterable[str]:
+        return set(super().__dir__()) | set(self._keys())
 
     def __len__(self) -> int:
         if cocotb_previews.is_enabled(
@@ -1491,7 +1584,20 @@ class PackedStructObject(_PackedStructUnionObjectBase):
 
     The :attr:`size` is its width in bits.
     A packed struct has no range and cannot be indexed by position:
-    :attr:`range` and index access raise :exc:`TypeError`.
+    :attr:`range` and index access with an :class:`int` raise :exc:`TypeError`.
+
+    Members are found by name with either attribute syntax or index syntax.
+
+    .. code-block:: python
+
+        dut.my_struct.field  # attribute syntax
+        dut.my_struct["field"]  # index syntax
+
+    A member whose name collides with an attribute of this class, such as ``value`` or ``size``,
+    is only reachable with index syntax.
+    Accessing a non-existent member with attribute syntax raises :exc:`AttributeError`,
+    and with index syntax raises :exc:`KeyError`.
+    Iteration yields the member objects in no particular order.
 
     .. note::
         Simulators which flatten packed structs into plain vectors present them as :class:`PackedArrayObject` instead.
@@ -1527,7 +1633,20 @@ class PackedUnionObject(_PackedStructUnionObjectBase):
 
     The :attr:`size` is its width in bits.
     A packed union has no range and cannot be indexed by position:
-    :attr:`range` and index access raise :exc:`TypeError`.
+    :attr:`range` and index access with an :class:`int` raise :exc:`TypeError`.
+
+    Members are found by name with either attribute syntax or index syntax.
+
+    .. code-block:: python
+
+        dut.my_union.field  # attribute syntax
+        dut.my_union["field"]  # index syntax
+
+    A member whose name collides with an attribute of this class, such as ``value`` or ``size``,
+    is only reachable with index syntax.
+    Accessing a non-existent member with attribute syntax raises :exc:`AttributeError`,
+    and with index syntax raises :exc:`KeyError`.
+    Iteration yields the member objects in no particular order.
 
     .. note::
         Simulators which flatten packed unions into plain vectors present them as :class:`PackedArrayObject` instead.

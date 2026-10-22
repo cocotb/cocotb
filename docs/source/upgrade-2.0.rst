@@ -1114,6 +1114,16 @@ Change
 Accessing fields of packed structs and elements of packed arrays was removed.
 Packed objects now act as a single composite logic vector.
 
+.. versionchanged:: 2.1
+    Indexing elements of packed arrays (:class:`~cocotb.handle.PackedArrayObject`) was restored.
+
+.. versionchanged:: 2.2
+    Accessing members of packed structs and unions by name
+    (:class:`~cocotb.handle.PackedStructObject` and :class:`~cocotb.handle.PackedUnionObject`)
+    was restored on simulators that report them distinctly from plain vectors.
+
+Indexing into the full value remains the portable approach.
+
 How to Upgrade
 ==============
 

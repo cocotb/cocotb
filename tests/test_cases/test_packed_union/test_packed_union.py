@@ -35,10 +35,7 @@ DISCOVERY_BROKEN = SIM_NAME.startswith("ghdl") or (
     raises=AttributeError,
     reason="Simulator does not discover dut.t correctly",
 )
-@cocotb.xfail(
-    raises=AttributeError,
-    reason="Packed union members are not accessible as attributes",  # TODO implement this
-)
+@cocotb.xfail(FLATTENS_PACKED_UNION, raises=AttributeError)
 async def test_packed_union(dut):
     pbs = dut.t
     pbs.a.value = 0
@@ -50,10 +47,7 @@ async def test_packed_union(dut):
     raises=AttributeError,
     reason="Simulator does not discover dut.t correctly",
 )
-@cocotb.xfail(
-    FLATTENS_PACKED_UNION,
-    reason="Simulator flattens packed unions into vectors and is discovered as a PackedArrayObject",
-)
+@cocotb.xfail(FLATTENS_PACKED_UNION)
 async def test_packed_union_type(dut):
     """A packed union is a PackedUnionObject where the simulator reports it"""
 

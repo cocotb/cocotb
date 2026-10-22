@@ -1,0 +1,1 @@
+Added access to the members of packed structs and unions by name (``dut.pkt.field`` or ``dut.pkt["field"]``) and iteration over them on :class:`~cocotb.handle.PackedStructObject` and :class:`~cocotb.handle.PackedUnionObject`, on simulators that report packed structs and unions distinctly from vectors.
