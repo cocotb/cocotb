@@ -73,6 +73,7 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                                     "type %s (%d)",
                                     name.c_str(), vpi_get_str(vpiType, hdl),
                                     type);
+                                check_vpi_error();
                                 return -1;
                             }
                             // LCOV_EXCL_STOP
