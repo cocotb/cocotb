@@ -26,8 +26,6 @@ int get_range_bounds(vpiHandle obj, int &left, int &right) {
     vpiHandle leftRange = vpi_handle(vpiLeftRange, obj);
     // LCOV_EXCL_START
     if (leftRange == NULL) {
-        LOG_ERROR("Unable to get left range for object: %s",
-                  vpi_get_str(vpiName, obj));
         check_vpi_error();
         return -1;
     }
@@ -39,8 +37,6 @@ int get_range_bounds(vpiHandle obj, int &left, int &right) {
     vpiHandle rightRange = vpi_handle(vpiRightRange, obj);
     // LCOV_EXCL_START
     if (rightRange == NULL) {
-        LOG_ERROR("Unable to get right range for object: %s",
-                  vpi_get_str(vpiName, obj));
         check_vpi_error();
         return -1;
     }
@@ -103,6 +99,8 @@ int VpiArrayObjHdl::initialise(const std::string &name,
         int res = get_range_bounds(rangeHdl, m_range_left, m_range_right);
         // LCOV_EXCL_START
         if (res) {
+            LOG_ERROR("Unable to get range bounds for indexable array: %s",
+                      name.c_str());
             return -1;
         }
         // LCOV_EXCL_STOP
@@ -112,6 +110,8 @@ int VpiArrayObjHdl::initialise(const std::string &name,
         int res = get_range_bounds(hdl, m_range_left, m_range_right);
         // LCOV_EXCL_START
         if (res) {
+            LOG_ERROR("Unable to get range bounds for indexable array: %s",
+                      name.c_str());
             return -1;
         }
         // LCOV_EXCL_STOP

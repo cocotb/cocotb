@@ -68,6 +68,11 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         if (res) {
                             // LCOV_EXCL_START
                             if (!rangeless_ok) {
+                                LOG_ERROR(
+                                    "VPI: Unable to get range bounds for %s of "
+                                    "type %s (%d)",
+                                    name.c_str(), vpi_get_str(vpiType, hdl),
+                                    type);
                                 return -1;
                             }
                             // LCOV_EXCL_STOP
