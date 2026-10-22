@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-import warnings
 import contextlib
 import logging
+import warnings
 
 import pytest
 
