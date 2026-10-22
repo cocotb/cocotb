@@ -100,6 +100,10 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                 }
 
                 if (unknown_range) {
+                    // A packed struct or union is a vector (vpiVector is
+                    // TRUE) but has no range. Do not treat it as indexable,
+                    // so it is not mistaken for a packed array.
+                    m_indexable = false;
                     m_range_left = -1;
                     m_range_right = -1;
                     LOG_DEBUG("VPI: %s has no range, it is a %s of %d elements",
