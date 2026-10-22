@@ -26,6 +26,10 @@ class Feature(DocStrEnum):
         "strict_resolve",
         "`Logic.resolve()` and `LogicArray.resolve()` return `Bit` or 0/1-only `LogicArray`, respectively",
     )
+    HANDLE_LEN_IS_SUBELEMENTS = (
+        "handle_len_is_subelements",
+        "Make ``len()`` on packed objects return the number of elements in the outermost dimension instead of the number of bits",
+    )
 
 
 _feature_strs = {feature.value for feature in Feature}

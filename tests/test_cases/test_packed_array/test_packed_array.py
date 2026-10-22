@@ -4,9 +4,12 @@
 
 from __future__ import annotations
 
+import warnings
+
 import pytest
 
 import cocotb
+import cocotb.preview
 from cocotb.handle import (
     ArrayObject,
     Immediate,
@@ -55,6 +58,42 @@ async def check_types(dut):
     assert dut.i_enum_arr2d.size == 16
     assert dut.i_union_arr2d.size == 128
     assert dut.i_pkt_arr2d.size == 176
+
+
+@cocotb.test()
+async def check_len_semantics(dut):
+    """Check len() on packed objects in both states of the preview."""
+
+    feature = cocotb.preview.Feature.HANDLE_LEN_IS_SUBELEMENTS
+    was_enabled = cocotb.preview.is_enabled(feature)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+
+            # Without the preview, len() is the number of bits.
+            cocotb.preview.disable(feature)
+            assert len(dut.i_packed) == 32
+            assert len(dut.i_packed[0]) == 4
+            assert len(dut.pkt_var) == 22
+
+            # With the preview, len() is the number of elements in the outermost dimension.
+            cocotb.preview.enable(feature)
+            assert len(dut.i_packed) == 8
+            assert len(dut.i_packed[0]) == 4
+            if FLATTENS_PACKED_STRUCT:
+                assert len(dut.pkt_var) == 22
+            else:
+                with pytest.raises(TypeError):
+                    len(dut.pkt_var)
+    finally:
+        if was_enabled:
+            cocotb.preview.enable(feature)
+        else:
+            cocotb.preview.disable(feature)
+
+    # len() on a single bit is always deprecated.
+    with pytest.warns(DeprecationWarning):
+        assert len(dut.i_bit) == 1
 
 
 @cocotb.test()
