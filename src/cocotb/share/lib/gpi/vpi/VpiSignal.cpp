@@ -18,128 +18,99 @@ VpiSignalObjHdl::~VpiSignalObjHdl() {
     if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
-static bool is_struct_or_union_type(int32_t type) {
-    switch (type) {
-        case vpiStructVar:
-        case vpiStructNet:
-        case vpiUnionVar:
-        case vpiUnionNet:
-            return true;
-        default:
-            return false;
-    }
-}
-
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
-    bool is_struct_or_union = is_struct_or_union_type(type);
-    bool unknown_range = false;
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
         (vpiIntegerNet == type)) {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
     } else if (vpiRealNet == type) {
-        m_num_elems = 1;
+        m_num_elems = 64;
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
 
-        if (GpiObjHdl::get_type() == GPI_STRING || type == vpiConstant ||
-            type == vpiParameter) {
+        if (GpiObjHdl::get_type() == GPI_STRING) {
             m_indexable = false;  // Don't want to iterate over indices
             m_range_left = 0;
             m_range_right = m_num_elems - 1;
-        } else if (GpiObjHdl::get_type() == GPI_LOGIC ||
-                   GpiObjHdl::get_type() == GPI_LOGIC_ARRAY ||
-                   GpiObjHdl::get_type() == GPI_PACKED) {
+            m_range_dir = GPI_RANGE_UP;
+        } else if (type == vpiConstant || type == vpiParameter) {
+            // TODO handle parameters correctly instead of making them opaque
+            // packed array like objects
+            m_indexable = false;
+            m_range_left = 0;
+            m_range_right = m_num_elems - 1;
+            m_range_dir = GPI_RANGE_UP;
+        } else if (GpiObjHdl::get_type() == GPI_PACKED_STRUCT ||
+                   GpiObjHdl::get_type() == GPI_PACKED_UNION) {
+            // A packed struct or union is a vector (vpiVector is TRUE) but
+            // has no packed range of its own (IEEE 1800-2023 37.17), so it
+            // cannot be indexed. vpiSize is its width in bits.
+            m_indexable = false;
+            m_range_left = -1;
+            m_range_right = -1;
+            m_range_dir = GPI_RANGE_NO_DIR;
+            LOG_DEBUG("VPI: %s is a packed %s of %d bits", name.c_str(),
+                      vpi_get_str(vpiType, GpiObjHdl::get_handle<vpiHandle>()),
+                      m_num_elems);
+        } else if (GpiObjHdl::get_type() == GPI_LOGIC) {
+            // A scalar has no packed range to discover.
+            m_indexable = false;
+            m_range_left = 0;
+            // TODO can this ever be more than 1? Should range be NO_DIR instead
+            // of UP? i.e. should getting these properties fail?
+            m_range_right = m_num_elems - 1;
+            m_range_dir = GPI_RANGE_UP;
+        } else if (GpiObjHdl::get_type() == GPI_PACKED_ARRAY ||
+                   GpiObjHdl::get_type() == GPI_LOGIC_ARRAY /* GHDL */) {
             vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
-            m_indexable = vpi_get(vpiVector, hdl);
+            vpiHandle iter = vpi_iterate(vpiRange, hdl);
 
-            if (m_indexable) {
-                vpiHandle iter = vpi_iterate(vpiRange, hdl);
+            /* Only ever need the first "range" */
+            if (iter != NULL) {
+                vpiHandle rangeHdl = vpi_scan(iter);
 
-                /* Only ever need the first "range" */
-                if (iter != NULL) {
-                    vpiHandle rangeHdl = vpi_scan(iter);
+                if (rangeHdl != NULL) {
+                    DEFER(vpi_free_object(iter));
+                    DEFER(vpi_free_object(rangeHdl));
 
-                    if (rangeHdl != NULL) {
-                        DEFER(vpi_free_object(iter));
-                        DEFER(vpi_free_object(rangeHdl));
-
-                        int res = get_range_bounds(rangeHdl, m_range_left,
-                                                   m_range_right);
-                        if (res) {
-                            // LCOV_EXCL_START
-                            if (!is_struct_or_union) {
-                                LOG_ERROR(
-                                    "VPI: Unable to get range bounds for %s of "
-                                    "type %s (%d)",
-                                    name.c_str(), vpi_get_str(vpiType, hdl),
-                                    type);
-                                check_vpi_error();
-                                return -1;
-                            }
-                            // LCOV_EXCL_STOP
-                            unknown_range = true;
-                        }
-                    } else if (is_struct_or_union) {
-                        unknown_range = true;
-                    }
-                    // LCOV_EXCL_START
-                    else {
+                    if (get_range_bounds(rangeHdl, m_range_left,
+                                         m_range_right)) {
+                        // LCOV_EXCL_START
                         LOG_ERROR(
-                            "VPI: Unable to get range for %s of type %s (%d)",
+                            "VPI: Unable to get range bounds for %s of type %s "
+                            "(%d)",
                             name.c_str(), vpi_get_str(vpiType, hdl), type);
+                        check_vpi_error();
                         return -1;
+                        // LCOV_EXCL_STOP
                     }
-                    // LCOV_EXCL_STOP
-                } else if (is_struct_or_union) {
-                    // Some simulators (e.g. VCS) report a packed array of
-                    // structs or unions as a struct/union object, with the
-                    // array's dimensions available through vpiRange (handled
-                    // above). A packed struct or union itself has no range,
-                    // and the object has no vpiLeftRange/vpiRightRange
-                    // relations, but Questa still returns handles for them
-                    // that hold garbage bounds. Do not query them.
-                    unknown_range = true;
-                } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
-                           0) {
-                    // TODO is this the best behavior? Do simulators
-                    // actually hit this case?
-                    LOG_WARN(
-                        "VPI: Cannot discover range bounds, guessing based "
-                        "on elements");
-                    m_range_left = 0;
-                    m_range_right = m_num_elems - 1;
                 }
-
-                if (unknown_range) {
-                    // A packed struct or union is a vector (vpiVector is
-                    // TRUE) but has no range. Do not treat it as indexable,
-                    // so it is not mistaken for a packed array.
-                    m_indexable = false;
-                    m_range_left = -1;
-                    m_range_right = -1;
-                    LOG_DEBUG("VPI: %s has no range, it is a %s of %d elements",
-                              name.c_str(), vpi_get_str(vpiType, hdl),
-                              m_num_elems);
-                } else {
-                    LOG_DEBUG(
-                        "VPI: Indexable object initialized with range [%d:%d] "
-                        "and length >%d<",
-                        m_range_left, m_range_right, m_num_elems);
+                // LCOV_EXCL_START
+                else {
+                    LOG_ERROR("VPI: Unable to get range for %s of type %s (%d)",
+                              name.c_str(), vpi_get_str(vpiType, hdl), type);
+                    return -1;
                 }
-            } else {
+                // LCOV_EXCL_STOP
+            } else if (get_range_bounds(hdl, m_range_left, m_range_right)) {
+                LOG_WARN(
+                    "VPI: Cannot discover range bounds, guessing based "
+                    "on elements");
                 m_range_left = 0;
                 m_range_right = m_num_elems - 1;
             }
+
+            m_indexable = true;
+            // Verilog has no concept of null ranges, yeah this makes a bad
+            // assumption for GHDL, but oh well.
+            m_range_dir =
+                m_range_left > m_range_right ? GPI_RANGE_DOWN : GPI_RANGE_UP;
         }
     }
-    if (!unknown_range) {
-        m_range_dir =
-            m_range_left > m_range_right ? GPI_RANGE_DOWN : GPI_RANGE_UP;
-    }
-    LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(),
-              m_num_elems);
+    LOG_DEBUG("VPI: %s initialized. Size: %d, Indexable: %s, Range: [%d:%d]",
+              name.c_str(), m_num_elems, m_indexable ? "true" : "false",
+              m_range_left, m_range_right);
     return GpiObjHdl::initialise(name, fq_name);
 }
 

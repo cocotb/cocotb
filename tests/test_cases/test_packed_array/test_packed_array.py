@@ -14,9 +14,13 @@ import cocotb
 import cocotb.preview
 from cocotb.handle import (
     ArrayObject,
+    EnumObject,
     Immediate,
     LogicObject,
+    PackedArrayObject,
     PackedObject,
+    PackedStructObject,
+    PackedUnionObject,
 )
 from cocotb.triggers import (
     ClockCycles,
@@ -34,21 +38,27 @@ xfail_without_packed_indexing = cocotb.xfail(
     reason="Verilator does not index packed dimensions over VPI before v5.048",
 )
 
+# Verilator 5.053 added distinct VPI types for packed structs and unions.
+FLATTENS_PACKED_STRUCT = cocotb.SIM_NAME.lower().startswith("icarus") or (
+    cocotb.SIM_NAME.lower().startswith("verilator")
+    and VerilatorVersion(cocotb.SIM_VERSION) < VerilatorVersion("5.053")
+)
+
 
 @cocotb.test()
 async def check_types(dut):
     """Check types"""
 
-    assert type(dut.i_packed) is PackedObject
-    assert type(dut.i_packed[0]) is PackedObject
+    assert type(dut.i_packed) is PackedArrayObject
+    assert type(dut.i_packed[0]) is PackedArrayObject
     assert type(dut.i_packed[0][0]) is LogicObject
     assert type(dut.i_unpacked) is ArrayObject
     assert type(dut.i_mixed) is ArrayObject
-    assert type(dut.i_short) is PackedObject
+    assert type(dut.i_short) is PackedArrayObject
     assert type(dut.i_bit) is LogicObject
-    assert type(dut.i_enum_arr2d) is PackedObject
-    assert type(dut.i_union_arr2d) is PackedObject
-    assert type(dut.i_pkt_arr2d) is PackedObject
+    assert type(dut.i_enum_arr2d) is PackedArrayObject
+    assert type(dut.i_union_arr2d) is PackedArrayObject
+    assert type(dut.i_pkt_arr2d) is PackedArrayObject
     assert type(dut.i_enum_arr2d_unpk) is ArrayObject
     assert type(dut.i_union_arr2d_unpk) is ArrayObject
     assert type(dut.i_pkt_arr2d_unpk) is ArrayObject
@@ -62,7 +72,7 @@ async def check_types(dut):
     assert dut.i_pkt_arr2d.size == 176
 
 
-@cocotb.test()
+@cocotb.test
 async def check_len_semantics(dut):
     """Check len() on packed objects in both states of the preview."""
 
@@ -76,7 +86,12 @@ async def check_len_semantics(dut):
             cocotb.preview.disable(feature)
             assert len(dut.i_packed) == 32
             assert len(dut.i_packed[0]) == 4
-            assert len(dut.pkt_var) == 22
+            if FLATTENS_PACKED_STRUCT:
+                assert len(dut.pkt_var) == 22
+            else:
+                # On packed structs len() is a deprecated alias for size.
+                with pytest.warns(DeprecationWarning):
+                    assert len(dut.pkt_var) == 22
 
             # With the preview, len() is the number of elements in the outermost dimension.
             cocotb.preview.enable(feature)
@@ -479,24 +494,40 @@ PKT_VAR_PATTERN = "".join(
     ]
 )
 
-FLATTENS_PACKED_STRUCT = cocotb.SIM_NAME.lower().startswith(("icarus", "verilator"))
 
-
-@cocotb.test(expect_error=() if FLATTENS_PACKED_STRUCT else TypeError)
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
 async def packed_struct_var_range(dut):
     """A packed struct variable has no range of its own"""
 
-    assert dut.pkt_var.range == Range(21, "downto", 0)
+    with pytest.raises(TypeError):
+        _ = dut.pkt_var.range
 
 
-@cocotb.test()
+@cocotb.test
 async def packed_struct_var_size(dut):
     """The size of a packed struct variable is its width in bits"""
 
     assert dut.pkt_var.size == 22
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
+async def packed_struct_var_type(dut):
+    """A packed struct variable is a PackedStructObject where the simulator reports it"""
+
+    assert isinstance(dut.pkt_var, PackedObject)
+    assert type(dut.pkt_var) is PackedStructObject
+    assert type(dut.i_pkt_arr2d[0][0]) is PackedStructObject
+    assert type(dut.i_union_arr2d[0][0]) is PackedUnionObject
+    # VCS keeps the enum type on elements of a packed array of enums.
+    # Verilator reports them as plain logic vectors.
+    assert type(dut.i_enum_arr2d[0][0]) in (EnumObject, PackedArrayObject)
+    with pytest.raises(TypeError):
+        _ = dut.pkt_var.left
+
+
+@cocotb.test
 async def packed_vector_range(dut):
     """A plain packed vector does report a range"""
 
@@ -504,7 +535,7 @@ async def packed_vector_range(dut):
     assert dut.i_packed_32[0].range == Range(31, "downto", 0)
 
 
-@cocotb.test()
+@cocotb.test
 async def packed_struct_var_read(dut):
     """Read a whole packed struct variable"""
 
@@ -512,23 +543,17 @@ async def packed_struct_var_read(dut):
     assert str(dut.pkt_var.value) == PKT_VAR_PATTERN
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
 async def packed_struct_var_index(dut):
     """Bits of a packed struct variable cannot be indexed"""
 
     await Timer(1)
-    if FLATTENS_PACKED_STRUCT:
-        # These simulators present the struct as a plain vector.
-        for i, bit in enumerate(PKT_VAR_PATTERN):
-            assert str(dut.pkt_var[21 - i].value) == bit, f"mismatch at index {21 - i}"
-        with pytest.raises(IndexError):
-            dut.pkt_var[22]
-    else:
-        with pytest.raises(TypeError):
-            dut.pkt_var[0]
+    with pytest.raises(TypeError):
+        dut.pkt_var[0]
 
 
-@cocotb.test()
+@cocotb.test
 async def packed_struct_var_write(dut):
     """Write a whole packed struct variable"""
 
@@ -565,7 +590,7 @@ def _collect_gpi_records():
         logger.setLevel(old_level)
 
 
-@cocotb.test()
+@cocotb.test
 async def packed_struct_var_discovery_is_quiet(dut):
     """Discovering a packed struct variable logs nothing at WARNING or above"""
 
