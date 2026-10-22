@@ -26,7 +26,6 @@ int get_range_bounds(vpiHandle obj, int &left, int &right) {
     vpiHandle leftRange = vpi_handle(vpiLeftRange, obj);
     // LCOV_EXCL_START
     if (leftRange == NULL) {
-        check_vpi_error();
         return -1;
     }
     // LCOV_EXCL_STOP
