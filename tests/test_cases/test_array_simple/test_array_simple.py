@@ -13,8 +13,10 @@ import pytest
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
+from cocotb_tools.sim_versions import VerilatorVersion
 
 tlog = logging.getLogger("cocotb.test")
+SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
@@ -143,18 +145,29 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][28], 0xEF)
 
 
-# GHDL unable to access record signals (gh-2591)
-# Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
-# Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
-@cocotb.test(
-    expect_error=AttributeError
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl", "verilator"))
-    or (cocotb.SIM_NAME.lower().startswith("riviera") and LANGUAGE == "verilog")
-    else ()
+@cocotb.xfail(
+    SIM_NAME.startswith("icarus"),
+    reason="Icarus doesn't support structs (gh-2592)",
+    raises=AttributeError,
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL unable to access record signals (gh-2591)",
+    raises=AttributeError,
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("verilator")
+    and VerilatorVersion(cocotb.SIM_VERSION) < VerilatorVersion("5.050"),
+    reason="Verilator before 5.050 doesn't support VPI access to unpacked struct members (gh-1275)",
+    raises=AttributeError,
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("riviera") and LANGUAGE == "verilog",
+    reason="Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)",
+    raises=AttributeError,
 )
 async def test_struct_unpacked(dut):
-    """Test setting and getting values of unpacked structs."""
+    """Test accessing, setting, and getting unpacked struct members."""
     cocotb.start_soon(Clock(dut.clk, 1000, "ns").start())
     dut.inout_if.a_in.value = 1
     await Timer(1000, "ns")
