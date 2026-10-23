@@ -374,8 +374,6 @@ Change bit indexing and slicing to use the indexing provided by the ``range`` ar
     assert val[3] == 1
     assert val[0] == 0
 
-See :ref:`update-indexing` for more details on how to update indexing and slicing.
-
 ----
 
 Change all uses of the :attr:`.LogicArray.binstr`, :attr:`.LogicArray.integer`, :attr:`.LogicArray.signed_integer`, and :attr:`.LogicArray.buff` setters,
@@ -629,7 +627,6 @@ How to Upgrade
 Change code when dealing with scalar logic-like simulator objects to work with :class:`!Logic`.
 
 Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the logic array as defined in HDL.
-See :ref:`update-indexing` for more details on how to update indexing and slicing.
 
 Rationale
 =========
@@ -679,7 +676,6 @@ How to Upgrade
 ==============
 
 Change indexing assumptions from always being ``0`` to ``length-1`` left-to-right, to following the arbitrary indexing scheme of the array as defined in HDL.
-See :ref:`update-indexing` for more details on how to update indexing and slicing.
 
 Rationale
 =========
