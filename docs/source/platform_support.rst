@@ -29,6 +29,7 @@ alternative Python implementations like PyPy or Jython are not supported.
 * CPython 3.12
 * CPython 3.13
 * CPython 3.14
+* CPython 3.15
 
 .. _supported-linux-distributions:
 
