@@ -104,7 +104,7 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
             m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
             int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
-            m_value.value.str = new vhpiCharT[bufSize];
+            m_value.value.str = new vhpiCharT[static_cast<size_t>(bufSize)];
             m_value.numElems = m_num_elems;
             LOG_DEBUG("VHPI: Overriding num_elems to %d", m_num_elems);
             break;
@@ -126,7 +126,7 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
     if (m_num_elems) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
-        m_binvalue.value.str = new vhpiCharT[bufSize];
+        m_binvalue.value.str = new vhpiCharT[static_cast<size_t>(bufSize)];
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -167,7 +167,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
         m_value.format = vhpiLogicVecVal;
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
         m_value.bufSize = static_cast<bufSize_type>(bufSize);
-        m_value.value.enumvs = new vhpiEnumT[bufSize];
+        m_value.value.enumvs = new vhpiEnumT[static_cast<size_t>(bufSize)];
     }
 
     if (m_indexable &&
@@ -178,7 +178,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     if (m_num_elems) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
-        m_binvalue.value.str = new vhpiCharT[bufSize];
+        m_binvalue.value.str = new vhpiCharT[static_cast<size_t>(bufSize)];
     }
 
     return GpiObjHdl::initialise(name, fq_name);

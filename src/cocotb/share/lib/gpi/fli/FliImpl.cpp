@@ -524,7 +524,7 @@ int FliImpl::get_simulator_args(int *argc, const char *const **argv) {
         Tcl_DecrRefCount(result);
 
         // store argv pointers
-        m_argv = new const char *[m_argc];
+        m_argv = new const char *[static_cast<size_t>(m_argc)];
         for (int i = 0; i < m_argc; i++) {
             m_argv[i] = m_argv_storage[static_cast<size_t>(i)].c_str();
         }
