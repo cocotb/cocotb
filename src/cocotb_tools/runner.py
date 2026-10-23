@@ -269,7 +269,7 @@ class Runner(ABC):
             return lang
         else:
             raise ValueError(
-                f"{type(self).__qualname__}: hdl_toplevel_lang {hdl_toplevel_lang!r} is not "
+                f"{type(self).__qualname__}: hdl_toplevel_lang {lang!r} is not "
                 f"in supported list: {', '.join(self.supported_gpi_interfaces)}"
             )
 
@@ -1545,6 +1545,7 @@ class Nvc(Runner):
        * Supports specifying a particular entity architecture by setting hdl_toplevel to {entity}-{arch}.
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
        * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
+       * Verilog sources must end in ``.v`` or ``.sv``, even when tagged with :class:`Verilog`.
     """
 
     supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"vhdl": ["vhpi"]}
@@ -1575,10 +1576,10 @@ class Nvc(Runner):
             raise SystemExit("ERROR: nvc executable not found!")
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
-        raise RuntimeError
+        return [f"-I{include}" for include in includes]
 
     def _get_define_options(self, defines: Mapping[str, object]) -> _Command:
-        raise RuntimeError
+        return [f"-D{name}={value}" for name, value in defines.items()]
 
     def _get_parameter_options(self, parameters: Mapping[str, object]) -> _Command:
         return [f"-g{name}={value}" for name, value in parameters.items()]
@@ -1590,19 +1591,24 @@ class Nvc(Runner):
         return f"{self.sim_hdl_toplevel}.fst"
 
     def _build_command(self) -> list[_Command]:
-        sources = self._sources + self._vhdl_sources
+        sources = self._sources + self._vhdl_sources + self._verilog_sources
 
         for source in sources:
-            if source.tag is not VHDL:
+            if source.tag not in (VHDL, Verilog):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. {str(source.value)!r} cannot be compiled."
+                    f"{type(self).__qualname__} only supports VHDL and Verilog. {str(source.value)!r} cannot be compiled."
                 )
 
         for arg in self._build_args:
             if arg.tag not in (VHDL, None):
                 raise ValueError(
-                    f"{type(self).__qualname__} only supports VHDL. build_args {arg.value!r} will not be applied."
+                    f"{type(self).__qualname__} only supports VHDL build_args. {arg.value!r} will not be applied."
                 )
+
+        verilog_args: _Command = []
+        if any(source.tag is Verilog for source in sources):
+            verilog_args += self._get_include_options(self.includes)
+            verilog_args += self._get_define_options(self.defines)
 
         cmds = [
             [
@@ -1614,6 +1620,7 @@ class Nvc(Runner):
             + [arg.value for arg in self._build_args]
             + ["-a"]
             + [str(source.value) for source in sources]
+            + verilog_args
             + self._preserve_case
         ]
 

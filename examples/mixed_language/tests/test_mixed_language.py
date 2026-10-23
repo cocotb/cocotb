@@ -13,11 +13,21 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 from cocotb_tools.runner import get_runner
-from cocotb_tools.sim_versions import RivieraVersion
+from cocotb_tools.sim_versions import NvcVersion, RivieraVersion
 
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
+@cocotb.skipif(
+    cocotb.simulator.is_running()
+    and cocotb.SIM_NAME.lower().startswith("nvc")
+    and NvcVersion(cocotb.SIM_VERSION) < "1.20",
+    reason="NVC versions prior to 1.20 abort when accessing a Verilog instance through VHPI",
+)
+@cocotb.xfail(
+    cocotb.simulator.is_running() and cocotb.SIM_NAME.lower().startswith("nvc"),
+    reason="NVC's VHPI exposes only the ports of Verilog instances, with NVC-internal types (nickg/nvc#1618)",
+)
 # Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
@@ -55,6 +65,12 @@ async def mixed_language_accessing_test(dut):
     vhdl.flush_pipe.value  # noqa: B018
 
 
+@cocotb.skipif(
+    cocotb.simulator.is_running()
+    and cocotb.SIM_NAME.lower().startswith("nvc")
+    and NvcVersion(cocotb.SIM_VERSION) < "1.20",
+    reason="NVC versions prior to 1.20 abort when accessing a Verilog instance through VHPI",
+)
 # Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)
 @cocotb.test(
     expect_error=AttributeError
@@ -125,7 +141,7 @@ sim = os.getenv("SIM", "icarus")
 
 
 @pytest.mark.skipif(
-    sim not in ["questa", "riviera", "xcelium"],
+    sim not in ["questa", "riviera", "xcelium", "nvc"],
     reason=f"Skipping example mixed_language since {sim} doesn't support this",
 )
 def test_mixed_language_runner():
