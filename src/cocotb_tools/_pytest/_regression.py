@@ -44,12 +44,13 @@ from pytest import (
 import cocotb
 import cocotb._shutdown
 import cocotb._test_manager
+import cocotb.simtime
 import cocotb.simulator
 import cocotb.types._resolve
 from cocotb._extended_awaitables import with_timeout
 from cocotb._gpi_triggers import Timer
 from cocotb._test_manager import TestManager
-from cocotb.simtime import TimeUnit, get_sim_time
+from cocotb.simtime import TimeUnit, convert, get_sim_time
 from cocotb_tools._pytest._fixture import (
     AsyncFixtureCachedResult,
     resolve_fixture_arg,
@@ -138,8 +139,7 @@ class RegressionManager:
         self._index: int = 0
         self._finished: bool = False
         self._call_start: float | None = None
-        self._sim_time_start: float = 0
-        self._sim_time_unit: TimeUnit = "step"
+        self._sim_time_start: int = 0
         self._nodeid: str = nodeid
         self._keywords: list[str] = list(keywords) if keywords else []
         self._reporter_address: str = reporter_address
@@ -358,8 +358,7 @@ class RegressionManager:
 
         if self._call_start is None:
             self._call_start = call.start
-            self._sim_time_unit = self._session.config.option.cocotb_sim_time_unit
-            self._sim_time_start = get_sim_time(self._sim_time_unit)
+            self._sim_time_start = get_sim_time()
         else:
             call.start = self._call_start
             call.duration = call.stop - call.start
@@ -701,8 +700,11 @@ class RegressionManager:
         """
         report: TestReport = yield  # get generated test report from other plugins
 
-        sim_time_stop: float = get_sim_time(self._sim_time_unit)
-        sim_time_duration: float = sim_time_stop - self._sim_time_start
+        unit = cocotb.simtime.report_precision
+        sim_time_stop = get_sim_time()
+        sim_time_duration = convert(
+            sim_time_stop - self._sim_time_start, "step", to=unit
+        )
         sim_time_ratio: float = (
             (report.duration / sim_time_duration) if sim_time_duration else 0.0
         )
@@ -710,11 +712,11 @@ class RegressionManager:
         # Additional properties that will be included with generated test report
         properties: dict[str, Any] = {
             "cocotb": True,
-            "sim_time_start": self._sim_time_start,
-            "sim_time_stop": sim_time_stop,
+            "sim_time_start": convert(self._sim_time_start, "step", to=unit),
+            "sim_time_stop": convert(sim_time_stop, "step", to=unit),
             "sim_time_duration": sim_time_duration,
             "sim_time_ratio": sim_time_ratio,
-            "sim_time_unit": self._sim_time_unit,
+            "sim_time_unit": unit,
             "runner_nodeid": self._nodeid,  # identify cocotb runner
             "random_seed": self._seed,
             "file": self._normalize_path(report.location[0]),
@@ -724,6 +726,12 @@ class RegressionManager:
         # Make properties available for other plugins. The `extra` argument from pytest.TestReport
         # __init__(self, ..., **extra) constructor is doing the same
         report.__dict__.update(properties)
+
+        # Preserve simulator timing for summaries using a different reporting unit.
+        report.__dict__.update(
+            sim_time_duration_steps=sim_time_stop - self._sim_time_start,
+            sim_time_precision=cocotb.simtime.time_precision,
+        )
 
         # Make properties available in generated test reports like JUnit XML report
         report.user_properties.extend(properties.items())

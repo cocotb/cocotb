@@ -23,6 +23,7 @@ import pytest
 from common import assert_takes
 
 import cocotb
+import cocotb.simtime
 from cocotb._base_triggers import Trigger
 from cocotb.clock import Clock
 from cocotb.simulator import get_precision
@@ -231,7 +232,7 @@ async def test_timing_trigger_repr(_):
     assert repr(rw) == "ReadWrite()"
     t = Timer(1)
     assert re.match(
-        r"<Timer of \d+\.\d+ps at \w+>",
+        rf"<Timer of \d+\.\d+{cocotb.simtime.report_precision} at \w+>",
         repr(t),
     )
 

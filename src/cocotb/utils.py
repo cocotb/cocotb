@@ -66,7 +66,7 @@ def get_sim_steps(
     time: float | Fraction | Decimal,
     unit: TimeUnit = "step",
     *,
-    round_mode: RoundMode = "error",
+    round_mode: RoundMode | None = None,
     units: None = None,
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
@@ -88,6 +88,9 @@ def get_sim_steps(
 
         round_mode: String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
+
+            .. versionchanged:: 2.2
+                When *round_mode* is ``None``, the value of :data:`~cocotb.simtime.default_round_mode` is used.
 
     Returns:
         The number of simulation time steps.

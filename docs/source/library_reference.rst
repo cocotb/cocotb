@@ -591,6 +591,29 @@ Simulation Time Utilities
     :member-order: bysource
     :synopsis: Tools for dealing with simulated time.
 
+.. envvar:: COCOTB_SIMTIME_DEFAULT_ROUND_MODE
+
+    Type: :ref:`env-string`
+
+    Sets :data:`cocotb.simtime.default_round_mode`, the default rounding mode for simulation time conversions.
+    Defaults to ``error``.
+    Valid values are ``error``, ``ceil``, ``round``, and ``floor``.
+
+    .. versionadded:: 2.2
+
+.. envvar:: COCOTB_SIMTIME_REPORT_PRECISION
+
+    Type: :ref:`env-string`
+
+    Sets :data:`cocotb.simtime.report_precision`, the unit used for reporting simulation time.
+    Defaults to ``ns``.
+    Valid values are ``fs``, ``ps``, ``ns``, ``us``, ``ms``, and ``sec``.
+
+    When using the pytest plugin, ``--cocotb-sim-time-unit`` and its configuration-file
+    and environment equivalents override this initial value.
+
+    .. versionadded:: 2.2
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource

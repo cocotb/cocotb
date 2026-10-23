@@ -18,6 +18,7 @@ from typing import Any, ClassVar, Generic, TypeVar, Union
 import cocotb
 import cocotb._event_loop
 import cocotb.handle
+import cocotb.simtime
 from cocotb import debug, simulator
 from cocotb._base_triggers import Trigger
 from cocotb._deprecation import deprecated
@@ -127,8 +128,13 @@ class Timer(GPITrigger):
         Passing ``0`` as the *time* argument now raises a :exc:`ValueError`.
     """
 
-    round_mode: ClassVar[RoundMode] = "error"
-    """The default rounding mode."""
+    round_mode: ClassVar[RoundMode | None] = None
+    """The default rounding mode.
+
+    .. versionchanged:: 2.2
+        When *round_mode* is ``None``, the value of :data:`~cocotb.simtime.default_round_mode` is used.
+        This variable now defaults to ``None``.
+    """
 
     def __init__(
         self,
@@ -162,9 +168,12 @@ class Timer(GPITrigger):
             raise RuntimeError(f"Unable set up {self} Trigger")
 
     def __repr__(self) -> str:
-        return "<{} of {:1.2f}ps at {}>".format(
+        return "<{} of {:.2f}{} at {}>".format(
             type(self).__qualname__,
-            get_time_from_sim_steps(self._sim_steps, unit="ps"),
+            get_time_from_sim_steps(
+                self._sim_steps, unit=cocotb.simtime.report_precision
+            ),
+            cocotb.simtime.report_precision,
             pointer_str(self),
         )
 
