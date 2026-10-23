@@ -41,7 +41,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "group": "ci-free",
@@ -49,7 +49,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -57,7 +57,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.11",
         "group": "ci-free",
@@ -65,7 +65,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.12",
         "group": "ci-free",
@@ -73,7 +73,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.13",
         "group": "ci-free",
@@ -81,7 +81,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.14",
         "group": "ci-free",
@@ -251,7 +251,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "windows-latest",
         "python-version": "3.11",
         "group": "ci-free",
@@ -261,7 +261,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "nvc",
-        "sim-version": "r1.20.0",
+        "sim-version": "r1.23.0",
         "os": "ubuntu-22.04",
         "python-version": "3.9",
         "cxx": "clang++",
@@ -395,7 +395,11 @@ for version in verilator_versions:
         },
     ]
 
-nvc_versions = ()
+nvc_versions = (
+    "r1.20.1",
+    "r1.21.1",
+    "r1.22.1",
+)
 for version in nvc_versions:
     ENVS += [
         {
