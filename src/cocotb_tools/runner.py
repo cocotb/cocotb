@@ -36,6 +36,7 @@ from typing import (
 
 import find_libpython
 
+import cocotb_previews
 import cocotb_tools.config
 from cocotb.types._logic import Logic
 from cocotb.types._logic_array import LogicArray
@@ -219,7 +220,11 @@ class Runner(ABC):
         self.env: dict[str, str] = {}
 
         # for running test() independently of build()
-        self.build_dir: Path | None = None
+        self.build_dir: Path | None = (
+            None
+            if cocotb_previews.is_enabled(cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR)
+            else get_abs_path("sim_build")
+        )
         self.parameters: Mapping[str, object] = {}
 
         self.log = logging.getLogger(type(self).__qualname__)
@@ -396,6 +401,7 @@ class Runner(ABC):
             sources: Language-agnostic list of source files to build.
             includes: Verilog include directories.
             defines: Defines to set.
+
                 String values are not quoted or escaped automatically, but taken literally to allow for manual formatting.
                 Any non-string values are converted to strings with the default formatter.
             parameters: Verilog parameters or VHDL generics.
@@ -403,6 +409,11 @@ class Runner(ABC):
             hdl_toplevel: The name of the HDL toplevel module.
             always: Always run the build step.
             build_dir: Directory to run the build step in.
+
+                Defaults to ``sim_build``.
+                With :data:`~cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR` enabled,
+                defaults to the previous build directory, or a new temporary directory
+                if no build directory has been set.
             cwd: Directory to execute the build command(s) in. Defaults to *build_dir*.
             clean: Delete *build_dir* before building.
             verbose: Enable verbose messages.
@@ -423,9 +434,11 @@ class Runner(ABC):
             :func:`~cocotb_tools.runner.as_sv_literal` to convert Python values to HDL literals.
 
         .. versionchanged:: 2.2
-            :meth:`~cocotb_tools.runner.Runner.build` now creates a new, uniquely named temporary directory with the
-            prefix ``sim_build_`` in the default temporary directory (see :func:`tempfile.gettempdir`) when the
-            ``build_dir`` parameter is not set. To restore the previous behavior, pass ``build_dir="sim_build"``.
+            With the :data:`~cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR` preview enabled,
+            the first build with no *build_dir* set creates a uniquely named directory
+            with the prefix ``sim_build_`` in the default temporary directory
+            (see :func:`tempfile.gettempdir`).
+            Subsequent builds reuse the directory unless *build_dir* is explicitly set.
         """
         # We don't get anything by printing this if the build fails
         __tracebackhide__ = True
@@ -467,6 +480,10 @@ class Runner(ABC):
 
         self._set_env_build()
 
+        if build_dir is None and not cocotb_previews.is_enabled(
+            cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR
+        ):
+            build_dir = "sim_build"
         if build_dir is not None:
             self.build_dir = get_abs_path(build_dir)
 
@@ -530,6 +547,10 @@ class Runner(ABC):
                 String values are not quoted or escaped automatically, but taken literally to allow for manual formatting.
                 Any non-string values are converted to strings with the default formatter.
             build_dir: Directory the build step has been run in.
+
+                Defaults to the directory used by :meth:`build`, or ``sim_build`` if :meth:`build` has not been called.
+                With :data:`~cocotb_previews.Feature.RUNNER_TEMP_BUILD_DIR` enabled,
+                this must be set if :meth:`build` has not been called.
             test_dir: Directory to run the tests in.
             results_xml: Name of xUnit XML file to store test results in.
                 If an absolute path is provided it will be used as-is,

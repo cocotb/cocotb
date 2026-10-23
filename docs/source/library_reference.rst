@@ -984,17 +984,27 @@ Preview Features
     A comma-separated list of previews of upcoming cocotb behavior that can be enabled.
     If this variable is not defined, all preview features are disabled.
 
-    See :class:`cocotb.preview.Feature` for a list of available features.
+    See :class:`cocotb_previews.Feature` for a list of available features.
     The lowercase name of the feature is used to enable it.
     Setting the value to ``1``, ``true``, or ``yes`` enables all features,
     while ``0``, ``false``, or ``no`` disables all features.
 
     .. versionadded:: 2.1
 
-.. automodule:: cocotb.preview
+.. automodule:: cocotb_previews
     :members:
     :member-order: bysource
     :synopsis: Previews of upcoming cocotb behavior that can be enabled or disabled.
+
+.. module:: cocotb.preview
+    :synopsis: Deprecated alias of cocotb_previews.
+    :deprecated:
+
+    Deprecated alias of :mod:`cocotb_previews`.
+    All attribute accesses are forwarded to :mod:`cocotb_previews` and emit a :exc:`DeprecationWarning`.
+
+    .. deprecated:: 2.2
+        Use :mod:`cocotb_previews` instead.
 
 Debugging
 ---------

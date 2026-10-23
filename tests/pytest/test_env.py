@@ -26,9 +26,9 @@ import cocotb._profiling
 import cocotb.regression
 import cocotb.types._resolve
 from cocotb.handle import SimHandleBase
-from cocotb.preview import Feature, disable, enable
 from cocotb.types import Logic, LogicArray
 from cocotb.types._resolve import ResolverLiteral
+from cocotb_previews import Feature, disable, enable
 from cocotb_tools import _env
 
 
