@@ -86,14 +86,14 @@ ENVS = [
         "python-version": "3.14",
         "group": "ci-free",
     },
-    # {
-    #     "lang": "vhdl",
-    #     "sim": "nvc",
-    #     "sim-version": "r1.17.1",
-    #     "os": "ubuntu-22.04",
-    #     "python-version": "3.15",
-    #     "group": "experimental",
-    # },
+    {
+        "lang": "vhdl",
+        "sim": "nvc",
+        "sim-version": "r1.20.0",
+        "os": "ubuntu-22.04",
+        "python-version": "3.15",
+        "group": "ci-free",
+    },
     # Test Icarus on Ubuntu
     {
         "lang": "verilog",

@@ -368,7 +368,7 @@ docs_preview = [
     "sphinx-autobuild",
 ]
 release_build_wheel = [
-    "cibuildwheel==3.2.1",
+    "cibuildwheel==4.3.4",
 ]
 release_build_sdist = [
     "build",
