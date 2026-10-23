@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from ._abstract_array import AbstractArray, AbstractMutableArray
 from ._array import Array
-from ._indexing import IndexingChangedWarning
 from ._logic import Bit, Logic
 from ._logic_array import LogicArray
 from ._range import Direction, Range
@@ -16,7 +15,6 @@ __all__ = (
     "Array",
     "Bit",
     "Direction",
-    "IndexingChangedWarning",
     "Logic",
     "LogicArray",
     "Range",

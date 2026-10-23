@@ -37,7 +37,6 @@ from cocotb._gpi_triggers import (
 )
 from cocotb._utils import DocIntEnum
 from cocotb.types import Array, Logic, LogicArray, Range
-from cocotb.types._indexing import do_indexing_changed_warning, indexing_changed
 from cocotb.types._logic_array import _str_literals
 from cocotb_tools import _env
 
@@ -1043,7 +1042,6 @@ class ArrayObject(
         return Array._from_handle(
             value=[self[i].value for i in r],
             range=r,
-            warn_indexing=indexing_changed(r) if do_indexing_changed_warning else False,
         )
 
     def set(
@@ -1342,12 +1340,7 @@ class _LogicArrayObjectBase(
     def get(self) -> LogicArray:
         """Return the current value of the simulation object as a :class:`.LogicArray`."""
         binstr = self._handle.get_signal_val_binstr()
-        return LogicArray._from_handle(
-            value=binstr,
-            warn_indexing=indexing_changed(self.range)
-            if do_indexing_changed_warning
-            else False,
-        )
+        return LogicArray._from_handle(value=binstr)
 
     def set(
         self,
