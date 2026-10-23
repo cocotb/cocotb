@@ -9,8 +9,8 @@ from asyncio import CancelledError
 from collections.abc import Awaitable, Iterable
 from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, overload
 
-from cocotb._base_triggers import NullTrigger, _InternalEvent
-from cocotb.task import Task, current_task
+from cocotb._base_triggers import _InternalEvent
+from cocotb.task import Task
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
@@ -179,27 +179,22 @@ async def _wait(
         task._add_done_callback(done_callback)
         task._start_next()
 
-    try:
-        await complete
+    external_cancellation: CancelledError | None = None
 
-    except CancelledError:
-        cancel_remaining()
-        current_task()._uncancel()
+    while not complete.is_set():
+        try:
+            await complete
+        except CancelledError as exc:
+            # Got an external cancellation while waiting for all tasks to complete.
+            cancel_remaining()
+            external_cancellation = exc
+        except BaseException:
+            # Something horrible has happened, cancel children as a best-effort and immediately propagate the exception.
+            cancel_remaining()
+            raise
 
-        while remaining:
-            try:
-                await NullTrigger()
-            except CancelledError:
-                # parent got cancelled again, so we also need to uncancel ourselves
-                # Ignore subsequent cancels while waiting for children to finish
-                current_task()._uncancel()
-                continue
-
-        raise
-
-    except BaseException:
-        cancel_remaining()
-        raise
+    if external_cancellation:
+        raise external_cancellation from None
 
     idx = waiters.index(first_completed) if first_completed is not None else None
     return idx, tuple(waiters)
