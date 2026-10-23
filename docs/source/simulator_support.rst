@@ -90,6 +90,8 @@ see :class:`cocotb_tools.runner.Verilator`.
 
     A working installation of `Verilator <https://www.veripool.org/verilator/>`_ is required.
     You can find installation instructions `in the Verilator documentation <https://verilator.org/guide/latest/install.html>`_.
+    :class:`cocotb_tools.runner.Verilator` also requires `CMake <https://cmake.org/>`_,
+    which is used to build the simulation executable on all platforms, including Windows.
 
 .. versionadded:: 1.3
 
