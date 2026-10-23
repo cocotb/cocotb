@@ -457,12 +457,12 @@ async def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_LOGIC"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.temp, "GPI_PACKED"),
+        (dut.temp, "GPI_PACKED_ARRAY"),
         (dut.logic_b, "GPI_LOGIC"),
         (dut.logic_c, "GPI_LOGIC"),
         (dut.INT_PARAM, "GPI_LOGIC_ARRAY"),
         (dut.REAL_PARAM, "GPI_REAL"),
-        (dut.stream_in_data, "GPI_PACKED"),
+        (dut.stream_in_data, "GPI_PACKED_ARRAY"),
         (dut.and_output, "GPI_LOGIC"),
         (dut.logic_a, "GPI_LOGIC"),
     ]

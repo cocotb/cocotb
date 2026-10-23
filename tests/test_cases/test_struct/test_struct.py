@@ -22,7 +22,11 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) == "PackedObject(sample_module.my_struct)"
+    if SIM_NAME.startswith("verilator"):
+        # Verilator flattens packed structs into plain vectors.
+        assert repr(dut.my_struct) == "PackedArrayObject(sample_module.my_struct)"
+    else:
+        assert repr(dut.my_struct) == "PackedStructObject(sample_module.my_struct)"
 
     # Riviera-PRO initializes the struct with X, Verilator with 0, and others
     # with Z. Since we don't want to explicitly set dut.my_struct (write tests
