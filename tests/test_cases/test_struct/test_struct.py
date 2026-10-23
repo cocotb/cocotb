@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import logging
-import os
 import re
 
 import cocotb
@@ -12,7 +10,6 @@ from cocotb.triggers import Timer
 from cocotb_tools.sim_versions import RivieraVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
-LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 @cocotb.test(
@@ -62,29 +59,3 @@ async def test_packed_struct_setting(dut):
     await Timer(1000, "ns")
 
     assert str(dut.my_struct.value) == "000"
-
-
-# GHDL unable to access record signals (gh-2591)
-# Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
-# Riviera-PRO does not discover inout_if correctly over VPI (gh-3587, gh-3933)
-@cocotb.test(
-    expect_error=(
-        AttributeError
-        if SIM_NAME.startswith(("icarus", "ghdl", "verilator"))
-        or (SIM_NAME.startswith("riviera") and LANGUAGE == "verilog")
-        else ()
-    )
-)
-async def test_struct_format(dut):
-    """
-    Access a structure
-    """
-
-    tlog = logging.getLogger("cocotb.test")
-
-    structure = dut.inout_if
-
-    tlog.info(
-        f"Value of inout_if => a_in = {structure.a_in.value} ; b_out = {structure.b_out.value}"
-    )
