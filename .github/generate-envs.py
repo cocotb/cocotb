@@ -166,7 +166,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.046",  # Latest release version.
+        "sim-version": "v5.052",  # Latest release version.
         "os": "ubuntu-22.04",
         "python-version": "3.10",
         "group": "ci-free",
@@ -211,7 +211,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "verilator",
-        "sim-version": "v5.046",
+        "sim-version": "v5.052",
         "os": "macos-14",
         "python-version": "3.9",
         "group": "ci-free",
@@ -382,7 +382,16 @@ for version in icarus_versions:
         },
     ]
 
-verilator_versions = ("v5.036", "v5.038", "v5.040", "v5.042", "v5.044")
+verilator_versions = (
+    "v5.036",
+    "v5.038",
+    "v5.040",
+    "v5.042",
+    "v5.044",
+    "v5.046",
+    "v5.048",
+    "v5.050",
+)
 for version in verilator_versions:
     ENVS += [
         {
