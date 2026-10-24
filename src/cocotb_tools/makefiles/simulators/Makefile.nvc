@@ -2,10 +2,12 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-ifneq ($(VERILOG_SOURCES),)
+TOPLEVEL_LANG ?= vhdl
+
+ifneq ($(filter-out $(TOPLEVEL_LANG),vhdl),)
 
 $(COCOTB_RESULTS_FILE):
-	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+	@echo "Skipping simulation as only VHDL toplevels are supported on simulator=$(SIM)"
 
 else
 
@@ -28,6 +30,10 @@ else
     TOPLEVEL_LIBRARY ?= work
 endif
 
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix -I, $(VERILOG_INCLUDE_DIRS))
+endif
+
 .PHONY: analyse
 
 # Split SIM_ARGS into those options that need to be passed to -e and
@@ -38,14 +44,14 @@ NVC_E_ARGS := $(filter $(NVC_E_FILTER),$(SIM_ARGS))
 NVC_R_ARGS := $(filter-out $(NVC_E_FILTER),$(SIM_ARGS))
 
 # Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
+analyse: $(VHDL_SOURCES) $(VERILOG_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
 	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
 	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
 
 	$(foreach LIB_VAR,$(VHDL_LIB_ORDER), \
 		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(PRESERVE_CASE) $(COMPILE_ARGS) && ) \
-	$(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(PRESERVE_CASE) $(COMPILE_ARGS)
+	$(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(VERILOG_SOURCES) $(PRESERVE_CASE) $(COMPILE_ARGS)
 
 $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)

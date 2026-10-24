@@ -526,6 +526,9 @@ In order to use this simulator, set :make:var:`SIM` to ``nvc``:
 For simulator-specific limitations when running with the :ref:`Python Runner <howto-python-runner>` flow,
 see :class:`cocotb_tools.runner.Nvc`.
 
+As of NVC 1.20, Verilog sources can be used in designs with a VHDL toplevel.
+A Verilog toplevel is not supported.
+
 .. _sim-nvc-issues:
 
 Reported Issues for this Simulator

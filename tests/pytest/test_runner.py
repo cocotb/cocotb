@@ -174,6 +174,19 @@ def test_runner(parameters, pre_cmd, clean_build, static_build_dir):
         assert (runner.build_dir / "clean_test_file").is_file()
 
 
+@pytest.mark.skipif(
+    sim != "nvc", reason="Skipping test because it is only for the NVC simulator"
+)
+def test_nvc_verilog_build(tmp_path):
+    # cocotb can't test a Verilog toplevel on NVC, so only analysis is checked.
+    get_runner(sim).build(
+        sources=[runner_design_dir / "runner.sv"],
+        defines={"DEFINE": 4, "DEFINE_STR": string_define_value},
+        includes=[basic_hierarchy_module_dir],
+        build_dir=tmp_path,
+    )
+
+
 def test_missing_libpython(monkeypatch):
     hdl_toplevel_lang = os.getenv("TOPLEVEL_LANG", "verilog")
     if hdl_toplevel_lang == "verilog":
