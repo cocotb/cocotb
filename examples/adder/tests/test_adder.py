@@ -12,7 +12,7 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb_tools.runner import get_runner
 
-if cocotb.simulator.is_running():
+if cocotb.is_simulation:
     from adder_model import adder_model
 
 
