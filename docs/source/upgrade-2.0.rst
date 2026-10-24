@@ -1225,9 +1225,9 @@ Finally, this functionality leveraged VPI calls which appeared to violate the VP
 To prevent users from running into these issues, this feature was removed.
 
 
-*********************************************************************************
-Replace ``handle.setimmediatevalue(value)`` with ``handle.set(Immediate(value))``
-*********************************************************************************
+************************************************************************************
+Replace ``handle.setimmediatevalue(value)`` with ``handle.value = Immediate(value)``
+************************************************************************************
 
 Change
 ======
@@ -1246,10 +1246,10 @@ Replace the call to :meth:`!handle.setimmediatevalue` with a value set using the
     cocotb.top.iface.valid.setimmediatevalue(0)
 
 .. code-block:: python
-    :caption: New way with ``handle.set(Immediate(value))``
+    :caption: New way with ``handle.value = Immediate(value)``
     :class: new
 
-    cocotb.top.iface.valid.set(Immediate(0))
+    cocotb.top.iface.valid.value = Immediate(0)
 
 Rationale
 =========
@@ -1267,7 +1267,7 @@ This is unexpected and generally not useful.
     :class: new
 
     assert cocotb.top.data.value == 100
-    cocotb.top.data.set(Immediate(0))
+    cocotb.top.data.value = Immediate(0)
     # new value can be read back immediately
     assert cocotb.top.data.value == 0
 
