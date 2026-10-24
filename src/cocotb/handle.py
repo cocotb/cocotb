@@ -1041,7 +1041,8 @@ class ArrayObject(
     | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``Array([arr[7].value, arr[6].value, arr[5].value, arr[4].value], range=Range(7, 'downto', 4))`` |
     +--------------+---------------------+--------------------------------------------------------------------------------------------------+
 
-    Setting :attr:`~ValueObjectBase.value` takes an :class:`.Array`-like value.
+    Setting :attr:`~ValueObjectBase.value` takes a :class:`~collections.abc.Sequence`-like value:
+    an :class:`.Array`, :class:`list`, or :class:`tuple`.
     The simulation object is set, element-by-element, left-to-right, using the corresponding element of the value.
     The indexes of the value and the simulation object are not taken into account, only position.
     A :exc:`TypeError` is raised if the value is of a type that can't be assigned to the simulation object.
@@ -1788,8 +1789,8 @@ class FixedStringObject(StringObject):
     This type is used when a VHDL `string` simulation object is seen.
     This is because in VHDL string are fixed-length unlike Verilog string
 
-    Getting and setting :attr:`~ValueObjectBase.value` works as for :class:`StringObject`,
-    except that a value longer than the object raises :exc:`ValueError`.
+    Getting and setting :attr:`~ValueObjectBase.value` works the same as :class:`StringObject`,
+    except that a value longer than the simulation object raises :exc:`ValueError`.
     """
 
     def _set_value(
