@@ -1987,3 +1987,12 @@ def _make_sim_object(
     obj = cls(handle, path)
     _handle2obj[handle] = obj
     return obj
+
+
+class _FakeSimHandle(SimHandleBase):
+    def __init__(self) -> None: ...
+    def __getattr__(self, name: str) -> Any:
+        raise TypeError("_FakeSimHandle cannot be used")
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise TypeError("_FakeSimHandle cannot be used")
