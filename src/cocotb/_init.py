@@ -204,6 +204,7 @@ def _setup_random_seed() -> None:
 
 
 def _setup_root_handle() -> None:
+    # Parse out the root module name from the environment variable
     root_name: str | None = os.getenv("COCOTB_TOPLEVEL")
     if root_name is not None:
         root_name = root_name.strip()
@@ -211,30 +212,29 @@ def _setup_root_handle() -> None:
             root_name = None
         elif "." in root_name:
             # Skip any library component of the toplevel
-            root_name = root_name.split(".", 1)[1]
+            root_name = root_name.rsplit(".", 1)[1]
 
     from cocotb import simulator  # noqa: PLC0415
 
+    # Build cocotb.tops
     handles = simulator.root_iterate()
     if handles:
         for handle in handles:
-            cocotb.tops[handle.get_name_string().casefold()] = (
-                cocotb.handle._make_sim_object(handle)
+            cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
+                handle
             )
 
+    # Set cocotb.top if the root_name matches one of the handles
     if root_name is not None:
         target_name = root_name.casefold()
-        if target_name in cocotb.tops:
-            cocotb.top = cocotb.tops[target_name]
-            return
+        for name in cocotb.tops:
+            if name.casefold() == target_name:
+                cocotb.top = cocotb.tops[name]
+                return
 
+    # Otherwise, get the root handle directly from the simulator
     root_handle = simulator.get_root_handle(root_name)
     if not root_handle:
         raise RuntimeError(f"Can not find root handle {root_name!r}")
-
     cocotb.top = cocotb.handle._make_sim_object(root_handle)
-
-    if root_name is not None:
-        cocotb.tops[target_name] = cocotb.top
-    else:
-        cocotb.tops[cocotb.top._name.casefold()] = cocotb.top
+    cocotb.tops[cocotb.top._name] = cocotb.top
