@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import ctypes
 import os
-from logging import Logger
+from logging import Logger, getLogger
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -28,7 +28,7 @@ from cocotb._test_manager import (  # noqa: E402
     start,
     start_soon,
 )
-from cocotb.handle import SimHandleBase  # noqa: E402
+from cocotb.handle import SimHandleBase, _FakeSimHandle  # noqa: E402
 
 from ._version import __version__ as _version  # noqa: E402
 
@@ -75,7 +75,7 @@ __version__: str = _version
 """The version of cocotb."""
 
 
-log: Logger
+log: Logger = getLogger("test")
 """An easily accessible :class:`~logging.Logger` for the user.
 
 This logger defaults to the :data:`logging.INFO` log level.
@@ -85,16 +85,16 @@ This logger defaults to the :data:`logging.INFO` log level.
     It is now a Logger under the ``"test"`` namespace.
 """
 
-argv: list[str]
+argv: list[str] = []
 """The argument list as seen by the simulator."""
 
-plusargs: dict[str, bool | str]
+plusargs: dict[str, bool | str] = {}
 """A dictionary of "plusargs" handed to the simulation.
 
 See :envvar:`COCOTB_PLUSARGS` for details.
 """
 
-packages: SimpleNamespace
+packages: SimpleNamespace = SimpleNamespace()
 """A :class:`python:types.SimpleNamespace` of package handles.
 
 This will be populated with handles at test time if packages can be discovered
@@ -103,13 +103,13 @@ via the GPI.
 .. versionadded:: 2.0
 """
 
-SIM_NAME: str
+SIM_NAME: str = ""
 """The product information of the running simulator."""
 
-SIM_VERSION: str
+SIM_VERSION: str = ""
 """The version of the running simulator."""
 
-RANDOM_SEED: int
+RANDOM_SEED: int = 0
 """The last value used to seed the global PRNG.
 
 During test collection, this is set to the value provided by :envvar:`COCOTB_RANDOM_SEED`,
@@ -119,7 +119,7 @@ During test run, this is set to a new value computed by combining the value used
 with the full test name (e.g. ``my_test_module.my_test``).
 """
 
-top: SimHandleBase
+top: SimHandleBase = _FakeSimHandle()
 r"""
 A handle to the :envvar:`COCOTB_TOPLEVEL` entity/module.
 
@@ -128,7 +128,7 @@ It is particularly useful for extracting information about the :term:`DUT` in mo
 and in parameters to :class:`.TestFactory`\ s.
 """
 
-tops: dict = {}
+tops: dict[str, SimHandleBase] = {}
 """A dictionary of top-level module name to :class:`module handle <cocotb.handles.HierarchyObject>` including :data:`cocotb.top`.
 
 .. versionadded: 2.1
