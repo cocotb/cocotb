@@ -2,8 +2,7 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <libgen.h>  // basename
-#include <stdio.h>   // stderr, fprintf
+#include <stdio.h>  // stderr, fprintf
 
 #include <memory>  // std::unique_ptr
 #include <string>  // std::string
@@ -81,6 +80,16 @@ void wrap_up() {
 #endif
 }
 
+static const char *platform_basename(const char *path) {
+    const char *base = strrchr(path, '/');
+
+#ifdef _WIN32
+    const char *backslash = strrchr(path, '\\');
+    if (backslash && (!base || backslash > base)) base = backslash;
+#endif
+    return base ? base + 1 : path;
+}
+
 int main(int argc, char **argv) {
 #if VM_TRACE_FST
     const char *traceFile = "dump.fst";
@@ -138,7 +147,7 @@ int main(int argc, char **argv) {
                 "(slow)\n"
                 "  --trace-file             Specify the trace file name (%s by "
                 "default)\n",
-                basename(argv[0]), traceFile);
+                platform_basename(argv[0]), traceFile);
             return 0;
         }
     }
