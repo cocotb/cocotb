@@ -177,6 +177,54 @@ The following example shows these in action:
 See :ref:`coroutines` for more examples of what can be done with coroutines.
 
 
+.. _writing_tbs_exact_time_values:
+
+Dealing with :class:`!float`\ s as time values
+==============================================
+
+Simulated time advances in whole :term:`time steps <time step>`,
+and the length of one time step is the simulator's time precision (see :data:`cocotb.simtime.time_precision`).
+When a time such as ``0.3`` ns is converted to time steps,
+the result must be a whole number or cocotb raises a :exc:`ValueError`
+(this is the default behavior of the ``round_mode`` argument of :class:`.Timer`).
+
+The examples below assume a time precision of 1 ps.
+Many :class:`float` literals convert without trouble;
+``Timer(0.1, unit="ns")`` is exactly 100 time steps.
+Problems appear when times are *computed* with :class:`float` arithmetic,
+because the result can be a tiny amount away from the value you intended:
+
+.. code-block:: python
+
+    # 0.1 + 0.2 is 0.30000000000000004 as a float,
+    # which is not a whole number of time steps
+    await Timer(0.1 + 0.2, unit="ns")  # raises ValueError
+
+To avoid this, compute times with a type that represents the values exactly,
+such as :class:`decimal.Decimal` or :class:`fractions.Fraction`.
+:class:`.Timer` and the ``period`` argument of :class:`~cocotb.clock.Clock` accept both.
+
+.. code-block:: python
+
+    from decimal import Decimal
+    from fractions import Fraction
+
+    await Timer(Decimal("0.1") + Decimal("0.2"), unit="ns")  # exactly 300 time steps
+    await Timer(Fraction(1, 10) + Fraction(2, 10), unit="ns")  # also exactly 300
+
+.. warning::
+
+    Create :class:`~decimal.Decimal` values from strings, not from floats.
+    ``Decimal(0.1)`` keeps the inexactness of the float ``0.1``
+    and raises the same :exc:`ValueError`, while ``Decimal("0.1")`` is exact.
+
+A time can still fail to convert if it is finer than the simulator's time precision,
+for example ``Decimal("0.0004")`` ns with a precision of 1 ps.
+In that case, either use a finer time precision in your simulation
+(the precision comes from the ``timescale`` of the HDL, or from :make:var:`COCOTB_HDL_TIMEPRECISION` if the HDL does not specify one),
+or pass ``round_mode`` to choose how the value is rounded to a whole number of time steps.
+
+
 .. _writing_tbs_assigning_values_forcing_freezing:
 
 Forcing and freezing signals
