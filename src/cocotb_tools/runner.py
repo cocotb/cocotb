@@ -233,45 +233,42 @@ class Runner(ABC):
             SystemExit: Simulator executable does not exist in :envvar:`PATH`.
         """
 
-    def _check_hdl_toplevel_lang(self, hdl_toplevel_lang: str | None) -> str:
-        """Return *hdl_toplevel_lang* if supported by simulator, raise exception otherwise.
-
-        Returns:
-            *hdl_toplevel_lang* if supported by the simulator.
+    def _check_hdl_toplevel_lang(
+        self, hdl_toplevel_lang: str | None
+    ) -> tuple[str, set[str]]:
+        """Return *hdl_toplevel_lang* and remaining languages required by the sources if supported by the simulator.
 
         Raises:
             ValueError: *hdl_toplevel_lang* is not supported by the simulator.
         """
+        source_langs: set[str] = set()
+        for source in chain(self._sources, self._vhdl_sources, self._verilog_sources):
+            if source.tag is VHDL:
+                source_langs.add("vhdl")
+            elif source.tag is Verilog:
+                source_langs.add("verilog")
+
         if hdl_toplevel_lang is None:
-            if self._vhdl_sources and not self._verilog_sources and not self._sources:
-                lang = "vhdl"
-            elif self._verilog_sources and not self._vhdl_sources and not self._sources:
-                lang = "verilog"
-            elif self._sources and not self._vhdl_sources and not self._verilog_sources:
-                top_source = self._sources[-1]
-                if top_source.tag is VHDL:
-                    lang = "vhdl"
-                elif top_source.tag is Verilog:
-                    lang = "verilog"
-                else:
-                    raise ValueError(
-                        "First argument to *sources* must be a VHDL or Verilog file. "
-                        f"Got a {top_source.tag.__qualname__} file: {top_source.value}"
-                    )
+            if len(source_langs) == 1:
+                (hdl_toplevel_lang,) = source_langs
             else:
                 raise ValueError(
-                    f"{type(self).__qualname__}: Must specify a hdl_toplevel_lang in a mixed-language design"
+                    "Must specify 'hdl_toplevel_lang' in mixed-language simulation"
                 )
-        else:
-            lang = hdl_toplevel_lang
-
-        if lang in self.supported_gpi_interfaces:
-            return lang
-        else:
+        elif hdl_toplevel_lang not in type(self).supported_gpi_interfaces:
             raise ValueError(
-                f"{type(self).__qualname__}: hdl_toplevel_lang {lang!r} is not "
-                f"in supported list: {', '.join(self.supported_gpi_interfaces)}"
+                f"{type(self).__qualname__} does not support {hdl_toplevel_lang!r}."
             )
+
+        for lang in source_langs:
+            if lang not in type(self).supported_gpi_interfaces:
+                raise ValueError(
+                    f"{type(self).__qualname__} does not support {lang!r}."
+                )
+
+        source_langs.remove(hdl_toplevel_lang)
+
+        return hdl_toplevel_lang, source_langs
 
     def _set_env_common(self) -> None:
         self.env.update(os.environ)
@@ -488,7 +485,7 @@ class Runner(ABC):
         hdl_toplevel: str,
         hdl_toplevel_library: str = "top",
         hdl_toplevel_lang: str | None = None,
-        gpi_interfaces: list[str] | None = None,
+        gpi_interfaces: Sequence[str] | None = None,
         testcase: str | Sequence[str] | None = None,
         seed: str | int | None = None,
         elab_args: Sequence[str] = [],
@@ -501,7 +498,7 @@ class Runner(ABC):
         build_dir: PathLike | None = None,
         test_dir: PathLike | None = None,
         results_xml: str | None = None,
-        pre_cmd: list[str] | None = None,
+        pre_cmd: Sequence[str] | None = None,
         verbose: bool = False,
         timescale: tuple[str, str] | None = None,
         log_file: PathLike | None = None,
@@ -549,6 +546,11 @@ class Runner(ABC):
         """
         __tracebackhide__ = True  # Hide the traceback when using pytest
 
+        # note: to avoid mutating argument defaults, we ensure that no value
+        # is written without a copy. This is much more concise and leads to
+        # a better docstring than using `None` as a default in the parameters
+        # list.
+
         if build_dir is not None:
             self.build_dir = get_abs_path(build_dir)
         elif self.build_dir is None:
@@ -570,19 +572,35 @@ class Runner(ABC):
         else:
             self.test_module = ",".join(test_module)
 
-        # note: to avoid mutating argument defaults, we ensure that no value
-        # is written without a copy. This is much more concise and leads to
-        # a better docstring than using `None` as a default in the parameters
-        # list.
         self.sim_hdl_toplevel = hdl_toplevel
         self.hdl_toplevel_library: str = hdl_toplevel_library
-        self.hdl_toplevel_lang = self._check_hdl_toplevel_lang(hdl_toplevel_lang)
-        if gpi_interfaces:
+        self.hdl_toplevel_lang, other_langs = self._check_hdl_toplevel_lang(
+            hdl_toplevel_lang
+        )
+        if gpi_interfaces is not None:
+            if isinstance(gpi_interfaces, str):
+                raise TypeError(
+                    f"Expected a Sequence for argument *gpi_interfaces*, got {type(gpi_interfaces).__qualname__}"
+                )
+            for intf in gpi_interfaces:
+                if not any(
+                    intf in supported_intfs
+                    for supported_intfs in self.supported_gpi_interfaces.values()
+                ):
+                    raise ValueError(
+                        f"gpi_interface {intf!r} is not supported by {type(self).__qualname__}"
+                    )
             self.gpi_interfaces = gpi_interfaces
         else:
-            self.gpi_interfaces = []
-            for gpi_if in self.supported_gpi_interfaces.values():
-                self.gpi_interfaces.append(gpi_if[0])
+            # Force language of toplevel to be first in GPI Impl load order.
+            self.gpi_interfaces = [
+                self.supported_gpi_interfaces[self.hdl_toplevel_lang][0]
+            ]
+            # Add remaining languages GPI Impls in any order.
+            for lang in other_langs:
+                gpi_if = self.supported_gpi_interfaces[lang][0]
+                if gpi_if not in self.gpi_interfaces:
+                    self.gpi_interfaces.append(gpi_if)
 
         self.pre_cmd = pre_cmd
 
@@ -1199,6 +1217,11 @@ class Questa(Runner):
             "questa", *self.gpi_interfaces
         )
 
+        # Must add library for mixed language to work correctly
+        self.env["COCOTB_TOPLEVEL"] = (
+            f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
+        )
+
         return cmds
 
 
@@ -1548,7 +1571,10 @@ class Nvc(Runner):
        * Verilog sources must end in ``.v`` or ``.sv``, even when tagged with :class:`Verilog`.
     """
 
-    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"vhdl": ["vhpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "vhdl": ["vhpi"],
+        "verilog": ["vhpi"],
+    }
 
     def __init__(self) -> None:
         super().__init__()
