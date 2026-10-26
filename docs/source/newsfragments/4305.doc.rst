@@ -1,0 +1,1 @@
+Documented when :meth:`Runner.test() <cocotb_tools.runner.Runner.test>` reports failing tests, and how to check the results file when it is called without pytest.

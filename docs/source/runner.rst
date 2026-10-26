@@ -84,6 +84,38 @@ For example, add the following code at the end:
     if __name__ == "__main__":
         test_simple_dff_runner()
 
+.. _runner-checking-results:
+
+Checking test results
+=====================
+
+Whether :meth:`.Runner.test` reports failing cocotb tests
+depends on how it is called.
+
+When called from a pytest test, it also checks the results file.
+The pytest test fails if any cocotb test failed,
+if no results file was written,
+or if the simulator exited with a non-zero status.
+
+When used directly, it does not read the results file.
+It raises an exception if the simulator exits with a non-zero status,
+and otherwise returns the path to the results file,
+even if cocotb tests failed or the file was not written.
+To make a script fail when cocotb tests fail,
+check the returned file, for example with :func:`~cocotb_tools.runner.get_results`,
+which also raises an exception if the file does not exist:
+
+.. code-block:: python
+
+    import sys
+
+    from cocotb_tools.runner import get_results
+
+    results_xml = runner.test(hdl_toplevel="dff", test_module="test_dff")
+    num_tests, num_failed = get_results(results_xml)
+    if num_failed:
+        sys.exit(f"{num_failed} of {num_tests} tests failed")
+
 Generate waveforms
 ==================
 
