@@ -179,8 +179,8 @@ See :ref:`coroutines` for more examples of what can be done with coroutines.
 
 .. _writing_tbs_exact_time_values:
 
-Using exact time values
-=======================
+Dealing with :class:`!float`s as time values
+============================================
 
 Simulated time advances in whole :term:`time steps <time step>`,
 and the length of one time step is the simulator's time precision (see :data:`cocotb.simtime.time_precision`).
