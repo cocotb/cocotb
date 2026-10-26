@@ -89,7 +89,7 @@ For example, add the following code at the end:
 Checking test results
 =====================
 
-Whether :meth:`Runner.test <cocotb_tools.runner.Runner.test>` reports failing cocotb tests
+Whether :meth:`.Runner.test>` reports failing cocotb tests
 depends on how it is called.
 
 When called from a pytest test, it also checks the results file.
