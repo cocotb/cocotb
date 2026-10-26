@@ -1217,7 +1217,7 @@ class Questa(Runner):
             "questa", *self.gpi_interfaces
         )
 
-        # Must add library or mixed language doesn't work correctly
+        # Must add library for mixed language to work correctly
         self.env["COCOTB_TOPLEVEL"] = (
             f"{self.hdl_toplevel_library}.{self.sim_hdl_toplevel}"
         )
