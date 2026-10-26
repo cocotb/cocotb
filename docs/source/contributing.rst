@@ -233,6 +233,7 @@ Deprecations serve the following purposes:
 Deprecations can be incorporated at any time.
 They are implemented in Python by issuing a :class:`DeprecationWarning` or using the ``@deprecated`` decorator.
 In C++ code, deprecations are implemented by `issuing a LOG_WARN <https://docs.cocotb.org/en/stable/generated/file/gpi__logging_8h.html?highlight=LOG_WARN#c.LOG_WARN>`__ with ``DEPRECATED`` in the message.
+Tests for deprecated behavior belong in ``tests/test_cases/test_cocotb/test_deprecated.py``, where they run against real simulation objects.
 
 Removals only occur on major version bumps.
 One can create removal pull requests at any time, on the condition they will not be accepted until

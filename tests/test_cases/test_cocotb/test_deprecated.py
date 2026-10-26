@@ -89,6 +89,15 @@ async def test_string_handle_casts_deprecated(dut):
 
 
 @cocotb.test
+async def test_handle_get_set_deprecated(dut):
+    with pytest.warns(DeprecationWarning):
+        dut.stream_in_data.set(0b1011_0011)
+    await Timer(1, "ns")
+    with pytest.warns(DeprecationWarning):
+        assert dut.stream_in_data.get() == 0b1011_0011
+
+
+@cocotb.test
 async def test_join_trigger_deprecated(_) -> None:
     async def returns_1():
         return 1

@@ -330,12 +330,12 @@ class Clock:
                 timer_high = Timer(self._period_high_steps)
                 timer_low = Timer(self._period_steps - self._period_high_steps)
                 if start_high:
-                    self._signal.set(self._set_action(1))
+                    self._signal.value = self._set_action(1)
                     await timer_high
                 while True:
-                    self._signal.set(self._set_action(0))
+                    self._signal.value = self._set_action(0)
                     await timer_low
-                    self._signal.set(self._set_action(1))
+                    self._signal.value = self._set_action(1)
                     await timer_high
 
         self._task = cocotb.start_soon(drive())
