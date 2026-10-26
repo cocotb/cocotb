@@ -1,1 +1,0 @@
-Added glossary entries for the :term:`fire`, :term:`pending`, :term:`resume`, and :term:`scheduled` terms used to describe :term:`triggers <trigger>` and :term:`tasks <task>`.
