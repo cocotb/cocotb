@@ -35,6 +35,29 @@ Glossary
       or turn them into a :term:`task`, which can be run concurrently.
       See also the :term:`Python glossary <python:coroutine>`.
 
+   fire
+      A :term:`trigger` *fires* when the event it represents occurs in the simulation,
+      for example when a signal changes value or the requested amount of simulated time has passed.
+      When a trigger fires, the :term:`tasks <task>` waiting on it stop being :term:`pending` and become :term:`scheduled`.
+      They do not run immediately.
+
+   pending
+      A :term:`task` is *pending* while it waits for a :term:`trigger` it :keyword:`awaited <await>` to :term:`fire`.
+      A pending task does not run until that trigger fires.
+
+   resume
+      To *resume* a :term:`task` is to continue running it from the :keyword:`await` expression where it was paused
+      (or from the start, if it has not run yet).
+      A :term:`scheduled` task resumes when the event loop runs it.
+      It then runs until it awaits another :term:`trigger` (becoming :term:`pending` again) or finishes.
+
+   scheduled
+      A :term:`task` is *scheduled* while it is queued to run soon, but is not running yet.
+      A task becomes scheduled when it is started with :func:`cocotb.start_soon`,
+      when the :term:`trigger` it was waiting on :term:`fires <fire>`,
+      or when it is cancelled with :meth:`~cocotb.task.Task.cancel`.
+      Scheduled tasks are :term:`resumed <resume>` one at a time.
+
    task
       A :term:`coroutine` that can be run concurrently to other tasks.
 
