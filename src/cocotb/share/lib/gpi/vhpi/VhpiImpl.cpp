@@ -132,10 +132,13 @@ int VhpiImpl::get_simulator_args(int *argc, char const *const **argv) {
                 for (size_t i = 0; (argv_hdl = vhpi_scan(argv_iter)); i++) {
                     if (i >= tool_argc) {
                         LOG_ERROR("More arguments returned than expected");
+                        vhpi_release_handle(argv_hdl);
+                        vhpi_release_handle(argv_iter);
                         break;
                     }
                     m_argv[i] = const_cast<char *>(static_cast<const char *>(
                         vhpi_get_str(vhpiStrValP, argv_hdl)));
+                    vhpi_release_handle(argv_hdl);
                 }
             }
 
@@ -150,17 +153,26 @@ int VhpiImpl::get_simulator_args(int *argc, char const *const **argv) {
 // Determine whether a VHPI object type is a constant or not
 bool is_const(vhpiHandleT hdl) {
     vhpiHandleT tmp = hdl;
+    bool result = false;
 
     /* Need to walk the prefix's back to the original handle to get a type
      * that is not vhpiSelectedNameK or vhpiIndexedNameK
      */
     do {
         vhpiIntT vhpitype = vhpi_get(vhpiKindP, tmp);
-        if (vhpiConstDeclK == vhpitype || vhpiGenericDeclK == vhpitype)
-            return true;
-    } while ((tmp = vhpi_handle(vhpiPrefix, tmp)) != NULL);
+        if (vhpiConstDeclK == vhpitype || vhpiGenericDeclK == vhpitype) {
+            result = true;
+            break;
+        }
+        vhpiHandleT prefix = vhpi_handle(vhpiPrefix, tmp);
+        // hdl is borrowed from the caller; every prefix handle is ours.
+        if (tmp != hdl) vhpi_release_handle(tmp);
+        tmp = prefix;
+    } while (tmp != NULL);
 
-    return false;
+    if (tmp != NULL && tmp != hdl) vhpi_release_handle(tmp);
+
+    return result;
 }
 
 bool is_enum_logic(vhpiHandleT hdl) {
@@ -184,10 +196,13 @@ bool is_enum_logic(vhpiHandleT hdl) {
 
                 while ((enum_hdl = vhpi_scan(it)) != NULL) {
                     const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
-                    if (1 < cnt || (0 != strncmp(etype, enums_1[cnt],
+                    bool mismatch =
+                        1 < cnt || (0 != strncmp(etype, enums_1[cnt],
                                                  strlen(enums_1[cnt])) &&
                                     0 != strncmp(etype, enums_2[cnt],
-                                                 strlen(enums_2[cnt])))) {
+                                                 strlen(enums_2[cnt])));
+                    vhpi_release_handle(enum_hdl);
+                    if (mismatch) {
                         vhpi_release_handle(it);
                         return false;
                     }
@@ -209,10 +224,13 @@ bool is_enum_logic(vhpiHandleT hdl) {
 
                 while ((enum_hdl = vhpi_scan(it)) != NULL) {
                     const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
-                    if (8 < cnt || (0 != strncmp(etype, enums_1[cnt],
+                    bool mismatch =
+                        8 < cnt || (0 != strncmp(etype, enums_1[cnt],
                                                  strlen(enums_1[cnt])) &&
                                     0 != strncmp(etype, enums_2[cnt],
-                                                 strlen(enums_2[cnt])))) {
+                                                 strlen(enums_2[cnt])));
+                    vhpi_release_handle(enum_hdl);
+                    if (mismatch) {
                         vhpi_release_handle(it);
                         return false;
                     }
@@ -254,7 +272,8 @@ bool is_enum_boolean(vhpiHandleT hdl) {
 
                 while ((enum_hdl = vhpi_scan(it)) != NULL) {
                     const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
-                    if (((0 == cnt &&
+                    bool mismatch =
+                        ((0 == cnt &&
                           0 != strncmp(etype, "FALSE", strlen("FALSE"))) &&
                          (0 == cnt &&
                           0 != strncmp(etype, "false", strlen("false")))) ||
@@ -262,7 +281,9 @@ bool is_enum_boolean(vhpiHandleT hdl) {
                           0 != strncmp(etype, "TRUE", strlen("TRUE"))) &&
                          (1 == cnt &&
                           0 != strncmp(etype, "true", strlen("true")))) ||
-                        2 <= cnt) {
+                        2 <= cnt;
+                    vhpi_release_handle(enum_hdl);
+                    if (mismatch) {
                         vhpi_release_handle(it);
                         return false;
                     }
@@ -370,6 +391,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                   fq_name.c_str());
                         gpi_type = GPI_ARRAY;
                     }
+                    vhpi_release_handle(elem_base_type_hdl);
                 } else {
                     LOG_ERROR(
                         "VHPI: Unable to determine the Array Element Base Type "
@@ -440,7 +462,9 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 
                     if (NULL != prim) {
                         hdl_name = vhpi_get_str(vhpiCaseNameP, prim);
+                        vhpi_release_handle(prim);
                     }
+                    vhpi_release_handle(arch);
                 }
             }
 
@@ -584,6 +608,7 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
                     vhpi_release_handle(iter);
                     break;
                 }
+                vhpi_release_handle(new_hdl);
             }
         }
     } else if (new_hdl == NULL) {
@@ -593,15 +618,18 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
         if (iter != NULL) {
             vhpiHandleT rgn;
             for (rgn = vhpi_scan(iter); rgn != NULL; rgn = vhpi_scan(iter)) {
+                bool found = false;
                 if (vhpi_get(vhpiKindP, rgn) == vhpiForGenerateK) {
                     std::string rgn_name = vhpi_get_str(vhpiCaseNameP, rgn);
-                    if (compare_generate_labels(rgn_name, name)) {
-                        /* Pseudo-region: borrow the parent's handle */
-                        new_hdl = vhpi_hdl;
-                        owns_handle = false;
-                        vhpi_release_handle(iter);
-                        break;
-                    }
+                    found = compare_generate_labels(rgn_name, name);
+                }
+                vhpi_release_handle(rgn);
+                if (found) {
+                    /* Pseudo-region: borrow the parent's handle */
+                    new_hdl = vhpi_hdl;
+                    owns_handle = false;
+                    vhpi_release_handle(iter);
+                    break;
                 }
             }
         }
@@ -697,6 +725,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                       parent->get_fullname_str());
             return NULL;
         }
+        DEFER(vhpi_release_handle(base_hdl));
 
         vhpiIntT num_dim = vhpi_get(vhpiNumDimensionsP, base_hdl);
         int idx = 0;
@@ -746,6 +775,11 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 #endif
 
                 std::vector<vhpiHandleT> constraints;
+                auto release_constraints = [&constraints]() {
+                    for (auto c : constraints) vhpi_release_handle(c);
+                    constraints.clear();
+                };
+                DEFER(release_constraints());
 
                 /* All necessary indices are available, need to iterate over
                  * dimension constraints to determine the index into the
@@ -770,6 +804,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                         if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
 #endif
                             /* Bail and try the sub-type handle */
+                            vhpi_release_handle(constraint);
                             vhpi_release_handle(it);
                             break;
                         }
@@ -781,9 +816,8 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                  * sub-type handle */
                 if (constraints.size() != num_dim) {
                     vhpiHandleT sub_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
-                    ;
 
-                    constraints.clear();
+                    release_constraints();
 
                     if (sub_hdl != NULL) {
                         it = vhpi_iterator(vhpiConstraints, sub_hdl);
@@ -795,12 +829,14 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                                  * type */
                                 if (vhpi_get(vhpiIsUnconstrainedP,
                                              constraint)) {
+                                    vhpi_release_handle(constraint);
                                     vhpi_release_handle(it);
                                     break;
                                 }
                                 constraints.push_back(constraint);
                             }
                         }
+                        vhpi_release_handle(sub_hdl);
                     }
                 }
 
@@ -827,6 +863,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                         scale = scale * len;
 
                         indices.pop_back();
+                        vhpi_release_handle(constraint);
                         constraints.pop_back();
                     }
                 } else {
@@ -866,6 +903,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                             vhpi_release_handle(iter);
                             break;
                         }
+                        vhpi_release_handle(new_hdl);
                         curr_index++;
                     }
                 }
@@ -947,9 +985,11 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
             "Trying handle lookup by name");
         check_vhpi_error();
     }
+    if (arch) vhpi_release_handle(arch);
 
     if (entity) {
         root_name = vhpi_get_str(vhpiCaseNameP, entity);
+        vhpi_release_handle(entity);
 
         // If this matches the name then it is what we want,
         // but we use the root handle two levels up as the DUT
@@ -963,6 +1003,9 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
             return create_gpi_obj_from_handle(root, root_name, root_name);
         }
     }
+
+    // The rootInst handle is not going to be wrapped from here on.
+    vhpi_release_handle(root);
 
     // Second, we search for the root handle by name
     if (!name) {
@@ -994,6 +1037,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char *name) {
                 "VHPI: found root handle of type %s (%d) with name '%s' "
                 "doesn't match requested name '%s'",
                 dut_kind_str.c_str(), dut_kind, root_name.c_str(), name);
+            vhpi_release_handle(dut);
         } else {
             return create_gpi_obj_from_handle(dut, root_name, root_name);
         }
