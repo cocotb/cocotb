@@ -89,6 +89,22 @@ class VpiCbHdl : public GpiCbHdlBase {
     s_vpi_time vpi_time;
     bool m_removed = false;
 
+    /** Release the handle of a one-shot callback that has fired.
+     *
+     * IEEE 1800-2023 37.2.2 lists no automatic release for a fired callback,
+     * so on a conforming simulator the handle stays valid (and allocated)
+     * until it is released. Icarus deletes the callback object as soon as it
+     * fires (vvp/vpi_callback.cc sync_cb::run_run), so releasing there is a
+     * use-after-free, and Questa's behavior changed between releases (see
+     * test_trigger_memory_leak). Only simulators known to keep the handle
+     * alive release it here.
+     */
+    void release_fired_handle() {
+#if defined(IUS) || defined(VCS) || defined(ALDEC)
+        vpi_release_handle(get_handle<vpiHandle>());
+#endif
+    }
+
   public:
     s_cb_data cb_data;
 };
@@ -140,6 +156,7 @@ class VpiStartupCbHdl : public VpiCbHdl {
         } else {
             LOG_TRACE("[ VPI (startup) ] callback is removed");
         }
+        release_fired_handle();
         delete this;
         return res;
     }
@@ -164,6 +181,7 @@ class VpiShutdownCbHdl : public VpiCbHdl {
         } else {
             LOG_TRACE("[ VPI (shutdown) ] callback is removed");
         }
+        release_fired_handle();
         delete this;
         return res;
     }

@@ -142,6 +142,7 @@ int VpiCbHdl::remove() {
         // removing callbacks that have already fired.
 #ifndef VERILATOR
         // It's already fired, we shouldn't try to vpi_remove_cb() it now.
+        release_fired_handle();
         delete this;
         return 0;
 #endif
@@ -190,14 +191,10 @@ int VpiCbHdl::run() {
     else {
         delete this;
     }
-#elif defined(IUS) || defined(VCS) || defined(ALDEC)
-    // Some simulators need you to release the handle after firing, despite the
-    // VPI spec not stating that's necessary.
-    vpi_release_handle(get_handle<vpiHandle>());
-    delete this;
 #else
-    // For other simulators: VPI spec says one-shot callbacks auto-cleanup
-    // their handle after firing. We just need to delete the C++ object.
+    // One-shot callback: release the handle where the simulator keeps it
+    // alive (see release_fired_handle()), then delete the C++ object.
+    release_fired_handle();
     delete this;
 #endif
 
@@ -219,7 +216,12 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *signal,
 int VpiValueCbHdl::run() {
     // LCOV_EXCL_START
     if (m_removed) {
-        // Only call up if not removed.
+        // An earlier vpi_remove_cb() failed. Retry now that the callback has
+        // fired again; on success vpi_remove_cb() releases the handle and the
+        // wrapper can go. Otherwise keep squashing until it succeeds.
+        if (vpi_remove_cb(get_handle<vpiHandle>())) {
+            delete this;
+        }
         return 0;
     }
     // LCOV_EXCL_STOP

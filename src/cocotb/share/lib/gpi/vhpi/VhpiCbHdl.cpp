@@ -129,9 +129,18 @@ int VhpiCbHdl::run() {
     if (err) {
         LOG_DEBUG("VHPI: Unable to remove callback!");
         check_vhpi_error();
-        // If we fail to remove the callback, mark it as removed so if it fires
-        // we can squash it.
-        m_removed = true;
+        if (cb_data.reason == vhpiCbAfterDelay) {
+            // One-time callback: it is now mature and will never fire again,
+            // so the wrapper would leak. Release the handle instead.
+            if (vhpi_release_handle(get_handle<vhpiHandleT>())) {
+                check_vhpi_error();
+            }
+            delete this;
+        } else {
+            // Repetitive callback: squash it when it fires again and retry
+            // the removal then.
+            m_removed = true;
+        }
     }
     // LCOV_EXCL_STOP
     else {
@@ -151,7 +160,12 @@ VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig,
 int VhpiValueCbHdl::run() {
     // LCOV_EXCL_START
     if (m_removed) {
-        // Only call up if not removed.
+        // An earlier vhpi_remove_cb() failed. Retry now that the callback has
+        // fired again; on success vhpi_remove_cb() releases the handle and the
+        // wrapper can go. Otherwise keep squashing until it succeeds.
+        if (!vhpi_remove_cb(get_handle<vhpiHandleT>())) {
+            delete this;
+        }
         return 0;
     }
     // LCOV_EXCL_STOP
