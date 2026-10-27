@@ -135,6 +135,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                                               GpiObjHdl **hdl, void **raw_hdl) {
     vhpiHandleT obj;
     GpiObjHdl *new_obj;
+    bool owns_handle = true;
 
     if (!selected) return GpiIterator::END;
 
@@ -249,7 +250,9 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
         if (found != std::string::npos && found != 0) {
             name = idx_str.substr(0, found);
+            /* Pseudo-region: borrow the parent's handle */
             obj = m_parent->get_handle<vhpiHandleT>();
+            owns_handle = false;
         } else {
             LOG_WARN("VHPI: Unhandled Generate Loop Format - %s", name.c_str());
             name = c_name;
@@ -291,7 +294,8 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         fq_name += "." + name;
     }
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl *>(m_impl);
-    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    new_obj =
+        vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name, owns_handle);
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;

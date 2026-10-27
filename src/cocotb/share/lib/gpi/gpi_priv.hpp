@@ -72,8 +72,12 @@ class GPI_EXPORT GpiHdl {
 class GPI_EXPORT GpiObjHdl : public GpiHdl {
   public:
     GpiObjHdl(GpiImplInterface *impl, void *hdl = nullptr,
-              gpi_objtype objtype = GPI_UNKNOWN, bool is_const = false)
-        : GpiHdl(impl, hdl), m_type(objtype), m_const(is_const) {}
+              gpi_objtype objtype = GPI_UNKNOWN, bool is_const = false,
+              bool owns_handle = true)
+        : GpiHdl(impl, hdl),
+          m_type(objtype),
+          m_const(is_const),
+          m_owns_handle(owns_handle) {}
 
     virtual ~GpiObjHdl() = default;
 
@@ -110,6 +114,15 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
         m_is_resolved_reference = resolved;
     }
 
+    /** Whether the destructor releases the underlying simulator handle.
+     *
+     * Pseudo-regions and pseudo-handles borrow the handle of another object
+     * and must never release it. The caller that hands a borrowed handle to a
+     * constructor passes owns_handle=false.
+     */
+    bool owns_handle() const { return m_owns_handle; }
+    void set_owns_handle(bool owns) { m_owns_handle = owns; }
+
   protected:
     int m_num_elems = 0;
     bool m_is_resolved_reference = false;
@@ -125,6 +138,7 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
 
     gpi_objtype m_type;
     bool m_const;
+    bool m_owns_handle;
 };
 
 /* GPI Signal object handle, maps to a simulation object */

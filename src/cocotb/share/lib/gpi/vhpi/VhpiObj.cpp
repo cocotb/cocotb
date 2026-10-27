@@ -8,19 +8,21 @@
 #include "_vendor/vhpi/vhpi_user.h"
 
 VhpiArrayObjHdl::~VhpiArrayObjHdl() {
+    /* Pseudo-handles into multi-dimensional arrays borrow the handle of the
+     * real array object and must not release it. */
+    if (!m_owns_handle) return;
     LOG_DEBUG("VHPI: Releasing VhpiArrayObjHdl handle for %s at %p",
               get_fullname_str(), (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
 VhpiObjHdl::~VhpiObjHdl() {
-    /* Don't release handles for pseudo-regions, as they borrow the handle of
-     * the containing region */
-    if (m_type != GPI_GENARRAY) {
-        LOG_DEBUG("VHPI: Releasing VhpiObjHdl handle for %s at %p",
-                  get_fullname_str(), (void *)get_handle<vhpiHandleT>());
-        if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
-    }
+    /* Pseudo-regions borrow the handle of the containing region and must not
+     * release it. */
+    if (!m_owns_handle) return;
+    LOG_DEBUG("VHPI: Releasing VhpiObjHdl handle for %s at %p",
+              get_fullname_str(), (void *)get_handle<vhpiHandleT>());
+    if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,

@@ -27,6 +27,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl() {
 
     if (m_binvalue.value.str) delete[] m_binvalue.value.str;
 
+    if (!m_owns_handle) return;
     LOG_DEBUG("VHPI: Releasing VhpiSignalObjHdl handle for %s at %p",
               get_fullname_str(), (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();

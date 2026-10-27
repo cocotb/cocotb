@@ -291,7 +291,8 @@ static bool compare_names(const std::string &a, const std::string &b) {
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                                 const std::string &name,
-                                                const std::string &fq_name) {
+                                                const std::string &fq_name,
+                                                bool owns_handle) {
     vhpiIntT type;
     gpi_objtype gpi_type;
     GpiObjHdl *new_obj = NULL;
@@ -476,30 +477,33 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 
     switch (gpi_type) {
         case GPI_ARRAY: {
-            new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type);
+            new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type, owns_handle);
             break;
         }
         case GPI_GENARRAY:
         case GPI_MODULE:
         case GPI_STRUCTURE:
         case GPI_PACKAGE: {
-            new_obj = new VhpiObjHdl(this, new_hdl, gpi_type);
+            new_obj = new VhpiObjHdl(this, new_hdl, gpi_type, owns_handle);
             break;
         }
         case GPI_LOGIC:
         case GPI_LOGIC_ARRAY: {
             new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type,
-                                                is_const(new_hdl));
+                                                is_const(new_hdl), owns_handle);
             break;
         }
         default: {
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type,
-                                           is_const(new_hdl));
+                                           is_const(new_hdl), owns_handle);
             break;
         }
     }
 
     if (new_obj->initialise(name, fq_name)) {
+        // The caller still owns new_hdl on failure, so the destructor must
+        // not release it.
+        new_obj->set_owns_handle(false);
         delete new_obj;
         new_obj = NULL;
     }
@@ -554,6 +558,7 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
     vhpiHandleT vhpi_hdl = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
+    bool owns_handle = true;
     std::string fq_name = fully_qualified_name(name, parent);
 
     std::vector<char> writable(fq_name.begin(), fq_name.end());
@@ -591,18 +596,21 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
                 if (vhpi_get(vhpiKindP, rgn) == vhpiForGenerateK) {
                     std::string rgn_name = vhpi_get_str(vhpiCaseNameP, rgn);
                     if (compare_generate_labels(rgn_name, name)) {
+                        /* Pseudo-region: borrow the parent's handle */
                         new_hdl = vhpi_hdl;
+                        owns_handle = false;
                         vhpi_release_handle(iter);
                         break;
                     }
                 }
             }
         }
-        if (new_hdl == NULL) {
-            LOG_DEBUG("VHPI: Unable to query vhpi_handle_by_name %s",
-                      fq_name.c_str());
-            return NULL;
-        }
+    }
+
+    if (new_hdl == NULL) {
+        LOG_DEBUG("VHPI: Unable to query vhpi_handle_by_name %s",
+                  fq_name.c_str());
+        return NULL;
     }
 
     /* Generate Loops have inconsistent behavior across VHPI.  A "name"
@@ -611,16 +619,22 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
      *
      * If this unique case is hit, we need to create the Pseudo-region, with the
      * handle being equivalent to the parent handle.
+     *
+     * Only a handle we found ourselves can be the first iteration. The
+     * borrowed parent handle may itself be a for-generate iteration (nested
+     * generates) and must never be released here.
      */
-    if (vhpi_get(vhpiKindP, new_hdl) == vhpiForGenerateK) {
+    if (owns_handle && vhpi_get(vhpiKindP, new_hdl) == vhpiForGenerateK) {
         vhpi_release_handle(new_hdl);
 
         new_hdl = vhpi_hdl;
+        owns_handle = false;
     }
 
-    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl *new_obj =
+        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
     if (new_obj == NULL) {
-        vhpi_release_handle(new_hdl);
+        if (owns_handle) vhpi_release_handle(new_hdl);
         LOG_DEBUG("VHPI: Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
@@ -633,6 +647,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     std::string name = parent->get_name();
     std::string fq_name = parent->get_fullname();
     vhpiHandleT new_hdl = NULL;
+    bool owns_handle = true;
     char buff[14];  // needs to be large enough to hold -2^31 to 2^31-1 in
                     // string form ('(''-'10+'')'\0')
 
@@ -823,6 +838,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             } else {
                 new_hdl = vhpi_hdl;  // Set to the parent handle to create the
                                      // pseudo-handle
+                owns_handle = false;
             }
         } else {
             int left = parent->get_range_left();
@@ -874,9 +890,10 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         return NULL;
     }
 
-    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl *new_obj =
+        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
     if (new_obj == NULL) {
-        vhpi_release_handle(new_hdl);
+        if (owns_handle) vhpi_release_handle(new_hdl);
         LOG_DEBUG(
             "VHPI: Could not fetch object below entity (%s) at index (%d)",
             parent->get_name_str(), index);
