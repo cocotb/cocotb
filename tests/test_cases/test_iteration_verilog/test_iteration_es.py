@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import logging
 
+import pytest
+
 import cocotb
 from cocotb.handle import ArrayObject, HierarchyArrayObject, HierarchyObject
 from cocotb.triggers import gather
@@ -64,3 +66,34 @@ async def dual_iteration(dut):
     loop_two = cocotb.start_soon(iteration_loop(dut))
 
     await gather(loop_one, loop_two)
+
+
+@cocotb.test()
+async def abandoned_iterator(dut):
+    """Dropping a GPI iterator before it is exhausted must free it cleanly.
+
+    Also checks that an exhausted iterator keeps raising StopIteration instead
+    of touching the already-freed GPI iterator.
+    """
+    it = dut._handle.iterate(cocotb.simulator.OBJECTS)
+    next(it)
+    del it
+
+    # Root iteration is not implemented by every GPI implementation, and on
+    # mixed-language simulators the iterator may belong to the implementation
+    # that cannot see the toplevel and therefore be empty.
+    roots = cocotb.simulator.root_iterate()
+    if roots is not None:
+        next(roots, None)
+        del roots
+
+    it = dut._handle.iterate(cocotb.simulator.OBJECTS)
+    count = sum(1 for _ in it)
+    assert count > 0
+    with pytest.raises(StopIteration):
+        next(it)
+
+    # Later discovery still works. (The raw GPI count is not compared: some
+    # implementations return the same object through several relationships,
+    # which discovery deduplicates.)
+    assert sum(1 for _ in dut) > 0
