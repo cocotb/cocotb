@@ -170,6 +170,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
         m_value.bufSize = static_cast<bufSize_type>(bufSize);
         m_value.value.enumvs = new vhpiEnumT[static_cast<size_t>(bufSize)];
     }
+    if (base_hdl != NULL) vhpi_release_handle(base_hdl);
 
     if (m_indexable &&
         get_range(handle, 0, &m_range_left, &m_range_right, &m_range_dir)) {
