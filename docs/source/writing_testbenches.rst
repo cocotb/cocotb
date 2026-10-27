@@ -224,6 +224,26 @@ In that case, either use a finer time precision in your simulation
 (the precision comes from the ``timescale`` of the HDL, or from :make:var:`COCOTB_HDL_TIMEPRECISION` if the HDL does not specify one),
 or pass ``round_mode`` to choose how the value is rounded to a whole number of time steps.
 
+Instead of passing ``round_mode`` in every call,
+you can set the default for all time conversions with the :envvar:`COCOTB_SIMTIME_DEFAULT_ROUND_MODE` environment variable
+(see also :data:`cocotb.simtime.default_round_mode`).
+It accepts ``error`` (the default), ``round``, ``floor``, and ``ceil``.
+A ``round_mode`` passed explicitly to a call still takes precedence over the default.
+
+.. code-block:: bash
+
+    COCOTB_SIMTIME_DEFAULT_ROUND_MODE=round
+
+.. note::
+
+    Prefer ``round`` when the inexactness comes from :class:`float` arithmetic.
+    The error can leave a value just below or just above a whole number of time steps,
+    so ``floor`` and ``ceil`` can be off by one time step.
+    For example, with a precision of 1 ps, ``0.1 + 0.2`` ns is slightly more than 300 time steps,
+    so ``ceil`` gives 301, and ``0.3 * 3`` ns is slightly less than 900 time steps, so ``floor`` gives 899.
+    Note that rounding also hides times that really are finer than the time precision:
+    with a precision of 1 ps, ``0.0004`` ns is silently rounded instead of raising a :exc:`ValueError`.
+
 
 .. _writing_tbs_assigning_values_forcing_freezing:
 
