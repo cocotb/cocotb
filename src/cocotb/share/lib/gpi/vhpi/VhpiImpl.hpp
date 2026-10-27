@@ -138,6 +138,9 @@ class VhpiStartupCbHdl : public VhpiCbHdl {
         } else {
             LOG_TRACE("[ VHPI (startup) ] callback is removed");
         }
+        // The callback is mature (IEEE 1076-2019 21.1) and will never fire
+        // again, but its handle stays valid until released.
+        if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
         delete this;
         return res;
     }
@@ -162,6 +165,9 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
         } else {
             LOG_TRACE("[ VHPI (shutdown) ] callback is removed");
         }
+        // The callback is mature (IEEE 1076-2019 21.1) and will never fire
+        // again, but its handle stays valid until released.
+        if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
         delete this;
         return res;
     }
