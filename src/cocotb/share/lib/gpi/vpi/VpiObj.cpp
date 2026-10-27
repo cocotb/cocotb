@@ -11,12 +11,14 @@
 #include "_vendor/vpi/sv_vpi_user.h"
 
 VpiArrayObjHdl::~VpiArrayObjHdl() {
+    // Pseudo-handles into multi-dimensional arrays borrow the real array's
+    // handle.
     if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
 VpiObjHdl::~VpiObjHdl() {
     // Generate pseudo-regions borrow their containing region's handle.
-    if (m_type != GPI_GENARRAY) vpi_free_object(get_handle<vpiHandle>());
+    if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
 int get_range_bounds(vpiHandle obj, int &left, int &right) {

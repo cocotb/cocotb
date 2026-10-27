@@ -177,20 +177,18 @@ class VpiArrayObjHdl : public GpiObjHdl {
   public:
     VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
                    bool owns_handle = true)
-        : GpiObjHdl(impl, hdl, objtype), m_owns_handle(owns_handle) {}
+        : GpiObjHdl(impl, hdl, objtype, false, owns_handle) {}
     ~VpiArrayObjHdl() override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
-
-  private:
-    bool m_owns_handle;
 };
 
 class VpiObjHdl : public GpiObjHdl {
   public:
-    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype)
-        : GpiObjHdl(impl, hdl, objtype) {}
+    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
+              bool owns_handle = true)
+        : GpiObjHdl(impl, hdl, objtype, false, owns_handle) {}
     ~VpiObjHdl() override;
 
     const char *get_definition_name() override;
@@ -200,8 +198,8 @@ class VpiObjHdl : public GpiObjHdl {
 class VpiSignalObjHdl : public GpiSignalObjHdl {
   public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
-                    bool is_const)
-        : GpiSignalObjHdl(impl, hdl, objtype, is_const) {}
+                    bool is_const, bool owns_handle = true)
+        : GpiSignalObjHdl(impl, hdl, objtype, is_const, owns_handle) {}
     ~VpiSignalObjHdl() override;
 
     const char *get_signal_value_binstr() override;
@@ -347,6 +345,12 @@ class VpiImpl : public GpiImplInterface {
     GpiObjHdl *get_child_by_index(int32_t index, GpiObjHdl *parent) override;
     GpiObjHdl *get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) override;
     static const char *reason_to_string(int reason);
+    /** Wrap a VPI handle in a GPI object.
+     *
+     * On success the returned object takes ownership of new_hdl when
+     * owns_handle is true. On failure (NULL return) the caller still owns
+     * new_hdl.
+     */
     GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl,
                                           const std::string &name,
                                           const std::string &fq_name,
