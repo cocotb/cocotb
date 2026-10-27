@@ -445,7 +445,8 @@ def test_env_cocotb_resolve_x_logic_conversion(resolver: str, tmp_path: Path) ->
     """
     typed_resolver = cast("ResolverLiteral", resolver)
     chars = "UX01ZWLH-"
-    arrays = ["1010", "01LH", "X01Z", "UXWZ", "1HLH"]
+    # "-" (don't care) at the start must not be treated as a minus sign by int().
+    arrays = ["1010", "01LH", "X01Z", "UXWZ", "1HLH", "-1", "-0L", "-H1", "1-1"]
     lines: list[str] = ["from cocotb.types import Logic, LogicArray"]
 
     def append_int_check(
