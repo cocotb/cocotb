@@ -1,0 +1,16 @@
+module top
+by-name bvec_enum_signal vpiType=vpiBitVar typespec=NULL
+by-name lvec_enum_signal NOT_FOUND
+by-name int_enum_signal vpiType=vpiIntVar typespec=NULL
+by-name byte_enum_signal NOT_FOUND
+by-name default_enum_signal vpiType=vpiIntVar typespec=NULL
+by-name plain_logic_signal NOT_FOUND
+iter vpiReg found=[lvec_enum_signal(vpiReg),plain_logic_signal(vpiReg)] count=2
+iter vpiNet NULL
+iter vpiVariables found=[bvec_enum_signal(vpiBitVar),byte_enum_signal(vpiByteVar),default_enum_signal(vpiIntVar),dummy_clk(vpiBitVar),int_enum_signal(vpiIntVar)] count=5
+iter vpiEnumVar NULL
+iter vpiEnumNet NULL
+iter vpiBitVar found=[bvec_enum_signal(vpiBitVar),dummy_clk(vpiBitVar)] count=2
+iter vpiIntVar found=[default_enum_signal(vpiIntVar),int_enum_signal(vpiIntVar)] count=2
+iter vpiByteVar found=[byte_enum_signal(vpiByteVar)] count=1
+iter vpiTypedef NULL
