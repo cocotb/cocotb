@@ -710,13 +710,17 @@ GpiObjHdl *VpiImpl::get_root_handle(const char *name) {
     }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
-        if (to_gpi_objtype(vpi_get(vpiType, root)) != GPI_MODULE) continue;
+        if (to_gpi_objtype(vpi_get(vpiType, root)) != GPI_MODULE) {
+            vpi_free_object(root);
+            continue;
+        }
 
         // prevents finding virtual classes (which Xcelium puts at the top-level
         // scope) when looking for objects with get_root_handle.
         const char *obj_name = vpi_get_str(vpiFullName, root);
         if ((!name && obj_name[0] != '\\') || (name && !strcmp(name, obj_name)))
             break;
+        vpi_free_object(root);
     }
 
     if (!root) {
@@ -741,13 +745,13 @@ error:
     LOG_ERROR("VPI: Couldn't find root handle %s", name);
 
     iterator = vpi_iterate(vpiModule, NULL);
+    if (iterator == NULL) return NULL;
 
+    // List every toplevel instance; the exhausted iterator frees itself.
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
         LOG_ERROR("VPI: Toplevel instances: %s != %s...", name,
                   vpi_get_str(vpiFullName, root));
-
-        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
-            break;
+        vpi_free_object(root);
     }
 
     return NULL;
