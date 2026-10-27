@@ -480,6 +480,27 @@ def test_bool_cast():
         bool(LogicArray("XZ01"))
 
 
+@pytest.mark.parametrize("value", ["-", "-0", "-1", "-H", "-101", "1-1", "0-"])
+def test_dont_care_is_not_a_sign(value: str) -> None:
+    """A "don't care" ``-`` is a logic value, never a minus sign, so it can't be converted to int."""
+    array = LogicArray(value)
+    assert not array.is_resolvable
+    with pytest.raises(ValueError):
+        array.to_unsigned()
+    with pytest.raises(ValueError):
+        array.to_signed()
+    with pytest.raises(ValueError):
+        int(array)
+    with pytest.raises(ValueError):
+        bool(array)
+    with pytest.raises(ValueError):
+        array.to_bytes(byteorder="big")
+    # Comparing to an int must not accidentally succeed.
+    assert array != 0
+    assert array != 1
+    assert array != -1
+
+
 def test_resolve():
     assert LogicArray("UX01ZWLH-").resolve("weak") == LogicArray("UX01ZX01-")
     assert LogicArray("UX01ZWLH-").resolve("zeros") == LogicArray("000100010")

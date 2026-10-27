@@ -1,0 +1,1 @@
+Fixed :class:`~cocotb.types.LogicArray` values starting with ``-`` ("don't care") converting to a negative :class:`int` instead of raising a :exc:`ValueError`, or being resolved by :envvar:`COCOTB_RESOLVE_X`.

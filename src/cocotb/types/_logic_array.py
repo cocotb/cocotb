@@ -23,6 +23,20 @@ _resolve_lh_table = str.maketrans({"L": "0", "H": "1"})
 _str_literals = frozenset("UX01ZWLH-")
 
 
+def _int_from_binstr(binstr: str) -> int:
+    """Convert a string of ``0`` and ``1`` characters to an unsigned :class:`int`.
+
+    Unlike :func:`int`, this never treats a leading ``-`` as a sign.
+    In a :class:`!LogicArray`, ``-`` is the "don't care" :class:`.Logic` value, not a minus sign.
+
+    Raises:
+        ValueError: If *binstr* contains anything other than ``0`` and ``1``.
+    """
+    if binstr.startswith("-"):
+        raise ValueError(f"invalid literal for int() with base 2: {binstr!r}")
+    return int(binstr, 2)
+
+
 ByteOrder: TypeAlias = Literal["big", "little"]
 
 
@@ -332,7 +346,7 @@ class LogicArray(AbstractMutableArray[Logic]):
             value_as_str = value_as_str.translate(_resolve_lh_table)
 
             try:
-                self._value_as_int = int(value_as_str, 2)
+                self._value_as_int = _int_from_binstr(value_as_str)
             except ValueError:
                 if RESOLVE_X is None:
                     raise ValueError(
@@ -340,7 +354,7 @@ class LogicArray(AbstractMutableArray[Logic]):
                     ) from None
                 else:
                     value_as_str = RESOLVE_X(value_as_str)
-                    return int(value_as_str, 2)
+                    return _int_from_binstr(value_as_str)
 
         return self._value_as_int
 
