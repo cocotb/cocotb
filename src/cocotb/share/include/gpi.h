@@ -414,10 +414,18 @@ GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base,
 
 /** Get next object in iteration.
  *
+ * Like `vpi_scan()`, the iterator is freed when this returns `NULL` and must
+ * not be used again.
  * @param iterator  Iterator handle.
  * @return          Object handle, or `NULL` when there are no more objects.
  */
 GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+
+/** Free an iterator that was abandoned before @ref gpi_next returned `NULL`.
+ *
+ * @param iterator  Iterator handle.
+ */
+GPI_EXPORT void gpi_free_iterator(gpi_iterator_hdl iterator);
 
 /** @} */  // End of group HandleIteration
 

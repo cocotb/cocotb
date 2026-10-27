@@ -469,6 +469,8 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iter) {
     }
 }
 
+void gpi_free_iterator(gpi_iterator_hdl iter) { delete iter; }
+
 const char *gpi_get_definition_name(gpi_sim_hdl obj_hdl) {
     return obj_hdl->get_definition_name();
 }

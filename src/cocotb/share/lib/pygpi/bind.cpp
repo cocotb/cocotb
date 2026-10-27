@@ -503,15 +503,33 @@ static PyObject *package_iterate(PyObject *, PyObject *) {
 }
 
 static PyObject *iterator_next(gpi_hdl_Object<gpi_iterator_hdl> *self) {
+    // Already exhausted: gpi_next() freed the iterator.
+    if (self->hdl == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
     gpi_sim_hdl result = gpi_next(self->hdl);
 
     // Raise StopIteration when we're done
     if (!result) {
+        self->hdl = NULL;
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
     }
 
     return gpi_hdl_New(result);
+}
+
+static void iterator_dealloc(PyObject *self) {
+    auto *obj = (gpi_hdl_Object<gpi_iterator_hdl> *)self;
+    // An iterator dropped before exhaustion still owns a simulator iterator
+    // handle. Nothing to do once the simulator is gone.
+    if (obj->hdl != NULL && gpi_has_registered_impl()) {
+        gpi_free_iterator(obj->hdl);
+    }
+    obj->hdl = NULL;
+    Py_TYPE(self)->tp_free(self);
 }
 
 // Raise an exception on failure
@@ -1514,6 +1532,7 @@ PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
         "handle.";
     type.tp_iter = PyObject_SelfIter;
     type.tp_iternext = (iternextfunc)iterator_next;
+    type.tp_dealloc = iterator_dealloc;
     return type;
 }();
 

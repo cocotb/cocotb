@@ -279,6 +279,12 @@ class VpiSingleIterator : public GpiIterator {
         }
     }
 
+    ~VpiSingleIterator() override {
+        // Non-NULL only if iteration was abandoned before vpi_scan() returned
+        // NULL and freed it.
+        if (m_iterator) vpi_free_object(m_iterator);
+    }
+
     Status next_handle(std::string &name, GpiObjHdl **hdl,
                        void **raw_hdl) override;
 
@@ -303,6 +309,12 @@ class VpiPackageIterator : public GpiIterator {
         }
     }
 
+    ~VpiPackageIterator() override {
+        // Non-NULL only if iteration was abandoned before vpi_scan() returned
+        // NULL and freed it.
+        if (m_iterator) vpi_free_object(m_iterator);
+    }
+
     Status next_handle(std::string &name, GpiObjHdl **hdl,
                        void **raw_hdl) override;
 
@@ -322,6 +334,12 @@ class VpiRootIterator : public GpiIterator {
         if (!m_iterator) {
             LOG_INFO("No root handle visible via VPI");
         }
+    }
+
+    ~VpiRootIterator() override {
+        // Non-NULL only if iteration was abandoned before vpi_scan() returned
+        // NULL and freed it.
+        if (m_iterator) vpi_free_object(m_iterator);
     }
 
     Status next_handle(std::string &name, GpiObjHdl **hdl,

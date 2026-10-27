@@ -153,7 +153,11 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
     if (NULL == m_iterator) return GpiIterator::END;
 
     obj = vpi_scan(m_iterator);
-    if (NULL == obj) return GpiIterator::END;
+    if (NULL == obj) {
+        // vpi_scan() freed the exhausted iterator.
+        m_iterator = NULL;
+        return GpiIterator::END;
+    }
 
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
@@ -218,6 +222,8 @@ GpiIterator::Status VpiRootIterator::next_handle(std::string &, GpiObjHdl **hdl,
         return GpiIterator::NATIVE;
     }
 
+    // vpi_scan() freed the exhausted iterator.
+    m_iterator = NULL;
     return GpiIterator::END;
 }
 
@@ -237,7 +243,11 @@ GpiIterator::Status VpiPackageIterator::next_handle(std::string &,
     while (true) {
         obj = vpi_scan(m_iterator);
         check_vpi_error();
-        if (obj == nullptr) return GpiIterator::END;
+        if (obj == nullptr) {
+            // vpi_scan() freed the exhausted iterator.
+            m_iterator = nullptr;
+            return GpiIterator::END;
+        }
 
         PLI_INT32 type = vpi_get(vpiType, obj);
         check_vpi_error();
