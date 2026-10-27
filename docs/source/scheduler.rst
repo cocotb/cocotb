@@ -159,6 +159,12 @@ at which point the coroutine is resumed.
         await RisingEdge(dut.clk)  # This coroutine is paused until the next rising edge of dut.clk.
         print(get_sim_time("ns"))  # 10 ns, the time of the rising edge of dut.clk.
 
+When the event represented by a trigger occurs, we say the trigger *fires*.
+Firing does not run the waiting tasks immediately.
+Instead, each task that was waiting on the trigger is *scheduled* to resume,
+and the event loop then runs the scheduled tasks one at a time.
+See :ref:`task-states` for the states a task goes through.
+
 A gotcha to watch out for is that if an event represented by the trigger will never occur,
 then the coroutine will be paused indefinitely and your test will hang.
 This is a good argument for specifying ``timeout_time`` and ``timeout_unit`` arguments to :deco:`cocotb.test` as seen above.
@@ -416,6 +422,35 @@ however, this will raise an exception if the task is not done yet, if the task r
 
         # Now that it's done, we can get the result without awaiting it.
         assert task.result() == 42
+
+
+.. _task-states:
+
+Task States
+===========
+
+A :class:`!Task` is always in one of the following states.
+The state is part of a task's :func:`repr`, which is useful when debugging.
+
+* *created*: The task exists, but has never run and is not scheduled to run.
+* *scheduled*: The task is queued to run soon, but is not running yet.
+  A task becomes scheduled when it is started with :func:`cocotb.start_soon`,
+  when a :class:`!Trigger` it was waiting on fires,
+  or when it is cancelled.
+* *running*: The task is running right now.
+  It keeps running until it :keyword:`!await`\ s a :class:`!Trigger`, finishes, or raises an exception.
+* *pending*: The task is paused, waiting for the :class:`!Trigger` it :keyword:`!await`\ ed to fire.
+* *finished*: The task has finished and has a result.
+* *error*: The task has finished with an exception.
+* *cancelled*: The task was cancelled before it finished.
+
+A scheduled task is *resumed* when the event loop runs it:
+it continues from the :keyword:`!await` expression where it was paused,
+or from the start if it has not run yet.
+When a running task awaits a trigger it becomes pending,
+and when that trigger fires it becomes scheduled again.
+
+A task that is *finished*, *error*, or *cancelled* is done, which is what :meth:`~cocotb.task.Task.done` reports.
 
 
 Handling Exceptions
