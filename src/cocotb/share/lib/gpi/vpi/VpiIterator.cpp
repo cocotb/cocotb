@@ -265,6 +265,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     GpiObjHdl *new_obj;
     vpiHandle obj;
     vpiHandle iter_obj = m_parent->get_handle<vpiHandle>();
+    bool owns_handle = true;
 
     if (!selected) return GpiIterator::END;
 
@@ -368,7 +369,9 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
         if (found != std::string::npos && found != 0) {
             name = idx_str.substr(0, found);
+            // Pseudo-region: borrow the parent's handle.
             obj = m_parent->get_handle<vpiHandle>();
+            owns_handle = false;
         } else {
             name = c_name;
         }
@@ -407,7 +410,8 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     LOG_DEBUG("vpi_scan found '%s'", fq_name.c_str());
-    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    new_obj =
+        vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name, owns_handle);
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;

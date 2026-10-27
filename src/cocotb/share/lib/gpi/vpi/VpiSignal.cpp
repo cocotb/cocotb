@@ -13,7 +13,9 @@
 #include "./VpiImpl.hpp"
 
 VpiSignalObjHdl::~VpiSignalObjHdl() {
-    vpi_free_object(get_handle<vpiHandle>());
+    // Pseudo-handles into multi-dimensional packed arrays borrow the real
+    // array's handle.
+    if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
 static bool may_lack_range(int32_t type) {

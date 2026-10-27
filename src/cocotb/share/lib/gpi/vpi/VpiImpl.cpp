@@ -222,6 +222,10 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             actual_hdl = iface_hdl;
         }
 
+        // The wrapper owns the resolved handle from here on. The original
+        // vpiRefObj handle is no longer needed.
+        if (owns_handle) vpi_free_object(new_hdl);
+        owns_handle = true;
         resolved_hdl = actual_hdl;
         new_hdl = actual_hdl;
         type = vpi_get(vpiType, new_hdl);
@@ -304,14 +308,16 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 vpi_get(vpiPacked, new_hdl)) {
                 gpi_type = GPI_PACKED;
             }
-            new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
+            new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false,
+                                          owns_handle);
             break;
         }
         case vpiParameter:
         case vpiConstant: {
             auto const_type = vpi_get(vpiConstType, new_hdl);
-            new_obj = new VpiSignalObjHdl(
-                this, new_hdl, const_type_to_gpi_objtype(const_type), true);
+            new_obj = new VpiSignalObjHdl(this, new_hdl,
+                                          const_type_to_gpi_objtype(const_type),
+                                          true, owns_handle);
             break;
         }
         case vpiRegArray:
@@ -333,14 +339,16 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
                 LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false,
+                                              owns_handle);
                 break;
             } else if (vpi_get(vpiVector, new_hdl)) {
                 is_vector = true;
             }
             const auto num_elements = vpi_get(vpiSize, new_hdl);
             new_obj = new VpiObjHdl(
-                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
+                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
+                owns_handle);
             break;
         }
         case vpiModule:
@@ -357,9 +365,11 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
                           fq_name.c_str(), hdl_name.c_str(),
                           resolved_name.c_str());
-                new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
+                new_obj =
+                    new VpiObjHdl(this, new_hdl, GPI_GENARRAY, owns_handle);
             } else {
-                new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+                new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type),
+                                        owns_handle);
             }
             break;
         }
@@ -422,23 +432,28 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
 
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
+    bool owns_handle = true;
 
 #ifdef IUS
     if (new_hdl != NULL && vpi_get(vpiType, new_hdl) == vpiGenScope) {
         // verify that this xcelium scope is valid, or else we segfault on the
         // invalid scope. Xcelium only returns vpiGenScope, no vpiGenScopeArray
 
+        bool is_valid = false;
         vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
-        bool is_valid = [&]() -> bool {
+        if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-                if (VpiImpl::compare_generate_labels(vpi_get_str(vpiName, rgn),
-                                                     name)) {
-                    return true;
+                is_valid = VpiImpl::compare_generate_labels(
+                    vpi_get_str(vpiName, rgn), name);
+                vpi_free_object(rgn);
+                if (is_valid) {
+                    // Not exhausted, so the iterator is still ours to free.
+                    vpi_free_object(iter);
+                    break;
                 }
             }
-            return false;
-        }();
-        vpi_free_object(iter);
+            // An exhausted iterator was freed by vpi_scan() returning NULL.
+        }
 
         if (!is_valid) {
             vpi_free_object(new_hdl);
@@ -487,14 +502,20 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
         if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
                 auto rgn_type = vpi_get(vpiType, rgn);
+                bool found = false;
                 if (rgn_type == vpiGenScope || rgn_type == vpiModule ||
                     rgn_type == vpiInterface || rgn_type == vpiRefObj) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
-                    if (VpiImpl::compare_generate_labels(rgn_name, name)) {
-                        new_hdl = parent_hdl;
-                        vpi_free_object(iter);
-                        break;
-                    }
+                    found = VpiImpl::compare_generate_labels(rgn_name, name);
+                }
+                vpi_free_object(rgn);
+                if (found) {
+                    // Pseudo-region: borrow the parent's handle.
+                    new_hdl = parent_hdl;
+                    owns_handle = false;
+                    // Not exhausted, so the iterator is still ours to free.
+                    vpi_free_object(iter);
+                    break;
                 }
             }
         }
@@ -515,15 +536,18 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
      * If this unique case is hit, we need to create the Pseudo-region, with the
      * handle being equivalent to the parent handle.
      */
-    if (vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
+    if (owns_handle && vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
         vpi_free_object(new_hdl);
 
+        // Pseudo-region: borrow the parent's handle.
         new_hdl = parent_hdl;
+        owns_handle = false;
     }
 
-    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl *new_obj =
+        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
     if (new_obj == NULL) {
-        vpi_free_object(new_hdl);
+        if (owns_handle) vpi_free_object(new_hdl);
         LOG_DEBUG("Unable to create object '%s'", fq_name.c_str());
         return NULL;
     }
@@ -707,7 +731,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char *name) {
     }
 
     root_name = vpi_get_str(vpiFullName, root);
-    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
+    rv = new VpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
     rv->initialise(root_name, root_name);
 
     return rv;
