@@ -22,6 +22,7 @@ SELECTED_PATHS: dict[str, tuple[str, ...]] = {
         ".codecov.yml",
         "pyproject.toml",
         "VERSION",
+        "scripts/cocotb_version.py",
         "uv.lock",
         # Any CI changes (easier than keeping track of which workflow files are relevant)
         ".github/**",
