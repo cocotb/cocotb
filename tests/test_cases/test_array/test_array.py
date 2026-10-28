@@ -19,10 +19,15 @@ from cocotb.handle import (
     _HierarchyObjectBase,
 )
 from cocotb.triggers import Timer
-from cocotb_tools.sim_versions import XceliumVersion
+from cocotb_tools.sim_versions import VerilatorVersion, XceliumVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
+
+# Verilator before 5.050 flattens unpacked structs into vectors over VPI (gh-1275)
+VERILATOR_FLATTENS_STRUCTS = SIM_NAME.startswith("verilator") and VerilatorVersion(
+    cocotb.SIM_VERSION
+) < VerilatorVersion("5.050")
 
 
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
@@ -187,7 +192,12 @@ async def test_gen_loop(dut):
         tlog.info("Iterate access found %s", gens)
 
 
-@cocotb.test()
+@cocotb.test
+@cocotb.xfail(
+    VERILATOR_FLATTENS_STRUCTS,
+    reason="Verilator before 5.050 doesn't support VPI access to unpacked struct members (gh-1275)",
+    raises=AssertionError,
+)
 async def test_discover_all(dut):
     r"""Discover everything in the DUT:
     dut
@@ -304,6 +314,15 @@ async def test_discover_all(dut):
         pass_total = 172
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
+    elif SIM_NAME.startswith("verilator"):
+        # Verilator does not create the implicit genvar localparam in each
+        # generate loop block (IEEE 1800 27.4), so asc_gen[*].idx1 and
+        # desc_gen[*].idx2 are missing.
+        pass_total = 206 - 16
+        if VerilatorVersion(cocotb.SIM_VERSION) < VerilatorVersion("5.055"):
+            # Verilator before 5.055 also returns the members of unpacked structs
+            # as module signals: a, b, b[0:2].
+            pass_total += 5
     else:
         # verilog
         pass_total = 206
@@ -360,8 +379,16 @@ async def test_direct_constant_indexing(dut):
     assert isinstance(dut.const_cmplx[1].b[1], LogicArrayObject)
 
 
-# GHDL unable to index multi-dimensional arrays (gh-2587)
-@cocotb.test(expect_fail=SIM_NAME.startswith("ghdl"))
+@cocotb.test
+@cocotb.xfail(
+    VERILATOR_FLATTENS_STRUCTS,
+    reason="Verilator before 5.050 doesn't support VPI access to unpacked struct members (gh-1275)",
+    raises=AssertionError,
+)
+@cocotb.xfail(
+    SIM_NAME.startswith("ghdl"),
+    reason="GHDL unable to index multi-dimensional arrays (gh-2587)",
+)
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
