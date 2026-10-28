@@ -59,10 +59,9 @@ static inline void __check_vpi_error(const char *file, const char *func,
             loglevel = GPI_WARNING;
     }
 
-    LOG_EXPLICIT("gpi", GPI_DEBUG, file, func, line,
-                 "VPI Internal Error: %s @ %s:%d: %s",
-                 gpi_log_level_to_str(loglevel), info.file, info.line,
-                 info.message);
+    LOG_EXPLICIT(
+        "gpi", loglevel, file, func, line, "VPI Internal Error: %s @ %s:%d: %s",
+        gpi_log_level_to_str(loglevel), info.file, info.line, info.message);
 }
 
 gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements = 0,
