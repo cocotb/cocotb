@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Icarus doesn't support structs (gh-2592)
-# Verilator doesn't support structs (gh-1275)
 
 ifeq ($(SIM),)
 all:
@@ -14,7 +13,7 @@ all:
 clean::
 # nothing to clean, just define target in this branch
 
-else ifneq ($(filter $(shell echo $(SIM) | tr A-Z a-z),icarus verilator),)
+else ifneq ($(filter $(shell echo $(SIM) | tr A-Z a-z),icarus),)
 all:
 	@echo "Skipping test_array since $(SIM) doesn't support structs"
 
@@ -26,5 +25,11 @@ else
 include ../../designs/array_module/Makefile
 
 COCOTB_TEST_MODULES = test_array
+
+endif
+
+ifeq ($(SIM), verilator)
+
+COMPILE_ARGS += -Wno-ASCRANGE
 
 endif
