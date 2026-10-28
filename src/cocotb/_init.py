@@ -50,6 +50,10 @@ def init_package_from_simulation() -> None:
     cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()
     cocotb.SIM_VERSION = cocotb.simulator.get_simulator_version().strip()
     _process_plusargs()
+    # The random module must be seeded before any user code is loaded, because
+    # test modules may call `random` when they are imported (at module level).
+    # Test modules are imported after this function returns, when the regression
+    # is started from the entry point, so don't move this call to after that point.
     _setup_random_seed()
     _setup_root_handle()
     _process_packages()

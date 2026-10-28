@@ -256,6 +256,8 @@ class RegressionManager:
             modules: Each argument given is the name of a module where tests are found.
         """
         for module_name in modules:
+            # Importing runs the user's module-level code, which may use `random`.
+            # `random` is seeded earlier, in `cocotb._init.init_package_from_simulation()`.
             mod = import_module(module_name)
 
             found_test = False
