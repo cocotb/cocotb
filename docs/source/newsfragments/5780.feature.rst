@@ -1,0 +1,1 @@
+Added preview :data:`strict_resolve <cocotb.preview.Feature.STRICT_RESOLVE>` which ensures calls to :func:`.Logic.resolve` and :func:`.LogicArray.resolve` return :class:`.Bit` or 0/1-only :class:`.LogicArray`, respectively. This changes the behavior of ``Logic('W').resolve("weak")`` to result in a :exc:`ValueError` instead of ``X``.

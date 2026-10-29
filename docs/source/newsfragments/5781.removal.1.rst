@@ -1,0 +1,1 @@
+:external+cocotb21:envvar:`GPI_EXTRA` was removed and replaced with :envvar:`GPI_IMPL` which loads one or more :term:`GPI Implementation Library` in order rather than assuming the initialization loads the first :term:`!GPI Implementation Library`.

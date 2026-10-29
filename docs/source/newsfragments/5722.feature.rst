@@ -1,0 +1,1 @@
+Added support for Verilog sources in designs with a VHDL toplevel when using :ref:`NVC <sim-nvc>`.

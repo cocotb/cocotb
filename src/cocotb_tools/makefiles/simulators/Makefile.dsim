@@ -1,0 +1,34 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+CMD_BIN := dsim
+
+ifdef DSIM_BIN_DIR
+    CMD := $(call find_command,$(DSIM_BIN_DIR)/$(CMD_BIN))
+else
+    # auto-detect bin dir from system path
+    CMD := $(call find_command,$(CMD_BIN))
+endif
+
+ifeq ($(WAVES), 1)
+    WAVE_ARG := -waves file.vcd
+else
+    WAVE_ARG :=
+endif
+
+TOPMODULE_ARG = -top $(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL)
+
+DSIM_ARGS = -work $(SIM_BUILD) -pli_lib $(shell cocotb-config --lib-entry vpi dsim) +acc+rwcbfsWF
+COMP_ARGS = $(DSIM_ARGS) -genimage image -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
+RUN_ARGS = $(DSIM_ARGS) -image image $(WAVE_ARG)
+
+$(SIM_BUILD)/image.so: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
+	$(SIM_CMD_PREFIX) $(CMD) $(COMP_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/image.so $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+	GPI_IMPL=$(GPI_IMPL) $(COCOTB_ENV) \
+	$(SIM_CMD_PREFIX) $(CMD) $(RUN_ARGS) $(TOPMODULE_ARG) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+	$(call check_results)

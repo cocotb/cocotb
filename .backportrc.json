@@ -1,0 +1,37 @@
+// Documentation at
+// https://github.com/sorenlouv/backport/blob/main/docs/config-file-options.md
+// Comments are allowed, trailing commas are not.
+{
+  "repoOwner": "cocotb",
+  "repoName": "cocotb",
+
+  // Branches to backport to.
+  "targetBranchChoices": [
+    "stable/1.9"
+  ],
+
+  // Use `backport-to:VERSION` as indication of the target branch.
+  // Also update .github/workflows/backport.yml when changing the label here.
+  "branchLabelMapping": {
+    "^backport-to:(\\d+\\.\\d+)$": "stable/$1"
+  },
+
+  // Labels assigned to the source PR after opening the backport PR(s).
+  "sourcePRLabels": ["status:backport-created"],
+
+  // In GitHub PR comments made by the bot suggest that users run
+  // "npx backport", which automatically installs backport if necessary.
+  "backportBinary": "npx backport",
+
+  // Leave a note in the source PR if a backport failed.
+  "publishStatusCommentOnFailure": true,
+
+  // Title of the backport PR(s).
+  "prTitle": "[{{targetBranch}}] Backport PR #{{sourcePullRequest.number}}: {{sourcePullRequest.title}}",
+
+  // Labels added to the newly created backport PR(s).
+  "targetPRLabels": ["type:backport"],
+
+  // Default reviewers.
+  "reviewers": ["cocotb/maintainers"]
+}

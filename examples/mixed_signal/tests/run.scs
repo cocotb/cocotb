@@ -1,0 +1,11 @@
+// Cadence Spectre control file for analog solver
+//tran tran stop=100u step=5n maxstep=5n relref=alllocal checklimitdest=both errpreset=conservative
+tran tran stop=100u maxstep=5n
+
+// connectmodule selection when not done via xrun -amsconnrules
+// amsd {
+//     ie vsup=5.0
+// }
+
+// saveOptions options save=all pwr=all currents=all saveahdlvars=all depth=3
+// save foo:currents

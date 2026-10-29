@@ -1,0 +1,1 @@
+Added preview :data:`handle_len_is_subelements <cocotb.preview.Feature.HANDLE_LEN_IS_SUBELEMENTS>` which makes ``len()`` on an indexable :class:`.PackedObject` return the number of elements in the outermost dimension instead of the number of bits, and raise :exc:`TypeError` on a packed struct or union. Use :attr:`.PackedObject.size` for the number of bits.

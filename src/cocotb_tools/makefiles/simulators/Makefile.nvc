@@ -1,0 +1,66 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+TOPLEVEL_LANG ?= vhdl
+
+ifneq ($(filter-out $(TOPLEVEL_LANG),vhdl),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as only VHDL toplevels are supported on simulator=$(SIM)"
+
+else
+
+CMD_BIN := nvc
+
+ifdef NVC_BIN_DIR
+    CMD := $(call find_command,$(NVC_BIN_DIR)/$(CMD_BIN))
+else
+    # auto-detect bin dir from system path
+    CMD := $(call find_command,$(CMD_BIN))
+	NVC_BIN_DIR := $(shell dirname $(CMD))
+endif
+
+PRESERVE_CASE := $(shell $(CMD) --version | $(PYTHON_BIN) -c "from cocotb_tools.sim_versions import NvcVersion; import sys; print('--preserve-case' if NvcVersion.from_commandline(sys.stdin.read()) > NvcVersion('1.16') else '')")
+
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix -I, $(VERILOG_INCLUDE_DIRS))
+endif
+
+.PHONY: analyse
+
+# Split SIM_ARGS into those options that need to be passed to -e and
+# those that need to be passed to -r
+NVC_E_FILTER := -g% --cover --cover=%
+
+NVC_E_ARGS := $(filter $(NVC_E_FILTER),$(SIM_ARGS))
+NVC_R_ARGS := $(filter-out $(NVC_E_FILTER),$(SIM_ARGS))
+
+# Compilation phase
+analyse: $(VHDL_SOURCES) $(VERILOG_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	$(foreach LIB_VAR,$(VHDL_LIB_ORDER), \
+		$(CMD) $(EXTRA_ARGS) --work=$(LIB_VAR):$(SIM_BUILD)/$(LIB_VAR) -L $(SIM_BUILD) -a $(VHDL_SOURCES_$(LIB_VAR)) $(PRESERVE_CASE) $(COMPILE_ARGS) && ) \
+	$(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) -a $(VHDL_SOURCES) $(VERILOG_SOURCES) $(PRESERVE_CASE) $(COMPILE_ARGS)
+
+$(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl nvc vhpi) $(COCOTB_ENV) \
+	  $(SIM_CMD_PREFIX) $(CMD) $(EXTRA_ARGS) --work=$(TOPLEVEL_LIBRARY):$(SIM_BUILD)/$(TOPLEVEL_LIBRARY) -L $(SIM_BUILD) \
+	  -e $(COCOTB_TOPLEVEL) --no-save $(NVC_E_ARGS) \
+	  -r --load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vhpi nvc) $(TRACE) $(NVC_R_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_results)
+
+endif

@@ -1,0 +1,497 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Testing the :mod:`cocotb_tools.env` module used to handle
+environment variables in a consistent and unified way."""
+
+from __future__ import annotations
+
+import os
+import shlex
+import subprocess
+import sys
+from importlib import reload
+from logging import getLogger
+from pathlib import Path
+from re import escape
+from typing import Callable, cast
+
+import pytest
+from pytest import MonkeyPatch, raises
+
+import cocotb
+import cocotb._init
+import cocotb._profiling
+import cocotb.regression
+import cocotb.simtime
+import cocotb.simulator
+import cocotb.types._resolve
+from cocotb.handle import SimHandleBase
+from cocotb.preview import Feature, disable, enable
+from cocotb.types import Logic, LogicArray
+from cocotb.types._resolve import ResolverLiteral
+from cocotb_tools import _env
+
+
+@cocotb.test
+async def dummy(dut: SimHandleBase) -> None:
+    """Dummy cocotb test used to test some functions from :mod:`cocotb` package."""
+
+
+def test_env_exists_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.exists` with existing environment variable."""
+    monkeypatch.setenv("TEST_EXISTS", "")
+    assert _env.exists("TEST_EXISTS")
+
+
+def test_env_exists_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.exists` with undefined environment variable."""
+    monkeypatch.delenv("TEST_EXISTS", raising=False)
+    assert not _env.exists("TEST_EXISTS")
+
+
+def test_env_bool_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_BOOL", "")
+    assert not _env.get_bool("TEST_BOOL")
+
+
+def test_env_bool_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_BOOL", raising=False)
+    assert not _env.get_bool("TEST_BOOL")
+
+
+def test_env_bool_default(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` with default value."""
+    monkeypatch.delenv("TEST_BOOL", raising=False)
+    assert _env.get_bool("TEST_BOOL", True)
+    assert not _env.get_bool("TEST_BOOL", False)
+
+
+def test_env_bool_true(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to true."""
+    for value in ("1", "yes", "y", "ON", "True", "Enable"):
+        monkeypatch.setenv("TEST_BOOL", value)
+        assert _env.get_bool("TEST_BOOL")
+
+
+def test_env_bool_false(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to false."""
+    for value in ("0", "no", "n", "OFF", "False", "Disable"):
+        monkeypatch.setenv("TEST_BOOL", value)
+        assert not _env.get_bool("TEST_BOOL")
+
+
+def test_env_bool_invalid(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_bool` with environment variable set to invalid value."""
+    for value in ("-1", "2", "l", "x", "y3s", "0N", "Tru3", "3n4b13"):
+        with raises(
+            ValueError,
+            match=escape(
+                f"Unexpected value '{value}' for environment variable: 'TEST_BOOL'. Expecting one of "
+                "('1', 'yes', 'y', 'on', 'true', 'enable') or ('0', 'no', 'n', 'off', 'false', 'disable')"
+            ),
+        ):
+            monkeypatch.setenv("TEST_BOOL", value)
+            _env.get_bool("TEST_BOOL")
+
+
+def test_env_path_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_path` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_PATH", "")
+    assert _env.get_path("TEST_PATH") == Path().cwd()
+
+
+def test_env_path_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_path` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_PATH", raising=False)
+    assert _env.get_path("TEST_PATH") == Path().cwd()
+
+
+def test_env_path_default(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    """Test :func:`cocotb_tools._env.get_path` with default value."""
+    monkeypatch.delenv("TEST_PATH", raising=False)
+    assert _env.get_path("TEST_PATH", tmp_path) == tmp_path.resolve()
+
+
+def test_env_path_set(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    """Test :func:`cocotb_tools._env.get_path` with environment variable set to path."""
+    monkeypatch.setenv("TEST_PATH", str(tmp_path))
+    assert _env.get_path("TEST_PATH") == tmp_path.resolve()
+    assert _env.get_path("TEST_PATH", "default") == tmp_path.resolve()
+
+
+def test_env_str_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_str` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_STRING", "")
+    assert _env.get_str("TEST_STRING") == ""
+
+
+def test_env_str_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_str` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_STRING", raising=False)
+    assert _env.get_str("TEST_STRING") == ""
+
+
+def test_env_str_default(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_str` with default value."""
+    monkeypatch.delenv("TEST_STRING", raising=False)
+    assert _env.get_str("TEST_STRING", "default") == "default"
+
+
+def test_env_str_set(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_str` with environment variable set to string."""
+    monkeypatch.setenv("TEST_STRING", "  value ")
+    assert _env.get_str("TEST_STRING") == "value"
+
+
+def test_env_int_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_int` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_INT", "")
+    assert _env.get_int("TEST_INT") == 0
+
+
+def test_env_int_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_int` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_INT", raising=False)
+    assert _env.get_int("TEST_INT") == 0
+
+
+def test_env_int_default(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_int` with default value."""
+    monkeypatch.delenv("TEST_INT", raising=False)
+
+    for value in (-13, -1, 0, 1, 20):
+        assert _env.get_int("TEST_INT", value) == value
+
+
+def test_env_int_set(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_int` with environment variable set to integer."""
+    for value in (-13, -1, 0, 1, 20):
+        monkeypatch.setenv("TEST_INT", str(value))
+        assert _env.get_int("TEST_INT") == value
+
+
+def test_env_args_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_args` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_ARGS", "")
+    assert _env.get_args("TEST_ARGS") == []
+
+
+def test_env_args_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_args` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_ARGS", raising=False)
+    assert _env.get_args("TEST_ARGS") == []
+
+
+def test_env_args_default(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_args` with default value."""
+    expected: str = "arg1 arg2 'arg3 arg4' arg5"
+    monkeypatch.delenv("TEST_ARGS", raising=False)
+    assert _env.get_args("TEST_ARGS", expected) == shlex.split(expected)
+
+
+def test_env_args_set(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_args` with environment variable set to arguments."""
+    expected: str = "arg1 arg2 'arg3 arg4' arg5"
+    monkeypatch.setenv("TEST_ARGS", expected)
+    assert _env.get_args("TEST_ARGS", "default") == shlex.split(expected)
+
+
+def test_env_list_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_list` when environment variable is defined but empty."""
+    monkeypatch.setenv("TEST_LIST", "")
+    assert _env.get_list("TEST_LIST") == []
+
+
+def test_env_list_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_list` when environment variable is undefined."""
+    monkeypatch.delenv("TEST_LIST", raising=False)
+    assert _env.get_list("TEST_LIST") == []
+
+
+def test_env_list_default(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_list` with default value."""
+    monkeypatch.delenv("TEST_LIST", raising=False)
+    assert _env.get_list("TEST_LIST", ["a", "b", "c", "d"]) == ["a", "b", "c", "d"]
+
+
+def test_env_list_set(monkeypatch: MonkeyPatch) -> None:
+    """Test :func:`cocotb_tools._env.get_list` with environment variable set to arguments."""
+    monkeypatch.setenv("TEST_LIST", " a,  b ,c,,d ,")
+    assert _env.get_list("TEST_LIST", "default") == ["a", "b", "c", "d"]
+
+
+def test_env_cocotb_testcase_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """Test if defining :envvar:`COCOTB_TESTCASE` environment variable will raise a deprecation warning."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setenv("COCOTB_TEST_MODULES", "test_env")
+    monkeypatch.delenv("COCOTB_TEST_FILTER", raising=False)
+    monkeypatch.setenv("COCOTB_TESTCASE", "dummy")
+
+    with pytest.deprecated_call():
+        cocotb.regression._setup_regression_manager()
+
+
+def test_env_cocotb_test_modules_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test if empty :envvar:`COCOTB_TEST_MODULES` environment variable will raise a runtime error."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setenv("COCOTB_TEST_MODULES", "")
+
+    with pytest.raises(
+        RuntimeError,
+        match=escape(
+            "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
+        ),
+    ):
+        cocotb.regression._setup_regression_manager()
+
+
+def test_env_cocotb_test_modules_undefined(monkeypatch: MonkeyPatch) -> None:
+    """Test if undefined :envvar:`COCOTB_TEST_MODULES` environment variable will raise a runtime error."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.delenv("COCOTB_TEST_MODULES", raising=False)
+
+    with pytest.raises(
+        RuntimeError,
+        match=escape(
+            "Environment variable COCOTB_TEST_MODULES, which defines the module(s) to execute, is not defined or empty."
+        ),
+    ):
+        cocotb.regression._setup_regression_manager()
+
+
+def test_env_cocotb_testcase_with_cocotb_test_filter(monkeypatch: MonkeyPatch) -> None:
+    """Test if defined :envvar:`COCOTB_TESTCASE` with :envvar:`COCOTB_TEST_FILETER` environment variable will raise a runtime error."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setenv("COCOTB_TEST_MODULES", "test_env")
+    monkeypatch.setenv("COCOTB_TEST_FILTER", "dummy")
+    monkeypatch.setenv("COCOTB_TESTCASE", "dummy")
+
+    with pytest.raises(
+        RuntimeError,
+        match="Specify only one of COCOTB_TESTCASE or COCOTB_TEST_FILTER",
+    ):
+        cocotb.regression._setup_regression_manager()
+
+
+def test_env_cocotb_random_seed(monkeypatch: MonkeyPatch) -> None:
+    """Test setting :envvar:`COCOTB_RANDOM_SEED` environment variable."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setattr(cocotb._init, "log", getLogger("cocotb"), raising=False)
+    monkeypatch.setenv("COCOTB_RANDOM_SEED", "100")
+
+    cocotb._init._setup_random_seed()
+
+    assert cocotb.RANDOM_SEED == 100
+
+
+def test_env_random_seed_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """Test if defining :envvar:`RANDOM_SEED` environment variable will raise a deprecation warning."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setattr(cocotb._init, "log", getLogger("cocotb"), raising=False)
+    monkeypatch.delenv("COCOTB_RANDOM_SEED", raising=False)
+    monkeypatch.setenv("RANDOM_SEED", "110")
+
+    with pytest.deprecated_call():
+        cocotb._init._setup_random_seed()
+        assert cocotb.RANDOM_SEED == 110
+
+
+def test_plusargs_ntb_random_seed_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """Test if setting plusargs ``ntb_random_seed`` will raise a deprecation warning."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setattr(cocotb._init, "log", getLogger("cocotb"), raising=False)
+    monkeypatch.delenv("COCOTB_RANDOM_SEED", raising=False)
+    monkeypatch.delenv("RANDOM_SEED", raising=False)
+    monkeypatch.setattr(cocotb, "plusargs", {"ntb_random_seed": "120"}, raising=False)
+
+    with pytest.deprecated_call():
+        cocotb._init._setup_random_seed()
+        assert cocotb.RANDOM_SEED == 120
+
+
+def test_plusargs_seed_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """Test if setting plusargs ``seed`` will raise a deprecation warning."""
+    monkeypatch.setattr(cocotb, "RANDOM_SEED", 0, raising=False)
+    monkeypatch.setattr(cocotb._init, "log", getLogger("cocotb"), raising=False)
+    monkeypatch.delenv("COCOTB_RANDOM_SEED", raising=False)
+    monkeypatch.delenv("RANDOM_SEED", raising=False)
+    monkeypatch.setattr(cocotb, "plusargs", {"seed": "130"}, raising=False)
+
+    with pytest.deprecated_call():
+        cocotb._init._setup_random_seed()
+        assert cocotb.RANDOM_SEED == 130
+
+
+def test_env_cocotb_enable_profiling(monkeypatch: MonkeyPatch) -> None:
+    """Test setting :envvar:`COCOTB_ENABLE_PROFILING` environment variable."""
+    for value in ("yes", "no"):
+        monkeypatch.setenv("COCOTB_ENABLE_PROFILING", value)
+        reload(cocotb._profiling)
+
+        cocotb._profiling._init()
+
+        with cocotb._profiling.profiling_context:
+            pass
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("error", "error"),
+        ("ceil", "ceil"),
+        ("round", "round"),
+        ("floor", "floor"),
+        (" \tRoUnD\n", "round"),
+    ],
+)
+def test_env_cocotb_simtime_default_round_mode(
+    monkeypatch: MonkeyPatch, value: str, expected: str
+) -> None:
+    monkeypatch.setenv("COCOTB_SIMTIME_DEFAULT_ROUND_MODE", value)
+    monkeypatch.delenv("COCOTB_SIMTIME_REPORT_PRECISION", raising=False)
+    monkeypatch.setattr(
+        cocotb.simulator, "get_precision", lambda: cocotb.simtime.time_precision
+    )
+    monkeypatch.setattr(cocotb.simtime, "default_round_mode", "error")
+
+    cocotb.simtime._init()
+
+    assert cocotb.simtime.default_round_mode == expected
+
+
+@pytest.mark.parametrize("value", ["invalid", "", " \tINVALID\n"])
+def test_env_cocotb_simtime_default_round_mode_invalid(
+    monkeypatch: MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("COCOTB_SIMTIME_DEFAULT_ROUND_MODE", value)
+    monkeypatch.setattr(
+        cocotb.simulator, "get_precision", lambda: cocotb.simtime.time_precision
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="^Invalid round mode specified in COCOTB_SIMTIME_DEFAULT_ROUND_MODE:",
+    ):
+        cocotb.simtime._init()
+
+
+def test_env_cocotb_resolve_x_weak(monkeypatch: MonkeyPatch) -> None:
+    """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to ``weak`` value."""
+    monkeypatch.setenv("COCOTB_RESOLVE_X", "weak")
+
+    resolve: Callable[[str], str] | None = cocotb.types._resolve._init()
+
+    assert resolve
+    assert resolve("0") == "0"
+    assert resolve("1") == "1"
+    assert resolve("L") == "0"
+    assert resolve("H") == "1"
+    assert resolve("W") == "X"
+
+
+def test_env_cocotb_resolve_preview() -> None:
+    enable(Feature.STRICT_RESOLVE)
+
+    for inp in "UXZW-":
+        with pytest.raises(ValueError):
+            Logic(inp).resolve("weak")
+
+    for inp, exp in zip("01LH", "0101"):
+        assert Logic(inp).resolve("weak") == Logic(exp)
+
+    assert LogicArray("01LH").resolve("weak") == LogicArray("0101")
+    with pytest.raises(ValueError):
+        LogicArray("01U").resolve("weak")
+
+    disable(Feature.STRICT_RESOLVE)
+
+
+def test_env_cocotb_resolve_x_value_error(monkeypatch: MonkeyPatch) -> None:
+    """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to deprecated ``value_error``."""
+    monkeypatch.setenv("COCOTB_RESOLVE_X", "value_error")
+
+    resolve: Callable[[str], str] | None = cocotb.types._resolve._init()
+
+    assert resolve
+    assert resolve("0") == "0"
+    assert resolve("1") == "1"
+
+
+def test_env_cocotb_resolve_x_invalid(monkeypatch: MonkeyPatch) -> None:
+    """Test setting :envvar:`COCOTB_RESOLVE_X` environment variable to invalid value."""
+    monkeypatch.setenv("COCOTB_RESOLVE_X", "invalid")
+
+    with pytest.raises(
+        ValueError,
+        match=escape(
+            "Invalid COCOTB_RESOLVE_X value: 'invalid'. Valid values are 'error', 'weak', 'zeros', 'ones', or 'random'"
+        ),
+    ):
+        cocotb.types._resolve._init()
+
+
+@pytest.mark.parametrize("resolver", ["weak", "zeros", "ones", "random", "error"])
+def test_env_cocotb_resolve_x_logic_conversion(resolver: str, tmp_path: Path) -> None:
+    """Test that :envvar:`COCOTB_RESOLVE_X` affects ``int()``/``bool()`` of
+    :class:`~cocotb.types.Logic` and :class:`~cocotb.types.LogicArray`.
+
+    The resolving ``__int__``/``__bool__`` methods are bound at import time
+    based on the env var, so this runs in a subprocess with the variable set.
+    Expected ints are computed in the parent via ``.resolve(resolver)``.
+    """
+    typed_resolver = cast("ResolverLiteral", resolver)
+    chars = "UX01ZWLH-"
+    # "-" (don't care) at the start must not be treated as a minus sign by int().
+    arrays = ["1010", "01LH", "X01Z", "UXWZ", "1HLH", "-1", "-0L", "-H1", "1-1"]
+    lines: list[str] = ["from cocotb.types import Logic, LogicArray"]
+
+    def append_int_check(
+        expr: str, expected: int | None, length: int, random_input: bool
+    ) -> None:
+        if resolver == "random" and random_input:
+            lines.append(f"assert 0 <= int({expr}) < (1 << {length}), {expr!r}")
+        elif expected is None:
+            lines.extend(
+                [
+                    f"try: int({expr})",
+                    "except ValueError: pass",
+                    f"else: raise AssertionError({expr!r})",
+                ]
+            )
+        else:
+            lines.append(f"assert int({expr}) == {expected}, {expr!r}")
+
+    for c in chars:
+        # Logic.__int__ under a resolver does `int(resolver(str(self)), 2)`.
+        # The resolved Logic's str is "0"/"1" iff that int call succeeds.
+        resolved = str(Logic(c).resolve(typed_resolver))
+        expected: int | None = int(resolved) if resolved in ("0", "1") else None
+        append_int_check(f"Logic({c!r})", expected, 1, c not in "01LH")
+        # Under any resolver, only 1/H are truthy; others return False (no raise).
+        lines.append(f"assert bool(Logic({c!r})) is {c in '1H'}, {c!r}")
+
+    for s in arrays:
+        # LogicArray._get_int pre-translates L,H -> 0,1 in both branches, so
+        # int(LogicArray(s).resolve(resolver)) predicts subprocess behavior.
+        try:
+            expected = int(LogicArray(s).resolve(typed_resolver))
+        except ValueError:
+            expected = None
+        random_input = any(c not in "01LH" for c in s)
+        append_int_check(f"LogicArray({s!r})", expected, len(s), random_input)
+        lines.append(
+            f"assert bool(LogicArray({s!r})) is {any(c in '1H' for c in s)}, {s!r}"
+        )
+    lines.append("assert bool(LogicArray('')) is False")
+
+    script = tmp_path / "check.py"
+    script.write_text("\n".join(lines) + "\n")
+    subprocess.run(
+        [sys.executable, str(script)],
+        env={**os.environ, "COCOTB_RESOLVE_X": resolver},
+        check=True,
+    )

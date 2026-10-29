@@ -1,0 +1,105 @@
+# Copyright cocotb contributors
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Common Makefile for Cadence Xcelium
+
+CMD_BIN := xrun
+
+ifdef XCELIUM_BIN_DIR
+    CMD := $(call find_command,$(XCELIUM_BIN_DIR)/$(CMD_BIN))
+else
+    # auto-detect bin dir from system path
+    CMD := $(call find_command,$(CMD_BIN))
+    XCELIUM_BIN_DIR := $(shell dirname $(CMD))
+endif
+
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+EXTRA_ARGS += $(COMPILE_ARGS)
+EXTRA_ARGS += $(SIM_ARGS)
+EXTRA_ARGS += -licqueue
+
+ifeq ($(PYTHON_ARCH),64bit)
+    EXTRA_ARGS += -64
+endif
+
+EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD)
+ifeq ($(DEBUG),1)
+    EXTRA_ARGS += -pliverbose
+    EXTRA_ARGS += -messages
+    EXTRA_ARGS += -plidebug             # Enhance the profile output with PLI info
+    EXTRA_ARGS += -plierr_verbose       # Expand handle info in PLI/VPI/VHPI messages
+    EXTRA_ARGS += -vpicompat 1800v2005  #  <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+else
+    EXTRA_ARGS += -plinowarn
+endif
+
+ifeq ($(GUI),1)
+    EXTRA_ARGS += -gui
+else
+    EXTRA_ARGS +=
+endif
+
+# Xcelium errors out if multiple timescales are specified on the command line.
+ifneq (,$(filter -timescale%,$(EXTRA_ARGS)))
+    $(error Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.)
+endif
+
+# Loading the VHPI library causes an error, so we always bootstrap through VPI and
+# load the required VPI and VHPI implementation libraries through GPI_IMPL below.
+
+# Xcelium will use default vlog_startup_routines symbol only if VPI library name is libvpi.so
+GPI_ARGS = -loadvpisim $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi xcelium)
+ifeq ($(TOPLEVEL_LANG),verilog)
+    HDL_SOURCES = $(VERILOG_SOURCES)
+    ROOT_LEVEL = $(COCOTB_TOPLEVEL)
+    EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl xcelium vpi)
+    ifneq ($(VHDL_SOURCES),)
+        HDL_SOURCES += $(VHDL_SOURCES)
+        GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl xcelium vpi vhpi)
+    endif
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    GPI_IMPL = $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl xcelium vpi vhpi)
+    EXTRA_ARGS += -top $(COCOTB_TOPLEVEL)
+    # Xcelium 23.09.004 fixes cocotb issue #1076 as long as the following define
+    # is set.
+    EXTRA_ARGS += -NEW_VHPI_PROPAGATE_DELAY
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+    MAKE_LIB = -makelib $(TOPLEVEL_LIBRARY)
+    END_LIB = -endlib
+    HDL_SOURCES = $(VHDL_SOURCES)
+    ifneq ($(VERILOG_SOURCES),)
+        HDL_SOURCES += $(VERILOG_SOURCES)
+    endif
+else
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+# Builds a list of arguments to support VHDL libraries specified in VHDL_SOURCES_*:
+LIBS := $(foreach LIB, $(VHDL_LIB_ORDER),-makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -endlib)
+
+$(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	set -o pipefail; \
+	GPI_IMPL=$(GPI_IMPL) $(COCOTB_ENV) \
+	$(SIM_CMD_PREFIX) $(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	-vhdl_time_precision "$(COCOTB_HDL_TIMEPRECISION)" \
+	$(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(END_LIB) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_results)

@@ -1,0 +1,1 @@
+Added :envvar:`GPI_IMPL` for loading all :term:`GPI Implementation Libraries <GPI Implementation Library>` when the GPI is initialized.

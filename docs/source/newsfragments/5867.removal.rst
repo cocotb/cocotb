@@ -1,0 +1,1 @@
+Remove ``cocotb.types.IndexingChangedWarning`` and the ``COCOTB_INDEXING_CHANGED_WARNING`` environment variable. If you need this for upgrading from cocotb 1.x to 2.x, first upgrade to cocotb 2.0 or 2.1, then upgrade to 2.x.

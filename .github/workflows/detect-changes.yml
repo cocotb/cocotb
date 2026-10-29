@@ -1,0 +1,32 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Detect changes
+
+on:
+  workflow_call:
+    outputs:
+      run_tests:
+        description: Whether to run regression tests
+        value: ${{ jobs.detect.outputs.run_tests }}
+      run_benchmarks:
+        description: Whether to run performance benchmarks
+        value: ${{ jobs.detect.outputs.run_benchmarks }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      run_tests: ${{ steps.changes.outputs.run_tests }}
+      run_benchmarks: ${{ steps.changes.outputs.run_benchmarks }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # The PR head and its merge base must both be available, including for forks.
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: changes
+        run: python3 .github/detect_changes.py

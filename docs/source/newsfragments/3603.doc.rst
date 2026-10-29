@@ -1,0 +1,1 @@
+Documented how to use :class:`decimal.Decimal` and :class:`fractions.Fraction` to compute exact time values for :class:`.Timer` and :class:`~cocotb.clock.Clock`, and why :class:`float` arithmetic can raise a :exc:`ValueError`.

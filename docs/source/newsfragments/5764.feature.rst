@@ -1,0 +1,1 @@
+Added the ``size`` property to :class:`.LogicObject`, :class:`.LogicArrayObject`, :class:`.PackedObject`, :class:`.IntegerObject`, and :class:`.EnumObject`, which returns the number of bits in the simulation object.

@@ -1,0 +1,261 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+"""
+Tests of cocotb.test functionality
+
+* expect_error
+* expect_fail
+* timeout
+"""
+
+from __future__ import annotations
+
+from collections.abc import Coroutine
+
+import pytest
+from common import MyBaseException, MyException
+
+import cocotb
+from cocotb.triggers import NullTrigger, SimTimeoutError, Timer
+
+
+@cocotb.test(expect_error=NameError)
+async def test_error(dut):
+    """Error in the test"""
+    await Timer(100, "ns")
+    fail  # noqa
+
+
+# just to be sure...
+@cocotb.test(expect_fail=True)
+async def test_async_test_can_fail(dut):
+    assert False
+
+
+@cocotb.test()
+async def test_immediate_test(dut):
+    """Test that tests can return immediately"""
+    return
+
+
+@cocotb.test(expect_fail=True)
+async def test_assertion_is_failure(dut):
+    assert False
+
+
+@cocotb.test(expect_error=MyException)
+async def test_expect_particular_exception(dut):
+    raise MyException()
+
+
+@cocotb.test(expect_error=(MyException, ValueError))
+async def test_expect_exception_list(dut):
+    raise MyException()
+
+
+@cocotb.test(expect_error=SimTimeoutError, timeout_time=1, timeout_unit="ns")
+async def test_timeout_testdec_fail(dut):
+    await Timer(10, "ns")
+
+
+@cocotb.test(timeout_time=100, timeout_unit="ns")
+async def test_timeout_testdec_pass(dut):
+    await Timer(10, "ns")
+
+
+# these tests should run in definition order, not lexicographic order
+last_ordered_test = None
+
+
+@cocotb.test()
+async def test_ordering_3(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 3
+    assert val is None
+
+
+@cocotb.test()
+async def test_ordering_2(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 2
+    assert val == 3
+
+
+@cocotb.test()
+async def test_ordering_1(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 1
+    assert val == 2
+
+
+@cocotb.test()
+class TestClass(Coroutine):
+    def __init__(self, dut):
+        self._coro = self.run(dut)
+
+    async def run(self, dut):
+        pass
+
+    def send(self, value):
+        self._coro.send(value)
+
+    def throw(self, exception):
+        self._coro.throw(exception)
+
+    def __await__(self):
+        yield from self._coro.__await__()
+
+
+@cocotb.test()
+async def test_empty_docstring(dut) -> None:
+    """"""
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_raises_fail(dut):
+    with pytest.raises(AssertionError):
+        assert True
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_warns_fail(dut):
+    def test_func():
+        pass
+
+    with pytest.warns(RuntimeWarning):
+        test_func()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_deprecated_call_fail(dut):
+    def test_func():
+        pass
+
+    with pytest.deprecated_call():
+        test_func()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_raises_fail_in_task(dut):
+    async def test_func():
+        with pytest.raises(AssertionError):
+            assert True
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_warns_fail_in_task(dut):
+    def inner_func():
+        pass
+
+    async def test_func():
+        with pytest.warns(RuntimeWarning):
+            inner_func()
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_fail=True)
+async def test_pytest_deprecated_call_fail_in_task(dut):
+    def inner_func():
+        pass
+
+    async def test_func():
+        with pytest.deprecated_call():
+            inner_func()
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+@cocotb.test(expect_error=MyBaseException)
+async def test_base_exception_expect_fail(dut):
+    raise MyBaseException
+
+
+@cocotb.test(expect_error=MyBaseException)
+async def test_base_exception_in_task_expect_fail(dut):
+    async def test_func():
+        raise MyBaseException
+
+    cocotb.start_soon(test_func())
+    await NullTrigger()
+
+
+a = 0
+
+
+@cocotb.test
+async def test_without_parenthesis(dut):
+    global a
+    a = 1
+
+
+@cocotb.test()
+async def test_test_without_parenthesis_ran(dut):
+    assert a == 1
+
+
+@cocotb.test
+async def test_bad_xfail(dut: object) -> None:
+    with pytest.raises(TypeError):
+
+        @cocotb.xfail(
+            raises="not an exception"  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
+
+    with pytest.raises(TypeError):
+
+        @cocotb.xfail(
+            raises=[ValueError, "not an exception"]  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
+
+    with pytest.raises(TypeError):
+
+        @cocotb.xfail(
+            raises=object()  # type: ignore
+        )
+        async def dummy(_: object) -> None:
+            pass
+
+
+@cocotb.test
+@cocotb.parametrize(reason=[None, "Inactive skip condition"])
+async def test_inactive_skipif_reason(dut: object, reason: str | None) -> None:
+    @cocotb.skipif(False, reason=reason)
+    @cocotb.skipif(True, reason="Active skip condition")
+    async def skipped(_: object) -> None:
+        pass
+
+    @cocotb.skipif(False, reason=reason)
+    @cocotb.xfail(reason="Expected failure")
+    async def xfailed(_: object) -> None:
+        pass
+
+    assert next(iter(skipped.generate_tests())).reason == "Active skip condition"
+    assert next(iter(xfailed.generate_tests())).reason == "Expected failure"
+
+
+@cocotb.test
+async def test_end_in_main_coro(dut: object) -> None:
+    cocotb.end_test("Finished test early")
+    assert False, "Test should have ended before this assertion"
+
+
+@cocotb.test
+async def test_end_in_task(dut: object) -> None:
+    async def end_test() -> None:
+        await Timer(1, unit="ns")
+        cocotb.end_test("Finished test early")
+
+    cocotb.start_soon(end_test())
+    await Timer(10, unit="ns")
+    assert False, "Test should have ended before this assertion"

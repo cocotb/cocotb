@@ -1,0 +1,10 @@
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint]
+extend-select = [
+    "PTH",  # flake8-use-pathlib
+]
+extend-ignore = [
+    "PTH123",  # open() should be replaced by Path.open() (preference)
+]

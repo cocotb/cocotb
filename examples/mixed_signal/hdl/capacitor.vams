@@ -1,0 +1,20 @@
+// This file is public domain, it can be freely copied without restrictions.
+// SPDX-License-Identifier: CC0-1.0
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module capacitor(p, n);
+
+  inout p; electrical p;
+  inout n; electrical n;
+
+  parameter real capacitance=1 from [0:inf);  // capacitance value, must be >= 0
+
+  branch (p, n) cap;
+
+  analog begin
+    I(cap) <+ capacitance * ddt(V(cap));
+  end
+
+endmodule

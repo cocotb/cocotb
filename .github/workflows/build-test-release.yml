@@ -1,0 +1,207 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+#
+# DO NOT RENAME THIS FILE!
+# PyPi uploads use OIDC, aka Trusted Publishing, to avoid the need for API keys.
+# https://pypi.org/manage/project/cocotb/settings/publishing/ is configured to
+# allow uploads from the cocotb GitHub project and this exact file name.
+#
+
+name: Release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: ${{ !(contains(github.ref, 'release/') || contains(github.ref, 'master')) }}
+
+on:
+  # Run this workflow on every push to master or to a stable branch.
+  push:
+    branches:
+      - master
+      - "stable/**"
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build and test.
+        required: false
+        default: master
+
+jobs:
+  build_release:
+    name: Build distribution on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Keep going even if one matrix build fails.
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-2022
+          - macos-26-intel  # x86_64 (26 is the last version to support Intel processors)
+          - macos-latest    # ARM64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ inputs.branch }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+      - name: Install nox
+        run: python3 -m pip install nox nox-uv
+
+      - name: Check release tag against VERSION
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: nox -s release_check_tag -- "$TAG"
+
+      # Use the cibuildwheel configuration inside nox, instead of the
+      # cibuildwheel GitHub Action, to make the process easy to reproduce
+      # locally.
+      - name: Build cocotb release
+        run: |
+          nox -s release_clean
+          nox -s release_build
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: cocotb-dist-${{ matrix.os }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  # This tests both the sdist and wheel builds in separate venvs back to back with just the pytest tests.
+  test_release:
+    name: Regression Tests
+    needs: build_release
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      test_task: release_test
+      download_artifacts: true
+      group: ci-free
+      branch: ${{ inputs.branch }}
+
+  test_release_licensed:
+    name: Regression Tests
+    needs: build_release
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      test_task: release_test
+      download_artifacts: true
+      group: ci-licensed
+      branch: ${{ inputs.branch }}
+
+  deploy_pypi:
+    name: Deploy to pypi.org
+    needs:
+    - test_release
+    - test_release_licensed
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    # Publishing is irreversible, so it runs in an environment: protection
+    # rules configured on it (e.g. required reviewers) apply here, and are
+    # the only chance to stop a release after the tag was pushed. Keep the
+    # environment name in sync with the PyPI Trusted Publishing settings,
+    # which have to either name this environment or none at all.
+    environment: pypi
+    # Only upload tagged releases.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.12"
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+      with:
+        path: dist
+        pattern: cocotb-dist-*
+        merge-multiple: true
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+      # Authentication to PyPi is done through OIDC ("Trusted Publishing").
+      with:
+        # Don't fail if a file is already on PyPI. Without this, a release
+        # can never be re-run: everything after the upload (the GitHub
+        # Release, the release notes backport) is gated on this job
+        # succeeding, so a hiccup in a later step would leave those undone
+        # with no way to complete them. Nothing is lost by allowing it,
+        # because PyPI never replaces an already published file anyway.
+        skip-existing: true
+
+  # Patch releases only ever run towncrier on a stable/X.Y branch, but
+  # master's release notes should always show the full history. Skip
+  # release candidates etc. (anything other than a final X.Y.Z tag) —
+  # those ship the final release's notes and aren't listed separately.
+  check_final_release:
+    name: Check for a final release tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    outputs:
+      final: ${{ steps.check.outputs.final }}
+    steps:
+    - id: check
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "final=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "final=false" >> "$GITHUB_OUTPUT"
+          echo "Skipping: '$TAG' is not a final release tag." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+  # A GitHub Release makes the tag show up on the repository's releases
+  # page, which the release notes point readers at. Only final releases
+  # are listed there, so release candidates don't get one.
+  github_release:
+    name: Publish GitHub Release
+    needs: [deploy_pypi, check_final_release]
+    if: success() && needs.check_final_release.outputs.final == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Create the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+
+        version="${TAG#v}"
+        # Link the docs built for this exact tag rather than "stable",
+        # which moves on with every later release.
+        notes=$(printf '%s\n%s\n\n%s\n' \
+          "Release notes: https://docs.cocotb.org/en/${TAG}/release_notes.html" \
+          "PyPI release: https://pypi.org/project/cocotb/${version}" \
+          "Install with \`pip install cocotb==${version}\`.")
+
+        gh release create "$TAG" \
+          --verify-tag \
+          --title "${version}" \
+          --notes "$notes"
+
+  # Do the backport by calling "Release 3" as a reusable workflow, rather
+  # than duplicating its steps here, so the manual and automatic paths
+  # can't drift apart.
+  backport_release_notes:
+    name: Backport release notes to master
+    needs: [deploy_pypi, check_final_release]
+    # A custom `if:` replaces the implicit "needs jobs succeeded" check
+    # GitHub Actions would otherwise apply, so it has to be spelled out
+    # here too — otherwise this would still run after a failed PyPI
+    # publish.
+    if: success() && needs.check_final_release.outputs.final == 'true'
+    uses: ./.github/workflows/release-3-backport-notes.yml
+    with:
+      until: ${{ github.ref_name }}
+    secrets: inherit

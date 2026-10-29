@@ -1,0 +1,68 @@
+# Copyright cocotb contributors
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+ifneq ($(VHDL_SOURCES),)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+
+else
+
+CMD_BIN := vcs
+
+ifdef VCS_BIN_DIR
+    CMD := $(call find_command,$(VCS_BIN_DIR)/$(CMD_BIN))
+else
+    # auto-detect bin dir from system path
+    CMD := $(call find_command,$(CMD_BIN))
+    VCS_BIN_DIR := $(shell dirname $(CMD))
+endif
+
+ifdef VERILOG_INCLUDE_DIRS
+    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+endif
+
+ifeq ($(PYTHON_ARCH),64bit)
+    COMPILE_ARGS += -full64
+endif
+
+ifeq ($(GUI),1)
+    EXTRA_ARGS += -gui -kdb
+endif
+
+# Avoid linker "undefined reference to" error
+COMPILE_ARGS += -LDFLAGS -Wl,--no-as-needed
+
+# Enables globally access for read, write, and callback capabilities.
+COMPILE_ARGS += +acc+3
+
+# Enables globally debug capabilities.
+COMPILE_ARGS += -debug_access+all
+
+# TODO:
+# investigate +vpi+1 option which reduces memory requirements
+
+# Compilation phase
+# Load GPI and VPI for system function registration, without starting PyGPI.
+$(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
+	cd $(SIM_BUILD) && \
+	COCOTB_BOOTSTRAP="$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-entry-point)" \
+	GPI_IMPL="$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi)" \
+	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -sverilog \
+	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	$(EXTRA_ARGS) -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+
+# Execution phase
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)
+	$(RM) $(COCOTB_RESULTS_FILE)
+
+	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi) $(COCOTB_ENV) \
+	$(SIM_CMD_PREFIX) $(SIM_BUILD)/simv $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
+
+	$(call check_results)
+
+endif

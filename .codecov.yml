@@ -1,0 +1,17 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Codecov configuration
+codecov:
+    notify:
+        # CI sends notifications after all coverage jobs finish, regardless of
+        # how many uploads they produce. This avoids premature coverage reports.
+        manual_trigger: true
+
+coverage:
+    status:
+        project:
+            default:
+                # Report a CI failure if coverage drops by more than 1 percent.
+                threshold: 1%

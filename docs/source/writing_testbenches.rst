@@ -1,0 +1,511 @@
+.. _writing_tbs:
+
+*******************
+Writing Testbenches
+*******************
+
+
+Logging
+=======
+
+cocotb uses Python's :mod:`logging` library, with the configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+``cocotb.log.info`` is a good stand-in for :func:`print`,
+but user are encouraged to create their own loggers and logger hierarchy by calling :func:`logging.getLogger` and/or :meth:`.Logger.getChild`.
+
+Logging functions `only` log messages, they do not cause the test to fail.
+See :ref:`passing_and_failing_tests` for more information on how to fail a test.
+
+.. code-block:: python
+
+    import logging
+    import cocotb
+
+    @cocotb.test()
+    async def test(dut):
+        # Create a logger for this testbench
+        logger = logging.getLogger("my_testbench")
+
+        logger.debug("This is a debug message")
+        logger.info("This is an info message")
+        logger.warning("This is a warning message")
+        logger.error("This is an error message")
+        logger.critical("This is a critical message")
+
+.. note::
+
+    Writing messages to the log/console using the built-in function :func:`print` is not recommended in cocotb testbenches.
+    :func:`print` defaults to writing to ``stdout``, which is often buffered;
+    not only by the Python runtime, but sometimes by the simulator as well.
+    This can make messages appear out-of-order compared to messages coming from the simulator or the :term:`DUT`.
+
+.. warning::
+
+    The ``"cocotb"`` and ``"gpi"`` logger namespaces and all :class:`~logging.Logger`\ s on cocotb-created objects are reserved for internal use only.
+
+.. _writing_tbs_assigning_values_signed_unsigned:
+
+Signed and unsigned values
+--------------------------
+
+Both signed and unsigned values can be assigned to signals using a Python int.
+cocotb makes no assumptions regarding the signedness of the signal. It only
+considers the width of the signal, so it will allow values in the range from
+the minimum negative value for a signed number up to the maximum positive
+value for an unsigned number: ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``
+Note: assigning out-of-range values will raise an :exc:`ValueError`.
+
+A :class:`~cocotb.types.LogicArray` object can be used instead of a Python int to assign a
+value to signals with more fine-grained control (e.g. signed values only).
+
+.. code-block:: verilog
+
+    module my_module (
+        input   logic       clk,
+        input   logic       rst,
+        input   logic [2:0] data_in,
+        output  logic [2:0] data_out
+        );
+
+.. code-block:: python
+
+    # assignment of negative value
+    dut.data_in.value = -4
+
+    # assignment of positive value
+    dut.data_in.value = 7
+
+    # assignment of out-of-range values
+    dut.data_in.value = 8   # raises ValueError
+    dut.data_in.value = -5  # raises ValueError
+
+
+.. _writing_tbs_reading_values:
+
+Reading values from signals
+===========================
+
+Values in the DUT can be accessed with the :attr:`~cocotb.handle.ValueObjectBase.value`
+property of a handle object.
+A common mistake is forgetting the ``.value`` which just gives you a reference to a handle
+(useful for defining an alias name), not the value.
+
+The Python type of a value depends on the handle's HDL type:
+
+* Arrays of ``logic`` and subtypes of that (``sfixed``, ``unsigned``, etc.)
+  are of type :class:`~cocotb.types.LogicArray`.
+* Integer nets and constants (``integer``, ``natural``, etc.) return :class:`int`.
+* Floating point nets and constants (``real``) return :class:`float`.
+* Boolean nets and constants (``boolean``) return :class:`bool`.
+* String nets and constants (``string``) return :class:`bytes`.
+
+.. todo::
+    Add simple example of how to use LogicArray
+
+
+.. _writing_tbs_identifying_tests:
+
+Identifying tests
+=================
+
+cocotb tests are identified using the :deco:`cocotb.test` decorator.
+Using this decorator will tell cocotb that this function is a special type of coroutine that is meant
+to either pass or fail.
+The :deco:`cocotb.test` decorator supports several keyword arguments (see section :ref:`writing-tests`).
+In most cases no arguments are passed to the decorator so cocotb tests can be written as:
+
+.. code-block:: python
+
+    # A valid cocotb test
+    @cocotb.test
+    async def test(dut):
+        ...
+
+    # Also a valid cocotb test
+    @cocotb.test()  # added ()
+    async def test(dut):
+        ...
+
+    # Another valid cocotb test
+    @cocotb.test(
+        skip=cocotb.top.feature.value != 1  # skip if feature disabled
+    )
+    async def test(dut):
+        ...
+
+.. _writing_tbs_concurrent_sequential:
+
+Concurrent and sequential execution
+===================================
+
+An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
+The called coroutine "blocks" the execution of the current coroutine.
+Wrapping the call in :func:`~cocotb.start_soon` runs the coroutine concurrently,
+allowing the current coroutine to continue executing.
+At any time you can await the result of a :class:`~cocotb.task.Task`,
+which will block the current coroutine's execution until the task finishes.
+
+The following example shows these in action:
+
+.. code-block:: python
+
+    # A coroutine
+    async def reset_dut(reset_n, duration_ns):
+        reset_n.value = 0
+        await Timer(duration_ns, unit="ns")
+        reset_n.value = 1
+        cocotb.log.debug("Reset complete")
+
+    @cocotb.test()
+    async def parallel_example(dut):
+        reset_n = dut.reset
+
+        # Execution will block until reset_dut has completed
+        await reset_dut(reset_n, 500)
+        cocotb.log.debug("After reset")
+
+        # Run reset_dut concurrently
+        reset_thread = cocotb.start_soon(reset_dut(reset_n, duration_ns=500))
+
+        # This timer will complete before the timer in the concurrently executing "reset_thread"
+        await Timer(250, unit="ns")
+        cocotb.log.debug("During reset (reset_n = %s)" % reset_n.value)
+
+        # Wait for the other thread to complete
+        await reset_thread
+        cocotb.log.debug("After reset")
+
+See :ref:`coroutines` for more examples of what can be done with coroutines.
+
+
+.. _writing_tbs_exact_time_values:
+
+Dealing with :class:`!float`\ s as time values
+==============================================
+
+Simulated time advances in whole :term:`time steps <time step>`,
+and the length of one time step is the simulator's time precision (see :data:`cocotb.simtime.time_precision`).
+When a time such as ``0.3`` ns is converted to time steps,
+the result must be a whole number or cocotb raises a :exc:`ValueError`
+(this is the default behavior of the ``round_mode`` argument of :class:`.Timer`).
+
+The examples below assume a time precision of 1 ps.
+Many :class:`float` literals convert without trouble;
+``Timer(0.1, unit="ns")`` is exactly 100 time steps.
+Problems appear when times are *computed* with :class:`float` arithmetic,
+because the result can be a tiny amount away from the value you intended:
+
+.. code-block:: python
+
+    # 0.1 + 0.2 is 0.30000000000000004 as a float,
+    # which is not a whole number of time steps
+    await Timer(0.1 + 0.2, unit="ns")  # raises ValueError
+
+To avoid this, compute times with a type that represents the values exactly,
+such as :class:`decimal.Decimal` or :class:`fractions.Fraction`.
+:class:`.Timer` and the ``period`` argument of :class:`~cocotb.clock.Clock` accept both.
+
+.. code-block:: python
+
+    from decimal import Decimal
+    from fractions import Fraction
+
+    await Timer(Decimal("0.1") + Decimal("0.2"), unit="ns")  # exactly 300 time steps
+    await Timer(Fraction(1, 10) + Fraction(2, 10), unit="ns")  # also exactly 300
+
+.. warning::
+
+    Create :class:`~decimal.Decimal` values from strings, not from floats.
+    ``Decimal(0.1)`` keeps the inexactness of the float ``0.1``
+    and raises the same :exc:`ValueError`, while ``Decimal("0.1")`` is exact.
+
+A time can still fail to convert if it is finer than the simulator's time precision,
+for example ``Decimal("0.0004")`` ns with a precision of 1 ps.
+In that case, either use a finer time precision in your simulation
+(the precision comes from the ``timescale`` of the HDL, or from :make:var:`COCOTB_HDL_TIMEPRECISION` if the HDL does not specify one),
+or pass ``round_mode`` to choose how the value is rounded to a whole number of time steps.
+
+Instead of passing ``round_mode`` in every call,
+you can set the default for all time conversions with the :envvar:`COCOTB_SIMTIME_DEFAULT_ROUND_MODE` environment variable
+(see also :data:`cocotb.simtime.default_round_mode`).
+It accepts ``error`` (the default), ``round``, ``floor``, and ``ceil``.
+A ``round_mode`` passed explicitly to a call still takes precedence over the default.
+
+.. code-block:: bash
+
+    COCOTB_SIMTIME_DEFAULT_ROUND_MODE=round
+
+.. note::
+
+    Prefer ``round`` when the inexactness comes from :class:`float` arithmetic.
+    The error can leave a value just below or just above a whole number of time steps,
+    so ``floor`` and ``ceil`` can be off by one time step.
+    For example, with a precision of 1 ps, ``0.1 + 0.2`` ns is slightly more than 300 time steps,
+    so ``ceil`` gives 301, and ``0.3 * 3`` ns is slightly less than 900 time steps, so ``floor`` gives 899.
+    Note that rounding also hides times that really are finer than the time precision:
+    with a precision of 1 ps, ``0.0004`` ns is silently rounded instead of raising a :exc:`ValueError`.
+
+
+.. _writing_tbs_assigning_values_forcing_freezing:
+
+Forcing and freezing signals
+============================
+
+In addition to regular value assignments (deposits), signals can be forced
+to a predetermined value or frozen at their current value. To achieve this,
+the various actions described in :ref:`assignment-methods` can be used.
+
+.. autolink-preface:: from cocotb.handle import Deposit, Force, Freeze, Release
+.. code-block:: python
+
+    # Deposit action
+    dut.my_signal.value = 12
+    dut.my_signal.value = Deposit(12)  # equivalent syntax
+
+    # Force action
+    dut.my_signal.value = Force(12)    # my_signal stays 12 until released
+
+    # Release action
+    dut.my_signal.value = Release()    # Reverts any force/freeze assignments
+
+    # Freeze action
+    dut.my_signal.value = Freeze()     # my_signal stays at current value until released
+
+.. warning::
+
+    Not all simulators support these features; refer to the :ref:`simulator-support` section for details or to `issues with label "upstream" <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Aupstream>`_
+
+
+.. _writing_tbs_accessing_underscore_identifiers:
+
+Accessing identifiers starting with an underscore or invalid Python names
+=========================================================================
+
+The attribute syntax of ``dut._some_signal`` cannot be used to access
+an identifier that starts with an underscore (``_``, as is valid in Verilog)
+because we reserve such names for cocotb-internals,
+thus the access will raise an :exc:`AttributeError`.
+
+Both SystemVerilog and VHDL allow developers to create signals or nets with non-standard characters by using special syntax.
+These objects are generally not accessible using attribute syntax since attributes in Python must follow a strict form.
+
+All named objects, including those with the aforementioned limitations, can be accessed using index syntax.
+
+.. code-block:: python
+
+    dut["_some_signal"]  # begins with underscore
+    dut["\\!WOOOOW!\\"]  # escaped identifier (Verilog), extended identifier (VHDL)
+
+
+.. _writing_tbs_accessing_verilog_packages:
+
+Accessing Verilog packages
+==========================
+
+Verilog packages are accessible via :data:`cocotb.packages`.
+Depending on the simulator, packages may need to be imported in
+the compilation unit scope or inside a module in order to be discoverable.
+Also note, the ``$unit`` pseudo-package is implemented differently between simulators.
+It may appear as one or more attributes here depending on the number of compilation units.
+
+.. code-block:: verilog
+
+    package my_package;
+        parameter int foo = 7
+    endpackage
+
+.. code-block:: python
+
+    # prints "7"
+    cocotb.log.info(cocotb.packages.my_package.foo.value)
+
+
+Forcing a test to end with a given result
+=========================================
+
+In addition to the normal ways a test can pass or fail (see :ref:`passing_and_failing_tests`),
+a test can be forced to end with a given result using the following functions:
+
+* :func:`pytest.xfail` to end the test with an expected fail (considered a pass)
+* :func:`pytest.skip` to end the test with a skip
+
+These functions can be called from any Task and will end the test immediately with the given result.
+They are typically used when you cannot use the :deco:`cocotb.skipif` or :deco:`cocotb.xfail` decorators
+to describe the exact conditions under which a test should be skipped or have reached an expected fail state.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        if load_stimulus_from_a_file(dut.paramA, dut.paramB) is None:
+            pytest.skip("The test stimulus is not available, assuming this combination of parameters is not supported")
+
+    @cocotb.test()
+    async def test(dut):
+        ...
+        if dut.read_empty.value == 0:
+            pytest.xfail("The read interface is not empty, but this test is expected to fail in this case")
+
+
+.. _passing_and_failing_tests:
+
+Passing and failing tests
+=========================
+
+When cocotb tests complete execution, they have either `passed` or `failed`.
+
+In general, if the main test coroutine completes without raising an :exc:`!Exception`,
+or if the test coroutine or any running :class:`~cocotb.task.Task` calls :func:`cocotb.pass_test`,
+the test is considered to have `passed`.
+Also, if the main test coroutine raises a :exc:`~asyncio.CancelledError`,
+or is :keyword:`await`\ ing a :class:`!Task` that is cancelled and does not handle it (or re-raises it),
+the test will end immediately but it will have `passed`.
+
+Below are examples of `passing` tests.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        assert 2 > 1  # assertion is correct, then the coroutine ends
+
+    @cocotb.test()
+    async def test(dut):
+        cocotb.pass_test("Reason")  # ends test with success early
+        assert 1 > 2  # this would fail, but it isn't run because the test was ended early
+
+    @cocotb.test()
+    async def test(dut):
+        async def ends_test_with_pass():
+            cocotb.pass_test("Reason")
+        cocotb.start_soon(ends_test_with_pass())
+        await Timer(10, 'ns')
+
+    @cocotb.test()
+    async def test(dut):
+        async def cancelled_after_time():
+            await Timer(1, unit='ns')
+            raise CancelledError
+        t = cocotb.start_soon(cancelled_after_time())
+        await t
+
+A passing test will print the following output.
+
+.. code-block::
+
+    0.00ns INFO     Test Passed: test
+
+A cocotb test is considered to have `failed` if the test coroutine or any running :class:`~cocotb.task.Task`
+fails an :keyword:`assert` statement, fails :func:`pytest.raises` or :func:`pytest.warns` checks,
+or raises any other :exc:`!Exception` besides :exc:`!CancelledError`.
+
+Below are examples of `failed` tests that failed assertion statements.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        assert 1 > 2, "Testing the obvious"
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            assert 1 > 2
+        cocotb.start_soon(fails_test())
+        await Timer(10, 'ns')
+
+When a test fails, a stacktrace is printed.
+
+If :mod:`pytest` is installed and assert statements are used,
+a more informative stacktrace is printed which includes the values that caused the assert to fail.
+For example, see the output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
+
+Below are examples of `failed` tests that raised an :exc:`!Exception`.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+        await coro_that_does_not_exist()  # NameError
+
+    @cocotb.test()
+    async def test(dut):
+        async def coro_with_an_error():
+            dut.signal_that_does_not_exist.value = 1  # AttributeError
+        cocotb.start_soon(coro_with_an_error())
+        await Timer(10, 'ns')
+
+When a test ends with an :exc:`!Exception`, a stacktrace is printed.
+For example, see the below output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was NameError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        await coro_that_does_not_exist()  # NameError
+                    NameError: name 'coro_that_does_not_exist' is not defined
+
+In summary:
+
++--------------+--------------------------------------------------------------------------+
+|| Test Passed || Test ends without raising :exc:`!Exception`.                            |
+||             || Test or Task calls :func:`cocotb.pass_test`.                            |
+||             || Test raises :exc:`~asyncio.CancelledError`.                             |
++--------------+--------------------------------------------------------------------------+
+|| Test Failed || Test fails an :keyword:`assert` statement.                              |
+||             || Test or Task raises :exc:`AssertionError`.                              |
+||             || Test or Task fails :func:`pytest.raises` or :func:`pytest.warns` check. |
+||             || Test or Task raises any other :exc:`!Exception`.                        |
++--------------+--------------------------------------------------------------------------+
+
+.. note::
+    For the purpose of denoting expected test failures that should be marked as passed,
+    and differentiating between specific types of failures,
+    see the ``expect_fail`` and ``expect_error`` arguments of the :func:`cocotb.test` decorator.
+
+
+Cleaning up resources
+=====================
+
+When you call :meth:`.Task.cancel` on a Task,
+a :exc:`~asyncio.CancelledError` will be raised which can be caught to run cleanup or end-of-test code.
+This will also trigger the finalization routine of any :term:`context manager`.
+
+When a test ends, the cocotb runtime will call :meth:`.Task.cancel` on all running tasks started with :func:`cocotb.start_soon`,
+allowing for end-of-test cleanup.
+
+.. code-block:: python
+
+    @cocotb.test()
+    async def test(dut):
+
+        async def drive_data_valid(intf, sequence):
+            try:
+                intf.valid.value = 1
+                for data in sequence:
+                    intf.data.value = data
+            finally:
+                # Ensure that valid is brought back to 0 when the test ends,
+                # the Task is explicitly cancelled, or if the Task ends normally.
+                intf.valid.value = 0
+
+        # Generate sequence
+        sequence = ...
+
+        # Run driver Task concurrently
+        cocotb.start_soon(drive_data_valid(dut.data_in, sequence))
+
+        # Do other stuff
+
+.. note::
+    If a :exc:`!CancelledError` is handled in a Task and not re-raised, the test will be considered to have :ref:`errored <passing_and_failing_tests>`.
+    This is to prevent Tasks from attempting to ignore cancellation.
+    For that reason, it is recommended to use :keyword:`finally` rather than specifically catching :exc:`!CancelledError`.

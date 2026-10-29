@@ -1,0 +1,240 @@
+# Copyright cocotb contributors
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
+
+import importlib.util
+import logging
+import os
+import random
+import time
+import warnings
+from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
+
+import cocotb
+import cocotb._profiling
+import cocotb._shutdown
+import cocotb.handle
+import cocotb.logging
+import cocotb.preview
+import cocotb.simtime
+import cocotb.simulator
+from cocotb_tools import _env
+
+log: logging.Logger
+
+
+def init_package_from_simulation() -> None:
+    """Initialize the cocotb package from a simulation context."""
+
+    # Initialize subsystems
+    cocotb.preview._init()
+    cocotb._shutdown._init()
+    cocotb.logging._init()
+    cocotb._profiling._init()
+    cocotb.simtime._init()
+
+    # Set up local "cocotb" logger
+    global log
+    log = logging.getLogger("cocotb.initialize")
+
+    # setup cocotb global variables
+    cocotb.is_simulation = True
+    cocotb.argv = cocotb.simulator.get_simulator_args()
+    cocotb.log = logging.getLogger("test")
+    cocotb.log.setLevel(logging.INFO)
+    cocotb.SIM_NAME = cocotb.simulator.get_simulator_product().strip()
+    cocotb.SIM_VERSION = cocotb.simulator.get_simulator_version().strip()
+    _process_plusargs()
+    _setup_random_seed()
+    _setup_root_handle()
+    _process_packages()
+    _start_user_coverage()
+
+    # log info about the simulation
+    log.info(
+        "Initialized cocotb v%s from %s",
+        cocotb.__version__,
+        Path(__file__).parent.absolute(),
+    )
+    log.info("Running on %s version %s", cocotb.SIM_NAME, cocotb.SIM_VERSION)
+
+
+def _process_plusargs() -> None:
+    cocotb.plusargs = {}
+
+    for option in cocotb.argv:
+        if option.startswith("+"):
+            if option.find("=") != -1:
+                (name, value) = option[1:].split("=", 1)
+                cocotb.plusargs[name] = value
+            else:
+                cocotb.plusargs[option[1:]] = True
+
+
+def _process_packages() -> None:
+    pkg_dict = {}
+
+    import cocotb.simulator  # noqa: PLC0415
+
+    pkgs = cocotb.simulator.package_iterate()
+    if pkgs is None:
+        cocotb.packages = SimpleNamespace()
+        return
+
+    for pkg in pkgs:
+        handle = cast(
+            "cocotb.handle.HierarchyObject", cocotb.handle._make_sim_object(pkg)
+        )
+        name = handle._name
+
+        # Icarus doesn't support named access to package objects:
+        # https://github.com/steveicarus/iverilog/issues/1038
+        # so we cannot lazily create handles
+        if cocotb.SIM_NAME == "Icarus Verilog":
+            handle._discover_all()
+        pkg_dict[name] = handle
+
+    cocotb.packages = SimpleNamespace(**pkg_dict)
+
+
+def _get_package_path(pkg: str) -> Path:
+    """Get the filesystem path of a package."""
+    spec = importlib.util.find_spec(pkg)
+    if spec is None or spec.origin is None:
+        raise ImportError(f"Cannot find package {pkg!r}")
+    return Path(spec.origin).parent.absolute()
+
+
+def _start_user_coverage() -> None:
+    enable_coverage: bool = False
+
+    if _env.exists("COCOTB_USER_COVERAGE"):
+        enable_coverage = _env.get_bool("COCOTB_USER_COVERAGE")
+
+    elif _env.exists("COVERAGE"):
+        warnings.warn(
+            "COVERAGE is deprecated in favor of COCOTB_USER_COVERAGE",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        enable_coverage = _env.get_bool("COVERAGE")
+
+    if enable_coverage:
+        try:
+            import coverage  # noqa: PLC0415
+        except ImportError:
+            raise RuntimeError(
+                "Coverage collection requested but coverage module not available. Install it using `pip install coverage`."
+            ) from None
+        else:
+            config_filepath: str = _env.get_str("COVERAGE_RCFILE")
+            if not config_filepath:
+                # Exclude cocotb libraries from coverage collection.
+                log.info(
+                    "Collecting coverage of user code. No coverage config file supplied via COVERAGE_RCFILE."
+                )
+                cocotb_package_dir = _get_package_path("cocotb")
+                cocotb_tools_package_dir = _get_package_path("cocotb_tools")
+                pygpi_package_dir = _get_package_path("pygpi")
+                user_coverage = coverage.coverage(
+                    branch=True,
+                    omit=[
+                        f"{cocotb_package_dir}/*",
+                        f"{cocotb_tools_package_dir}/*",
+                        f"{pygpi_package_dir}/*",
+                    ],
+                )
+            else:
+                log.info(
+                    "Collecting coverage of user code. Coverage config file supplied."
+                )
+                # Allow the config file to handle all configuration
+                user_coverage = coverage.coverage(config_file=config_filepath)
+            user_coverage.load()
+            user_coverage.start()
+
+            def stop_user_coverage() -> None:
+                user_coverage.stop()
+                log.debug("Writing user coverage data")
+                user_coverage.save()
+
+            cocotb._shutdown.register(stop_user_coverage)
+
+
+def _setup_random_seed() -> None:
+    seed: int = int(time.time())
+
+    if _env.exists("COCOTB_RANDOM_SEED"):
+        seed = _env.get_int("COCOTB_RANDOM_SEED", seed)
+
+    elif _env.exists("RANDOM_SEED"):
+        warnings.warn(
+            "RANDOM_SEED is deprecated in favor of COCOTB_RANDOM_SEED",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        seed = _env.get_int("RANDOM_SEED", seed)
+
+    elif "ntb_random_seed" in cocotb.plusargs:
+        warnings.warn(
+            "Passing +ntb_random_seed will not be used to seed Python's random number generator in the future. "
+            "Ensure you also set `COCOTB_RANDOM_SEED`.",
+            FutureWarning,
+            stacklevel=1,
+        )
+        seed = int(str(cocotb.plusargs["ntb_random_seed"]))
+
+    elif "seed" in cocotb.plusargs:
+        warnings.warn(
+            "Passing +seed will not be used to seed Python's random number generator in the future. "
+            "Ensure you also set `COCOTB_RANDOM_SEED`.",
+            FutureWarning,
+            stacklevel=1,
+        )
+        seed = int(str(cocotb.plusargs["seed"]))
+
+    cocotb.RANDOM_SEED = seed
+    random.seed(seed)
+    log.info("Seeding Python random module with %d", seed)
+
+
+def _setup_root_handle() -> None:
+    # Parse out the root module name from the environment variable
+    root_name: str | None = os.getenv("COCOTB_TOPLEVEL")
+    if root_name is not None:
+        root_name = root_name.strip()
+        if root_name == "":
+            root_name = None
+        elif "." in root_name:
+            # Skip any library component of the toplevel
+            root_name = root_name.rsplit(".", 1)[1]
+
+    from cocotb import simulator  # noqa: PLC0415
+
+    # Build cocotb.tops
+    handles = simulator.root_iterate()
+    if handles:
+        for handle in handles:
+            cocotb.tops[handle.get_name_string()] = cocotb.handle._make_sim_object(
+                handle
+            )
+
+    # Set cocotb.top if the root_name matches one of the handles
+    if root_name is not None:
+        target_name = root_name.casefold()
+        for name in cocotb.tops:
+            if name.casefold() == target_name:
+                cocotb.top = cocotb.tops[name]
+                return
+
+    # Otherwise, get the root handle directly from the simulator
+    root_handle = simulator.get_root_handle(root_name)
+    if not root_handle:
+        raise RuntimeError(f"Can not find root handle {root_name!r}")
+    cocotb.top = cocotb.handle._make_sim_object(root_handle)
+    cocotb.tops[cocotb.top._name] = cocotb.top

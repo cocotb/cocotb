@@ -1,0 +1,1 @@
+:meth:`handle.get() <cocotb.handle.ValueObjectBase.get>` and :meth:`handle.set() <cocotb.handle.ValueObjectBase.set>` on value handles are deprecated. Use the :attr:`~cocotb.handle.ValueObjectBase.value` property instead.

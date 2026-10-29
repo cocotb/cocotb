@@ -1,0 +1,1 @@
+``len()`` on :class:`.HierarchyObject`, :class:`.LogicObject`, :class:`.IntegerObject`, and :class:`.EnumObject` is deprecated. Use the ``size`` property to get the number of bits of a value object.

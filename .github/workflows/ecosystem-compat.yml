@@ -1,0 +1,157 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Tests to ensure that projects depending on cocotb continue to work with the
+# latest development version of cocotb.
+#
+# Generally, we test the development version of cocotb against supported,
+# released versions of the other projects. (It is expected that the projects
+# themselves test their in-development code against the released version of
+# cocotb.)
+
+name: Ecosystem compatibility tests
+
+on:
+  # Run daily at midnight (UTC).
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow triggering a CI run from the web UI.
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to test.
+        required: false
+        default: master
+
+env:
+  # Scheduled runs have no inputs, so fall back to master.
+  COCOTB_BRANCH: ${{ inputs.branch || 'master' }}
+
+jobs:
+  cocotb-coverage:
+    if: github.repository == 'cocotb/cocotb'
+    name: Test cocotb-coverage
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        cocotb-coverage-version: [ "2.0" ]
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
+
+      - name: Checkout cocotb-coverage repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: mciepluc/cocotb-coverage
+          path: cocotb-coverage
+          ref: v${{ matrix.cocotb-coverage-version }}
+
+      - name: Install the release version of cocotb-coverage
+        run: pip install ./cocotb-coverage
+
+      - name: Install the development version of cocotb
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
+
+      - name: Run tests
+        if: ${{ matrix.cocotb-coverage-version }} == '2.0'
+        env:
+          SIM: icarus
+          TOPLEVEL_LANG: verilog
+        run: |
+          pip install pytest cocotb-bus numpy
+          cd cocotb-coverage
+          make -k -C tests
+          make -C examples/fifo/tests
+          make -C examples/pkt_switch/tests
+
+  pyuvm:
+    if: github.repository == 'cocotb/cocotb'
+    name: Test pyuvm
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        pyuvm-version: [ "4.0.1" ]
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
+
+      - name: Install NVC
+        uses: nickg/setup-nvc@v1
+        with:
+          version: r1.19.3
+
+      - name: Checkout pyuvm repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: pyuvm/pyuvm
+          path: pyuvm
+          ref: ${{ matrix.pyuvm-version }}
+
+      - name: Install pyuvm
+        run: pip install ./pyuvm
+
+      - name: Install the development version of cocotb
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
+
+      - name: Run tests
+        if: ${{ matrix.pyuvm-version }} == '4.0.1'
+        working-directory: pyuvm
+        env:
+          VERILOG_SIM: icarus
+          VHDL_SIM: nvc
+        run: |
+          pip install pytest
+          pytest
+          make cocotb_tests
+
+  forastero:
+    if: github.repository == 'cocotb/cocotb'
+    name: Test Forastero
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        forastero-version: [ "1.2.1" ]
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get install -y --no-install-recommends iverilog
+
+      - name: Checkout Forastero repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: intuity/forastero
+          path: forastero
+          ref: ${{ matrix.forastero-version }}
+
+      - name: Install the release version of Forastero
+        run: pip install ./forastero
+
+      - name: Install the development version of cocotb
+        run: pip install "git+https://github.com/cocotb/cocotb.git@${COCOTB_BRANCH}"
+
+      - name: Run tests
+        working-directory: forastero
+        env:
+          SIM: icarus
+          TOPLEVEL_LANG: verilog
+        run: |
+          make -C examples/arbiter_strict
+          make -C examples/arbiter_window

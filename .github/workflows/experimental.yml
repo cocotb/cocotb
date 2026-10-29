@@ -1,0 +1,31 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# A workflow where the tool is the moving target, or the tool is known to be
+# not fully supported by cocotb, but we still want to see how its support
+# evolves over time.
+
+name: Test experimental tool versions
+
+on:
+  # Run every Monday at 2am (UTC).
+  schedule:
+    - cron: '0 2 * * 1'
+  # Allow triggering a CI run from the web UI.
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to test.
+        required: false
+        default: master
+
+jobs:
+  test_dev:
+    if: github.repository == 'cocotb/cocotb'
+    name: Regression Tests
+    uses: ./.github/workflows/regression-tests.yml
+    with:
+      test_task: dev_test
+      group: experimental
+      branch: ${{ inputs.branch }}

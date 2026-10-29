@@ -1,0 +1,18 @@
+// This file is public domain, it can be freely copied without restrictions.
+// SPDX-License-Identifier: CC0-1.0
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module resistor(p, n);
+
+  inout p; electrical p;
+  inout n; electrical n;
+
+  parameter real resistance=1 from (0:inf);  // resistance value, must be > 0
+
+  analog begin
+    V(p,n) <+ I(p,n) * resistance;
+  end
+
+endmodule

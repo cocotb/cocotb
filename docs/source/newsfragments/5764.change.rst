@@ -1,0 +1,1 @@
+Indexing the bits of a packed struct or union, or reading its ``range``, now raises :exc:`TypeError` on simulators that report packed structs and unions distinctly from vectors. Simulators that flatten them into plain vectors are unaffected.

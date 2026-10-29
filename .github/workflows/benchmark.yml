@@ -1,0 +1,103 @@
+name: Performance Benchmark
+# adapted from https://github.com/benchmark-action/github-action-benchmark#charts-on-github-pages-1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.ref }}
+  cancel-in-progress: ${{ !(contains(github.ref, 'release/') || contains(github.ref, 'master')) }}
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  changes:
+    if: github.repository == 'cocotb/cocotb'
+    uses: ./.github/workflows/detect-changes.yml
+
+  tests:
+    needs: changes
+    if: github.repository == 'cocotb/cocotb' && needs.changes.outputs.run_benchmarks == 'true'
+    name: Python ${{matrix.python-version}}
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.9
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
+      with:
+        key: ubuntu-22.04-gcc
+    - name: Setup ccache path
+      run: |
+        echo "/usr/lib/ccache" >> $GITHUB_PATH
+
+    # This action sets up its own Python, so run it before selecting the test Python.
+    - name: Set up Verilator
+      uses: ktbarrett/setup-verilator@2c87cbbff7b6d11227efef20a6f8a4278af11978  # v0.1.1
+      with:
+        version: v5.048
+
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: ${{matrix.python-version}}
+
+    - name: Install Icarus Verilog
+      run: |
+        sudo apt-get install -y --no-install-recommends iverilog
+
+    - name: Set up NVC (Ubuntu)
+      run: |
+        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
+        git clone https://github.com/nickg/nvc.git
+        cd nvc
+        git reset --hard r1.16.0
+        ./autogen.sh
+        mkdir build
+        cd build
+        ../configure
+        make -j $(nproc)
+        sudo make install
+
+    - name: Run benchmark
+      env:
+        COCOTB_PREVIEW: "1"
+      run: |
+        pip install pytest pytest-benchmark
+        pip install .
+        pytest -c /dev/null tests/benchmarks --benchmark-json output.json
+
+    # Pushing the benchmark requires elevated permissions to the
+    # cocotb/cocotb-benchmark-results repository, which we only grant for
+    # master builds, not for PR builds.
+    - name: Generate a token to access cocotb/cocotb-benchmark-results
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      id: generate_token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+      with:
+        client-id: ${{ secrets.COCOTB_CI_REPOACCESS_APP_ID }}
+        private-key: ${{ secrets.COCOTB_CI_REPOACCESS_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: cocotb-benchmark-results
+
+    - name: Store benchmark result
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc  # v1.22.2
+      continue-on-error: true
+      with:
+        tool: 'pytest'
+        output-file-path: output.json
+        alert-threshold: '120%'
+        fail-on-alert: true
+        github-token: ${{ steps.generate_token.outputs.token }}
+        auto-push: true
+        gh-repository: 'github.com/cocotb/cocotb-benchmark-results'

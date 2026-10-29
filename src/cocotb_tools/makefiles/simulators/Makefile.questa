@@ -1,0 +1,29 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Detect the version of Questa in use to choose the best flow.
+
+CMD_BIN := vsim
+
+ifdef MODELSIM_BIN_DIR
+    CMD := $(call find_command,$(MODELSIM_BIN_DIR)/$(CMD_BIN))
+else
+    # auto-detect bin dir from system path
+    CMD := $(call find_command,$(CMD_BIN))
+endif
+
+# Determine the version of Questa being used.
+QUESTA_VERSION := $(shell $(CMD) -version | $(PYTHON_BIN) -c 'import re,sys; print(re.sub(r".+vsim (\d+)\.(\d).+", "\\1 \\2", sys.stdin.read()))')
+QUESTA_VERSION_MAJOR := $(firstword $(QUESTA_VERSION))
+QUESTA_VERSION_MINOR := $(lastword $(QUESTA_VERSION))
+
+# Use the QIS/Qrun flow for Questa >= 2025.2 (the first version which fully
+# passes the cocotb regression suite). Use the compat flow otherwise.
+ifeq ($(shell test $(QUESTA_VERSION_MAJOR)$(QUESTA_VERSION_MINOR) -lt 20252; echo $$?),0)
+    $(info Using the Questa compat flow for Questa version $(QUESTA_VERSION_MAJOR).$(QUESTA_VERSION_MINOR) < 2025.2. Run make with SIM=questa-qisqrun to force the newer QIS/Qrun flow.)
+    include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.questa-compat
+else
+    $(info Using the Questa QIS/Qrun flow for Questa $(QUESTA_VERSION_MAJOR).$(QUESTA_VERSION_MINOR) >= 2025.2. Run make with SIM=questa-compat for the compat flow.)
+    include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.questa-qisqrun
+endif

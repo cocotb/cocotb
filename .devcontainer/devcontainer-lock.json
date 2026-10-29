@@ -1,0 +1,22 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:": {
+      "version": "4.1.0",
+      "resolved": "ghcr.io/devcontainers/features/docker-in-docker@sha256:7d979c4a36d595eb4ab79909caa3f396daf3b6152dcf38e8328ea4eff42206c7",
+      "integrity": "sha256:7d979c4a36d595eb4ab79909caa3f396daf3b6152dcf38e8328ea4eff42206c7"
+    },
+    "ghcr.io/helpers4/devcontainer/helpers4-common:1": {
+      "version": "1.2.2",
+      "resolved": "ghcr.io/helpers4/devcontainer/helpers4-common@sha256:65d3e504c66c1b1b0e56794846aa8537a6279c30cb812991782062cd8f2b3729",
+      "integrity": "sha256:65d3e504c66c1b1b0e56794846aa8537a6279c30cb812991782062cd8f2b3729"
+    },
+    "ghcr.io/helpers4/devcontainer/shell-history-per-project:1": {
+      "version": "1.2.3",
+      "resolved": "ghcr.io/helpers4/devcontainer/shell-history-per-project@sha256:c484a2d5035c8aa579cfc70d8f88e096647ded702c1eb3c852432c8a8a4f6b0a",
+      "integrity": "sha256:c484a2d5035c8aa579cfc70d8f88e096647ded702c1eb3c852432c8a8a4f6b0a",
+      "dependsOn": [
+        "ghcr.io/helpers4/devcontainer/helpers4-common:1"
+      ]
+    }
+  }
+}

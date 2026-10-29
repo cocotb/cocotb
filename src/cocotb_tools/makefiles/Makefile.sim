@@ -1,0 +1,96 @@
+# Copyright cocotb contributors
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# This file includes an appropriate makefile depending on the SIM variable.
+
+.PHONY: all
+all: sim
+
+# NOTE: keep this at 80 chars.
+define help_targets =
+Targets
+=======
+sim                       Unconditionally re-run the simulator (default)
+regression                Run simulator when dependencies have changes
+clean                     Remove build and simulation artefacts
+help                      This help text
+
+endef
+
+# NOTE: keep this at 80 chars.
+define help_makevars =
+Variables
+=========
+
+The following variables are makefile variables:
+
+Makefile-based Test Scripts
+---------------------------
+GUI                       Set this to 1 to enable the GUI mode in the simulator
+SIM                       Selects which simulator Makefile to use
+WAVES                     Enable wave traces dump for Riviera-PRO and Questa
+VERILOG_SOURCES           A list of the Verilog source files to include
+VHDL_SOURCES              A list of the VHDL source files to include
+VHDL_SOURCES_<lib>        VHDL source files to include in *lib* (GHDL/NVC/ModelSim/Questa/Xcelium/Incisive/Riviera-PRO only)
+VHDL_LIB_ORDER            Compilation order of VHDL libraries (needed for NVC/ModelSim/Questa/Xcelium/Incisive/Riviera-PRO)
+SIM_CMD_PREFIX            Prefix for simulation command invocations
+COMPILE_ARGS              Arguments to pass to compile (analysis) stage of simulation
+SIM_ARGS                  Arguments to pass to execution of compiled simulation
+EXTRA_ARGS                Arguments for compile and execute phases
+COCOTB_PLUSARGS           Plusargs to pass to the simulator
+COCOTB_HDL_TIMEUNIT       Default time unit for simulation
+COCOTB_HDL_TIMEPRECISION  Default time precision for simulation
+CUSTOM_COMPILE_DEPS       Add additional dependencies to the compilation target
+CUSTOM_SIM_DEPS           Add additional dependencies to the simulation target
+SIM_BUILD                 Define a scratch directory for use by the simulator
+SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
+
+endef
+
+
+# NOTE: keep *two* empty lines between "define" and "endef":
+define newline
+
+
+endef
+
+# this ensures we use the same python as the one cocotb was installed into
+# attempts to use cocotb_config entry script to get that info, falls back to "python"
+PYTHON_BIN_RES := $(shell cocotb-config --python-bin 2>>/dev/null; echo $$?)
+PYTHON_BIN_RC := $(lastword $(PYTHON_BIN_RES))
+PYTHON_BIN := $(strip $(subst $(PYTHON_BIN_RC)QQQQ,,$(PYTHON_BIN_RES)QQQQ))
+ifneq ($(PYTHON_BIN_RC),0)
+    PYTHON_BIN := python3
+endif
+
+# this cannot be a regular target because of the way Makefile.$(SIM) is included
+ifeq ($(MAKECMDGOALS),help)
+    $(info $(help_targets))
+    $(info $(help_makevars))
+    # hack to get newlines in output, see https://stackoverflow.com/a/54539610
+    # NOTE: the output of the command must not include a '%' sign, otherwise the formatting will break
+    help_envvars := $(subst %,${newline},$(shell $(PYTHON_BIN) -m cocotb.config --help-vars | tr \\n %))
+    $(info ${help_envvars})
+    # is there a cleaner way to exit here?
+    $(error Stopping after printing help)
+endif
+
+include $(shell $(PYTHON_BIN) -m cocotb_tools.config --makefiles)/Makefile.inc
+
+# Default to Icarus if no simulator is defined
+SIM ?= icarus
+
+# Maintain backwards compatibility by supporting upper and lower case SIM variable
+SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
+
+HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
+AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
+
+ifeq ($(HAVE_SIMULATOR),0)
+    $(error Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS))
+endif
+
+include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE)

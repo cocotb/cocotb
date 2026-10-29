@@ -1,0 +1,1 @@
+Added preview :data:`xfail_in_results <cocotb.preview.Feature.XFAIL_IN_RESULTS>` which reports expected test failures (via :deco:`cocotb.xfail` or :func:`pytest.xfail`) as `XFAIL` in the test summary and ``results.xml``.
