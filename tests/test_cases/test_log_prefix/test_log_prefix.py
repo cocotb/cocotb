@@ -20,7 +20,7 @@ def test_log_prefix() -> None:
 
     pwd = Path(__file__).parent.absolute()
 
-    build_dir = Path("sim_build")
+    build_dir = Path(os.environ.get("COCOTB_BUILD_DIR", "sim_build"))
     runner.build(
         sources=[pwd / "top.sv"],
         hdl_toplevel="top",

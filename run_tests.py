@@ -31,9 +31,15 @@ def main() -> int:
     parser.add_argument(
         "--clean", action="store_true", help="Run make clean in each suite."
     )
+    parser.add_argument(
+        "--session-dir",
+        type=Path,
+        help="Directory to keep simulator build artifacts in. Defaults to a 'sim_build' directory in each suite.",
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
+    session_dir = args.session_dir.resolve() if args.session_dir else None
     env = os.environ.copy()
     env.setdefault("SIM", "icarus")
     env.setdefault("TOPLEVEL_LANG", "verilog")
@@ -80,9 +86,12 @@ def main() -> int:
             f"Running {'clean for' if args.clean else 'regression suite'} {name}",
             flush=True,
         )
-        result = subprocess.run(
-            command, cwd=suite, env={**env, "PWD": str(suite)}, check=False
-        )
+        suite_env = {**env, "PWD": str(suite)}
+        if session_dir is not None:
+            build_dir = session_dir / suite.relative_to(repo_root) / "sim_build"
+            suite_env["SIM_BUILD"] = str(build_dir)
+            suite_env["COCOTB_BUILD_DIR"] = str(build_dir)
+        result = subprocess.run(command, cwd=suite, env=suite_env, check=False)
         completed += 1
         if result.returncode:
             failed += 1
