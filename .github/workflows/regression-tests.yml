@@ -128,12 +128,12 @@ jobs:
       if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
       uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e  # v2.31.0
       with:
-        msystem: MINGW64
+        msystem: UCRT64
         update: true
         install: >
           base-devel
           gperf
-          mingw-w64-x86_64-toolchain
+          mingw-w64-ucrt-x86_64-toolchain
 
     - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
@@ -176,7 +176,7 @@ jobs:
       timeout-minutes: 10
       shell: msys2 {0}
       env:
-        MINGW_ARCH: MINGW64
+        MINGW_ARCH: UCRT64
       run: |
         cd iverilog
         cd msys2
@@ -186,7 +186,7 @@ jobs:
       timeout-minutes: 10
       shell: msys2 {0}
       env:
-        MINGW_ARCH: MINGW64
+        MINGW_ARCH: UCRT64
       run: |
         pacman -U --noconfirm iverilog/msys2/*.zst
         echo "$(dirname $(cygpath -m $(which iverilog)))" >> $GITHUB_PATH
