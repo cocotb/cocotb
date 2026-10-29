@@ -24,6 +24,7 @@ import cocotb.simulator
 from cocotb._ansi import ANSI
 from cocotb._deprecation import deprecated
 from cocotb.simtime import TimeUnit, get_sim_time
+from cocotb.task import current_task
 from cocotb.utils import get_time_from_sim_steps
 from cocotb_tools import _env
 
@@ -32,6 +33,7 @@ __all__ = (
     "SimLog",
     "SimLogFormatter",
     "SimTimeContextFilter",
+    "TaskContextFilter",
     "default_config",
     "strip_ansi",
 )
@@ -60,9 +62,9 @@ def default_config(
     """Apply the default cocotb log formatting to the root logger.
 
     This hooks up the logger to write to stdout, using :class:`SimLogFormatter` for formatting.
-    It also adds a :class:`SimTimeContextFilter` filter so that the
-    :attr:`~logging.LogRecord.created_sim_time` attribute on :class:`~logging.LogRecord`
-    is available to the formatter.
+    It also adds the :class:`SimTimeContextFilter` and :class:`TaskContextFilter` filters so that the
+    :attr:`~logging.LogRecord.created_sim_time` and :attr:`~logging.LogRecord.task` attributes on
+    :class:`~logging.LogRecord` are available to the formatter.
 
     If desired, this logging configuration can be overwritten by calling
     ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards),
@@ -117,6 +119,7 @@ def default_config(
     # Pytest or other frameworks can add custom log handlers, we need to ensure that log output will be consistent
     for handler in logging.getLogger().handlers:
         handler.addFilter(SimTimeContextFilter())
+        handler.addFilter(TaskContextFilter())
 
         handler.setFormatter(
             SimLogFormatter(
@@ -239,6 +242,25 @@ class SimTimeContextFilter(logging.Filter):
             # RecursionError: get_sim_time may try to log.
             # RuntimeError: No simulator is loaded. Happens when default_config() is called outside of simulator process.
             record.created_sim_time = None
+        return True
+
+
+class TaskContextFilter(logging.Filter):
+    """
+    A filter to inject the currently running Task into the log records.
+
+    This adds the :attr:`~logging.LogRecord.task` attribute.
+    The attribute is :data:`None` when the log is emitted outside of a Task.
+
+    .. versionadded:: 2.2
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            record.task = current_task()
+        except RuntimeError:
+            # No Task is running, e.g. when logging from a simulator callback.
+            record.task = None
         return True
 
 
