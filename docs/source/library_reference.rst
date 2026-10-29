@@ -686,6 +686,23 @@ Adding Simulation Time to Logs
 
 .. currentmodule:: cocotb.logging
 
+Adding the Current Task to Logs
+-------------------------------
+
+.. autoclass:: TaskContextFilter
+    :show-inheritance:
+    :no-members:
+
+.. currentmodule:: None
+
+.. attribute:: logging.LogRecord.task
+
+    The :class:`~cocotb.task.Task` that emitted the log record, or :data:`None` if the log was created outside of a Task.
+
+    This is added by :class:`~cocotb.logging.TaskContextFilter`.
+
+.. currentmodule:: cocotb.logging
+
 Log Formatting
 --------------
 
@@ -714,7 +731,7 @@ Log Formatting
     The value of this variable should be in Python f-string syntax.
     It has access to the following variables:
 
-    - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attribute ``created_sim_time``, which is the simulation time in steps.
+    - ``record``: The :class:`~logging.LogRecord` being formatted. This includes the attributes ``created_sim_time``, which is the simulation time in steps, and ``task``, which is the currently running Task or ``None``.
     - ``time``: The Python :mod:`time` module.
     - ``simtime``: The cocotb :mod:`cocotb.simtime` module.
     - ``simtime_fmt``: Function which, given a ``LogRecord`` and ``TimeUnit``, returns the simulation time in the requested units as a string with the default formatting.
