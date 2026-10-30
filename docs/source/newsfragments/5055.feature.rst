@@ -1,0 +1,1 @@
+Added :class:`~cocotb.logging.TaskContextFilter`, which adds the currently running :class:`~cocotb.task.Task` to :attr:`logging.LogRecord.task`.

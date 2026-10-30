@@ -128,6 +128,18 @@ def test_default_config_no_simulator(caplog: LogCaptureFixture) -> None:
     assert all(record.created_sim_time is None for record in caplog.records)
 
 
+def test_default_config_task_outside_task(caplog: LogCaptureFixture) -> None:
+    """``default_config`` adds the task attribute, which is None outside a Task."""
+    cocotb.logging.default_config()
+
+    with caplog.at_level(INFO):
+        caplog.clear()
+        getLogger("cocotb").info("test message")
+
+    assert caplog.records
+    assert all(record.task is None for record in caplog.records)
+
+
 @pytest.mark.parametrize("unit, expected", [("ns", "1.25ns"), ("ps", "1250.00ps")])
 def test_report_precision(monkeypatch: MonkeyPatch, unit: str, expected: str) -> None:
     formatter = cocotb.logging.SimLogFormatter(strip_ansi=True)

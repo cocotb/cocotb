@@ -14,6 +14,7 @@ from collections.abc import Generator
 
 import cocotb
 import cocotb.logging as cocotb_logging
+import cocotb.task
 from cocotb.logging import ANSI
 
 
@@ -106,6 +107,13 @@ async def test_warning_capture(_: object) -> None:
         warnings.warn("This is a test warning", UserWarning, stacklevel=1)
     assert len(logs.msgs) == 1
     assert "This is a test warning" in logs.msgs[0]
+
+
+@cocotb.test
+async def test_task_context_filter(_: object) -> None:
+    record = logging.LogRecord("cocotb", logging.INFO, __file__, 0, "message", (), None)
+    cocotb_logging.TaskContextFilter().filter(record)
+    assert record.task is cocotb.task.current_task()
 
 
 @cocotb.test
