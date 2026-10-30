@@ -184,7 +184,12 @@ def dev_test_sim(
 
     if "COCOTB_CI_SKIP_MAKE" not in os.environ:
         session.log(f"Running Makefile-based suites against a simulator {config_str}")
-        test_args = ["python", "run_tests.py"]
+        test_args = [
+            "python",
+            "run_tests.py",
+            "--session-dir",
+            session.create_tmp(),
+        ]
         if "COCOTB_CI_FAIL_FAST" in os.environ:
             test_args.append("--fail-fast")
         session.run(*test_args, env=env)

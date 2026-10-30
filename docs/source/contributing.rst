@@ -117,6 +117,7 @@ We use code coverage as a quantifiable metric of the "exhaustiveness" of these t
 Run the Makefile-based regression suites and examples from the repository root with ``python run_tests.py``.
 Set ``SIM`` and ``TOPLEVEL_LANG`` in the environment to select the simulator and HDL language;
 the defaults are ``icarus`` and ``verilog``.
+Pass ``--session-dir DIR`` to keep simulator build artifacts outside the source tree.
 Use ``python run_tests.py tests`` or ``python run_tests.py examples`` to run only that group.
 The script continues after failed suites; use ``--fail-fast`` to stop at the first failure,
 or ``--clean`` to run each suite's cleanup target.
