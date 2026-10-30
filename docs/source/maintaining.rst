@@ -196,7 +196,8 @@ It then runs `towncrier <https://towncrier.readthedocs.io/>`_ on that branch (vi
 For a final release it also creates a GitHub Release for the tag; release candidates are published to PyPI but aren't listed on the releases page.
 
 The ``VERSION`` file names the release the current branch is working towards, as a full ``X.Y.Z``.
-It feeds `setuptools-git-versioning <https://setuptools-git-versioning.readthedocs.io/>`_, which uses it to version the ``dev`` builds made from every commit that isn't tagged, and it is where ``nox -s release_notes`` takes the version to file the notes under.
+It feeds ``scripts/cocotb_version.py``, which generates the version string for all non-tagged commits,
+and it is where ``nox -s release_notes`` takes the version to file the notes under.
 It therefore has to move on whenever a branch starts working towards a different version: to the next minor on ``master`` when a series is branched off (done by "Release 1"), and to the next patch on the release branch once a final release is tagged (done by "Release 2").
 Both are proposed as PRs, like everything else these workflows do.
 
