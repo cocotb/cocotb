@@ -1,0 +1,1 @@
+Documented the :envvar:`LICENSE_QUEUE` environment variable used by the Makefile-based flow for Riviera-PRO, and corrected the name of the Tcl variable it sets.
