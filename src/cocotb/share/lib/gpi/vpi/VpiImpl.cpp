@@ -96,7 +96,7 @@ gpi_objtype to_gpi_objtype(int32_t vpitype, int num_elements, bool is_vector) {
                 // packed/unpacked
                 return GPI_LOGIC_ARRAY;
 #else
-                return GPI_PACKED;
+                return GPI_PACKED_ARRAY;
 #endif
             } else {
                 return GPI_LOGIC;
@@ -187,10 +187,85 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
     }
 }
 
+#ifdef VCS
+// VCS reports a packed array of structs or unions with the element's vpiType
+// (vpiStructVar, vpiUnionVar, ...) instead of vpiPackedArrayVar, and attaches
+// the array's packed ranges to it. A plain packed struct or union has no
+// packed range of its own (IEEE 1800-2023 37.16 and 37.17), so an object
+// whose outermost range counts fewer elements than it has bits is an array.
+static bool vcs_is_packed_array(vpiHandle hdl) {
+    int left = 0;
+    int right = 0;
+    vpiHandle iter = vpi_iterate(vpiRange, hdl);
+    if (iter != NULL) {
+        vpiHandle range = vpi_scan(iter);
+        if (range == NULL) {
+            return false;
+        }
+        DEFER(vpi_free_object(iter));
+        DEFER(vpi_free_object(range));
+        if (get_range_bounds(range, left, right)) {
+            return false;
+        }
+    } else if (get_range_bounds(hdl, left, right)) {
+        return false;
+    }
+    const int elements = (left > right ? left - right : right - left) + 1;
+    return elements != vpi_get(vpiSize, hdl);
+}
+#endif
+
+static gpi_objtype packed_type_to_gpi_objtype(int32_t type, vpiHandle hdl) {
+    // Explicit packed object types take precedence over their typespecs.
+    switch (type) {
+        case vpiPackedArrayVar:
+        case vpiPackedArrayNet:
+            return GPI_PACKED_ARRAY;
+        case vpiStructVar:
+        case vpiStructNet:
+#ifdef VCS
+            if (vcs_is_packed_array(hdl)) {
+                return GPI_PACKED_ARRAY;
+            }
+#endif
+            return GPI_PACKED_STRUCT;
+        case vpiUnionVar:
+        case vpiUnionNet:
+#ifdef VCS
+            if (vcs_is_packed_array(hdl)) {
+                return GPI_PACKED_ARRAY;
+            }
+#endif
+            return GPI_PACKED_UNION;
+        default:
+            break;
+    }
+
+    // A typespec can preserve the declared type when the object is reported
+    // as a generic select or exposes a flat bit range for a packed struct.
+    vpiHandle typespec = vpi_handle(vpiTypespec, hdl);
+    if (typespec != NULL) {
+        DEFER(vpi_free_object(typespec));
+        const auto typespec_type = vpi_get(vpiType, typespec);
+        if (typespec_type == vpiPackedArrayTypespec) {
+            return GPI_PACKED_ARRAY;
+        }
+        if ((typespec_type == vpiStructTypespec ||
+             typespec_type == vpiUnionTypespec) &&
+            vpi_get(vpiPacked, typespec)) {
+            return typespec_type == vpiStructTypespec ? GPI_PACKED_STRUCT
+                                                      : GPI_PACKED_UNION;
+        }
+    }
+
+    return GPI_PACKED_ARRAY;
+}
+
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                                                const std::string &name,
                                                const std::string &fq_name,
-                                               bool owns_handle) {
+                                               bool owns_handle,
+                                               gpi_objtype packed_kind_hint) {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
@@ -302,7 +377,10 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto gpi_type = to_gpi_objtype(type, num_elements, is_vector);
             if ((type == vpiEnumVar || type == vpiEnumNet) &&
                 vpi_get(vpiPacked, new_hdl)) {
-                gpi_type = GPI_PACKED;
+                gpi_type = GPI_PACKED_ARRAY;
+            }
+            if (gpi_type == GPI_PACKED_ARRAY) {
+                gpi_type = packed_type_to_gpi_objtype(type, new_hdl);
             }
             new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
             break;
@@ -330,17 +408,20 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiStructNet:
         case vpiUnionVar:
         case vpiUnionNet: {
-            auto is_vector = false;
             if (vpi_get(vpiPacked, new_hdl)) {
-                LOG_DEBUG("VPI: Found packed struct/union data type");
-                new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false);
+                // A parent that knows this is the element of a packed array
+                // of structs or unions overrides range discovery, which VCS
+                // defeats by reporting the array's ranges on the element.
+                const auto gpi_type =
+                    packed_kind_hint != GPI_UNKNOWN
+                        ? packed_kind_hint
+                        : packed_type_to_gpi_objtype(type, new_hdl);
+                LOG_DEBUG("VPI: Found packed %s as %d",
+                          vpi_get_str(vpiType, new_hdl), gpi_type);
+                new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false);
                 break;
-            } else if (vpi_get(vpiVector, new_hdl)) {
-                is_vector = true;
             }
-            const auto num_elements = vpi_get(vpiSize, new_hdl);
-            new_obj = new VpiObjHdl(
-                this, new_hdl, to_gpi_objtype(type, num_elements, is_vector));
+            new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         }
         case vpiModule:
@@ -553,7 +634,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
     } else if (obj_type == GPI_LOGIC_ARRAY || obj_type == GPI_ARRAY ||
-               obj_type == GPI_STRING || obj_type == GPI_PACKED) {
+               obj_type == GPI_STRING || obj_type == GPI_PACKED_ARRAY) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing
@@ -641,7 +722,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     } else {
         LOG_ERROR(
             "VPI: Parent of type %s must be of type GPI_GENARRAY, "
-            "GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED "
+            "GPI_LOGIC_ARRAY, GPI_ARRAY, GPI_STRING, or GPI_PACKED_ARRAY "
             "to have an index.",
             parent->get_type_str());
         return NULL;
@@ -653,13 +734,37 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         return NULL;
     }
 
+    gpi_objtype packed_kind_hint = GPI_UNKNOWN;
+#ifdef VCS
+    // VCS reports an element of a packed array of structs or unions with
+    // the array's packed ranges, so the element handle alone looks like a
+    // smaller array. VCS only returns handles for whole elements of a packed
+    // array (partial selects become pseudo-handles that reuse the parent
+    // handle), so a real struct or union child of a packed array is an
+    // element.
+    if (obj_type == GPI_PACKED_ARRAY && new_hdl != vpi_hdl) {
+        switch (vpi_get(vpiType, new_hdl)) {
+            case vpiStructVar:
+            case vpiStructNet:
+                packed_kind_hint = GPI_PACKED_STRUCT;
+                break;
+            case vpiUnionVar:
+            case vpiUnionNet:
+                packed_kind_hint = GPI_PACKED_UNION;
+                break;
+            default:
+                break;
+        }
+    }
+#endif
+
     snprintf(buff, 14, "[%d]", index);
 
     std::string idx = buff;
     std::string name = parent->get_name() + idx;
     std::string fq_name = parent->get_fullname() + idx;
-    GpiObjHdl *new_obj =
-        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
+    GpiObjHdl *new_obj = create_gpi_obj_from_handle(
+        new_hdl, name, fq_name, owns_handle, packed_kind_hint);
     // LCOV_EXCL_START
     if (new_obj == NULL) {
         if (owns_handle) vpi_free_object(new_hdl);

@@ -16,23 +16,10 @@ VpiSignalObjHdl::~VpiSignalObjHdl() {
     vpi_free_object(get_handle<vpiHandle>());
 }
 
-static bool may_lack_range(int32_t type) {
-    switch (type) {
-        case vpiStructVar:
-        case vpiStructNet:
-        case vpiUnionVar:
-        case vpiUnionNet:
-            return true;
-        default:
-            return false;
-    }
-}
-
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
-    bool rangeless_ok = may_lack_range(type);
-    bool unknown_range = false;
+    bool has_range = true;
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
         (vpiIntegerNet == type)) {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
@@ -46,88 +33,71 @@ int VpiSignalObjHdl::initialise(const std::string &name,
             m_indexable = false;  // Don't want to iterate over indices
             m_range_left = 0;
             m_range_right = m_num_elems - 1;
-        } else if (GpiObjHdl::get_type() == GPI_LOGIC ||
-                   GpiObjHdl::get_type() == GPI_LOGIC_ARRAY ||
-                   GpiObjHdl::get_type() == GPI_PACKED) {
+        } else if (GpiObjHdl::get_type() == GPI_PACKED_STRUCT ||
+                   GpiObjHdl::get_type() == GPI_PACKED_UNION) {
+            // A packed struct or union is a vector (vpiVector is TRUE) but
+            // has no packed range of its own (IEEE 1800-2023 37.17), so it
+            // cannot be indexed. vpiSize is its width in bits.
+            m_indexable = false;
+            m_range_left = -1;
+            m_range_right = -1;
+            has_range = false;
+            LOG_DEBUG("VPI: %s is a packed %s of %d bits", name.c_str(),
+                      vpi_get_str(vpiType, GpiObjHdl::get_handle<vpiHandle>()),
+                      m_num_elems);
+        } else if (GpiObjHdl::get_type() == GPI_LOGIC) {
+            // A scalar has no packed range to discover.
+            m_indexable = false;
+            m_range_left = 0;
+            m_range_right = m_num_elems - 1;
+        } else if (GpiObjHdl::get_type() == GPI_PACKED_ARRAY ||
+                   GpiObjHdl::get_type() == GPI_LOGIC_ARRAY /* GHDL */) {
             vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
-            m_indexable = vpi_get(vpiVector, hdl);
+            vpiHandle iter = vpi_iterate(vpiRange, hdl);
 
-            if (m_indexable) {
-                vpiHandle iter = vpi_iterate(vpiRange, hdl);
+            /* Only ever need the first "range" */
+            if (iter != NULL) {
+                vpiHandle rangeHdl = vpi_scan(iter);
 
-                /* Only ever need the first "range" */
-                if (iter != NULL) {
-                    vpiHandle rangeHdl = vpi_scan(iter);
+                if (rangeHdl != NULL) {
+                    DEFER(vpi_free_object(iter));
+                    DEFER(vpi_free_object(rangeHdl));
 
-                    if (rangeHdl != NULL) {
-                        DEFER(vpi_free_object(iter));
-                        DEFER(vpi_free_object(rangeHdl));
-
-                        int res = get_range_bounds(rangeHdl, m_range_left,
-                                                   m_range_right);
-                        if (res) {
-                            // LCOV_EXCL_START
-                            if (!rangeless_ok) {
-                                LOG_ERROR(
-                                    "VPI: Unable to get range bounds for %s of "
-                                    "type %s (%d)",
-                                    name.c_str(), vpi_get_str(vpiType, hdl),
-                                    type);
-                                check_vpi_error();
-                                return -1;
-                            }
-                            // LCOV_EXCL_STOP
-                            unknown_range = true;
-                        }
-                    } else if (rangeless_ok) {
-                        unknown_range = true;
-                    }
-                    // LCOV_EXCL_START
-                    else {
-                        LOG_ERROR(
-                            "VPI: Unable to get range for %s of type %s (%d)",
-                            name.c_str(), vpi_get_str(vpiType, hdl), type);
+                    if (get_range_bounds(rangeHdl, m_range_left,
+                                         m_range_right)) {
+                        // LCOV_EXCL_START
                         return -1;
-                    }
-                    // LCOV_EXCL_STOP
-                } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
-                           0) {
-                    if (rangeless_ok) {
-                        unknown_range = true;
-                    } else {
-                        // TODO is this the best behavior? Do simulators
-                        // actually hit this case?
-                        LOG_WARN(
-                            "VPI: Cannot discover range bounds, guessing based "
-                            "on elements");
-                        m_range_left = 0;
-                        m_range_right = m_num_elems - 1;
+                        // LCOV_EXCL_STOP
                     }
                 }
-
-                if (unknown_range) {
-                    // A packed struct or union is a vector (vpiVector is
-                    // TRUE) but has no range. Do not treat it as indexable,
-                    // so it is not mistaken for a packed array.
-                    m_indexable = false;
-                    m_range_left = -1;
-                    m_range_right = -1;
-                    LOG_DEBUG("VPI: %s has no range, it is a %s of %d elements",
-                              name.c_str(), vpi_get_str(vpiType, hdl),
-                              m_num_elems);
-                } else {
-                    LOG_DEBUG(
-                        "VPI: Indexable object initialized with range [%d:%d] "
-                        "and length >%d<",
-                        m_range_left, m_range_right, m_num_elems);
+                // LCOV_EXCL_START
+                else {
+                    LOG_ERROR("VPI: Unable to get range for %s of type %s (%d)",
+                              name.c_str(), vpi_get_str(vpiType, hdl), type);
+                    return -1;
                 }
-            } else {
+                // LCOV_EXCL_STOP
+            } else if (get_range_bounds(hdl, m_range_left, m_range_right)) {
+                // TODO is this the best behavior? Do simulators
+                // actually hit this case?
+                LOG_WARN(
+                    "VPI: Cannot discover range bounds, guessing based "
+                    "on elements");
                 m_range_left = 0;
                 m_range_right = m_num_elems - 1;
             }
+
+            // Only a vector with a packed range can be indexed. vpiVector
+            // alone is not enough: it is also TRUE for packed structs and
+            // unions, which have no range.
+            m_indexable = true;
+            LOG_DEBUG(
+                "VPI: Indexable object initialized with range [%d:%d] "
+                "and length >%d<",
+                m_range_left, m_range_right, m_num_elems);
         }
     }
-    if (!unknown_range) {
+    if (has_range) {
         m_range_dir =
             m_range_left > m_range_right ? GPI_RANGE_DOWN : GPI_RANGE_UP;
     }

@@ -7,7 +7,7 @@ import re
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb_tools.sim_versions import RivieraVersion
+from cocotb_tools.sim_versions import RivieraVersion, VerilatorVersion
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 
@@ -19,7 +19,13 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 )
 async def test_packed_struct_format(dut):
     """Test that the correct objects are returned for a struct"""
-    assert repr(dut.my_struct) == "PackedObject(sample_module.my_struct)"
+    if SIM_NAME.startswith("verilator") and VerilatorVersion(
+        cocotb.SIM_VERSION
+    ) < VerilatorVersion("5.053"):
+        # Verilator before 5.053 flattens packed structs into plain vectors.
+        assert repr(dut.my_struct) == "PackedArrayObject(sample_module.my_struct)"
+    else:
+        assert repr(dut.my_struct) == "PackedStructObject(sample_module.my_struct)"
 
     # Riviera-PRO initializes the struct with X, Verilator with 0, and others
     # with Z. Since we don't want to explicitly set dut.my_struct (write tests
