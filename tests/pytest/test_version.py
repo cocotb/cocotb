@@ -76,7 +76,7 @@ def test_version_change_on_merge(git_repo: Callable[..., str]) -> None:
 
 @pytest.mark.parametrize(
     "tag",
-    ["v2.2.0", "v2.2.0rc1", "v2.2.0.dev7", "v2.2.0.post1", "v2.2.0+build", "v9.8.7"],
+    ["v2.2.0", "v2.2.0rc1", "v2.2.0.dev7", "v2.2.0.post1", "v2.2.0+build", "v9.8.10"],
 )
 def test_exact_tag(git_repo: Callable[..., str], tag: str) -> None:
     git_repo("commit", "--allow-empty", "-m", "Change")
