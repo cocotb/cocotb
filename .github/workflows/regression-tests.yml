@@ -112,7 +112,7 @@ jobs:
     # This action sets up its own Python, so run it before selecting the test Python.
     - name: Set up Verilator
       if: (startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')) && matrix.sim == 'verilator'
-      uses: ktbarrett/setup-verilator@2c87cbbff7b6d11227efef20a6f8a4278af11978  # v0.1.1
+      uses: ktbarrett/setup-verilator@16f13f69df81c521346de67b5d05d4c3590c0dbd  # v0.1.2
       with:
         version: ${{matrix.sim-version}}
 
