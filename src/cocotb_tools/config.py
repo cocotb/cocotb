@@ -25,8 +25,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-import find_libpython
-
 import cocotb_tools
 
 base_tools_dir = Path(cocotb_tools.__file__).parent.resolve()
@@ -316,7 +314,9 @@ def main() -> None:
     elif args.help_vars:
         print(_help_vars_text())
     elif args.libpython:
-        libpython_path = find_libpython.find_libpython()
+        from find_libpython import find_libpython  # noqa: PLC0415
+
+        libpython_path = find_libpython()
         if libpython_path is None:
             sys.exit(1)
         print(Path(libpython_path).as_posix())
