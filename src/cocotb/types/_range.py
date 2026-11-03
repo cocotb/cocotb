@@ -177,9 +177,9 @@ class Range(Sequence[int]):
     ) -> int:
         if start is not None or stop is not None:
             if start is None:
-                start = self._range.start
+                start = 0
             if stop is None:
-                stop = self._range.stop
+                stop = len(self)
             return super().index(value, start, stop)
         return self._range.index(value)
 
