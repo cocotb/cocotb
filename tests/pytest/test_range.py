@@ -98,6 +98,23 @@ def test_downto_range_with_direction():
     assert r.count(10) == 0
 
 
+def test_range_index_start_stop():
+    r = Range(3, "downto", 0)
+    assert r.index(0, 1) == 3
+    assert r.index(1, 1, 3) == 2
+    assert r.index(3, None, 2) == 0
+    with pytest.raises(ValueError):
+        r.index(0, 1, 3)
+    with pytest.raises(ValueError):
+        r.index(3, 1)
+
+    r = Range(5, "to", 8)
+    assert r.index(8, 1) == 3
+    assert r.index(5, None, 2) == 0
+    with pytest.raises(ValueError):
+        r.index(5, 1)
+
+
 def test_range_index_from_class():
     r = Range(9, "downto", 4)
     r2 = Range(9, Direction.DOWNTO, 4)

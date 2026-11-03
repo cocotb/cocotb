@@ -1,0 +1,1 @@
+Fixed :meth:`Range.index() <cocotb.types.Range.index>` failing to find values at the end of the range when passed only *start*, or at the beginning of the range when passed only *stop*.
