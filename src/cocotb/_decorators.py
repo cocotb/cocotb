@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import inspect
 import sys
+import warnings
 from collections.abc import Coroutine, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -415,14 +416,32 @@ def test(
         if timeout_time is not None:
             obj.timeout = (timeout_time, timeout_unit)
         if expect_fail is not None:
+            warnings.warn(
+                "The 'expect_fail' argument to cocotb.test is deprecated; "
+                "use cocotb.xfail instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             obj.expect_fail |= expect_fail
         if expect_error is not None:
+            warnings.warn(
+                "The 'expect_error' argument to cocotb.test is deprecated; "
+                "use cocotb.xfail with 'raises' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             if isinstance(expect_error, type):
                 obj.expect_error.add(expect_error)
             else:
                 for exc in expect_error:
                     obj.expect_error.add(exc)
         if skip is not None:
+            warnings.warn(
+                "The 'skip' argument to cocotb.test is deprecated; "
+                "use cocotb.skipif instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             obj.skip |= skip
         if stage is not None:
             obj.stage = stage
