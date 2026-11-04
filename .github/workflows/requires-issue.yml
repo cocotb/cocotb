@@ -1,0 +1,34 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+name: Require an assigned issue
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, labeled, unlabeled]
+
+concurrency:
+  group: requires-issue-${{ github.event.pull_request.number }}
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+jobs:
+  requires-issue:
+    if: >-
+      github.event.action != 'labeled' && github.event.action != 'unlabeled' ||
+      github.event.label.name == 'override-requires-issue'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # Only run the trusted workflow's version of the policy, never PR code.
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Check contribution requirements
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/requires_issue.py

@@ -74,8 +74,6 @@ There are several ways to improve the documentation:
 -  Documenting internal components (Wiki)
 
 See the documentation on `building the documentation <#building-documentation-locally>`__ and the `guidelines on submitting pull requests <#patch-requirements>`__.
-Documentation improvements typically require no maintainer pre-approval;
-you can simply work on the documentation and open a pull request.
 Documentation on the Wiki does not require a pull request;
 any user with a Github account can contribute to it.
 Please be responsible with that power.
@@ -139,9 +137,6 @@ cocotb's regression tests can be improved by:
 -  Testing more of cocotb's core functionality
 -  Testing corner cases left out of the current set of tests (identified by looking at code coverage)
 -  Increasing the matrix of simulators, operating system, and Python installations tested in CI
-
-Testing improvements don't require maintainer pre-approval, but require a pull request.
-Please see the `guidelines on submitting pull requests <#patch-requirements>`__.
 
 Features
 --------
@@ -260,8 +255,14 @@ Have you fixed a bug in cocotb, or want to add new functionality to it?
 cocotb follows the typical `GitHub flow <https://guides.github.com/introduction/flow/>`__ and makes use of pull requests and reviews.
 Follow the steps below to get your changes merged, i.e. integrated into the main cocotb codebase.
 
+..note::
+   Contributors with fewer than three PRs merged in ``cocotb/cocotb`` must be assigned an open issue by a maintainer before opening a PR.
+   See :ref:`assigned-issue-requirement` for more details.
+
+
 1. Create an issue ticket on `cocotb's GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`__ describing the problem.
    Issues are also a good place to discuss design options with others before writing code.
+   You may also comment on an existing issue to request assignment.
 2. `Fork <https://help.github.com/articles/fork-a-repo/>`__ the `cocotb GitHub repository <https://github.com/cocotb/cocotb>`__ into your personal namespace.
 3. Create a new branch off the ``master`` branch for your set of changes.
    Use one branch per "topic," i.e. per set of changes which belong together.
@@ -275,6 +276,18 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
    If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on `Gitter <https://gitter.im/cocotb/Lobby>`__ or email).
    If a maintainer asks you to explain or modify code, try to do so.
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the ``master`` branch.
+
+Assigned Issue Requirement
+--------------------------
+
+Contributors with fewer than three PRs merged in ``cocotb/cocotb`` must be assigned an open issue by a maintainer before opening a PR.
+Open an issue or comment on an existing one to request assignment, and wait for a maintainer to assign it to you.
+The PR description must link that issue using a `GitHub closing keyword <https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue>`__, such as ``Closes #123`` or ``Fixes #123``.
+
+PRs that do not meet this requirement are automatically closed with an explanation.
+After obtaining assignment and updating the PR description, you can reopen the same PR.
+Maintainers can waive the requirement by applying the ``override-requires-issue`` label before reopening the PR, including for PRs targeting other branches.
+Contributors with at least three merged PRs in this repository are exempt from the assigned issue requirement.
 
 Maintainer Pre-approval
 -----------------------
