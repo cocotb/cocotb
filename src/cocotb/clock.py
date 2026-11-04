@@ -98,7 +98,7 @@ class Clock:
             Whether to start the clock with a ``1``.
             Default is ``True``.
 
-            .. versionadded:: 2.0
+            .. versionadded:: 2.2
 
     When *impl* is ``'auto'``, if :envvar:`COCOTB_TRUST_INERTIAL_WRITES` is defined,
     the :class:`~cocotb.simulator.cpp_clock` implementation will be used.
@@ -283,7 +283,10 @@ class Clock:
 
     @property
     def start_high(self) -> bool:
-        """``True`` if the first partial-period of the clock drove a ``1``."""
+        """``True`` if the first partial-period of the clock drove a ``1``.
+
+        .. versionadded:: 2.2
+        """
         return self._start_high
 
     def start(self, start_high: bool | None = None) -> Task[None]:
