@@ -293,12 +293,7 @@ class SimTimeoutError(TimeoutError):
     """Exception thrown when a timeout, in terms of simulation time, occurs."""
 
 
-async def with_timeout(
-    trigger: Awaitable[T],
-    timeout_time: float | Decimal,
-    timeout_unit: TimeUnit = "step",
-    round_mode: RoundMode | None = None,
-) -> T:
+def with_timeout(*args: Any, **kwargs: Any) -> Any:
     r"""Wait on any awaitable, throw an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
@@ -311,7 +306,7 @@ async def with_timeout(
     When a :term:`task` is passed,
     the caller blocks until the callee completes
     and the callee's result is returned to the caller.
-    If timeout occurs, the callee `continues to run`
+    If timeout occurs, the callee ``continues to run``
     and :exc:`SimTimeoutError` is raised.
 
     If a :class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` is passed,
@@ -320,15 +315,22 @@ async def with_timeout(
     If timeout occurs, the trigger is cancelled
     and :exc:`SimTimeoutError` is raised.
 
-    Usage:
+    This function may also be used as a decorator. When called without an awaitable
+    as the first positional argument, it returns a decorator that wraps a coroutine
+    function so that awaiting it (or scheduling it) is subject to the timeout:
+
         .. code-block:: python
 
+            @with_timeout(100, "ns")
+            async def my_thing():
+                ...
+
             await with_timeout(coro, 100, "ns")
-            await with_timeout(First(coro, event.wait()), 100, "ns")
 
     Args:
         trigger:
             A single object that could be right of an :keyword:`await` expression in cocotb.
+            Omitted when used as a decorator.
         timeout_time:
             Simulation time duration before timeout occurs.
         timeout_unit:
@@ -339,7 +341,8 @@ async def with_timeout(
             A ``None`` argument is converted to the current value of :attr:`.Timer.round_mode`.
 
     Returns:
-        First trigger that completed if timeout did not occur.
+        First trigger that completed if timeout did not occur, or a decorator when
+        used as a decorator.
 
     Raises:
         :exc:`SimTimeoutError`: If timeout occurs.
@@ -351,11 +354,92 @@ async def with_timeout(
 
     .. versionchanged:: 2.0
         Passing ``None`` as the *timeout_unit* argument was removed, use ``'step'`` instead.
+
+    .. versionchanged:: 2.2
+        Support using as a decorator.
     """
-    i, res = await select(
-        Timer(timeout_time, timeout_unit, round_mode=round_mode), trigger
-    )
-    if i == 0:
-        raise SimTimeoutError
+    import functools
+    import inspect
+
+    # Parse keyword arguments.
+    timeout_time_kw = kwargs.pop("timeout_time", None)
+    timeout_unit_kw = kwargs.pop("timeout_unit", None)
+    round_mode_kw = kwargs.pop("round_mode", None)
+
+    # Immediate form: first positional (or trigger kwarg) is an awaitable.
+    trigger = None
+    immediate = False
+    if args and hasattr(args[0], "__await__"):
+        trigger = args[0]
+        immediate = True
+    elif "trigger" in kwargs and hasattr(kwargs["trigger"], "__await__"):
+        trigger = kwargs.pop("trigger")
+        immediate = True
+
+    if immediate:
+        if timeout_time_kw is not None:
+            tt = timeout_time_kw
+        elif len(args) > 1:
+            tt = args[1]
+        else:
+            raise TypeError("with_timeout() missing timeout_time")
+
+        if timeout_unit_kw is not None:
+            tu = timeout_unit_kw
+        elif len(args) > 2:
+            tu = args[2]
+        else:
+            tu = "step"
+
+        if round_mode_kw is not None:
+            rm = round_mode_kw
+        elif len(args) > 3:
+            rm = args[3]
+        else:
+            rm = None
+
+        async def _run() -> Any:
+            i, res = await select(Timer(tt, tu, round_mode=rm), trigger)
+            if i == 0:
+                raise SimTimeoutError
+            return cast("T", res)
+
+        return _run()
+
+    # Decorator / factory form.
+    # Determine timeout parameters from positional args / kwargs.
+    if timeout_time_kw is not None:
+        tt = timeout_time_kw
+    elif args:
+        tt = args[0]
     else:
-        return cast("T", res)
+        # allow trigger kwarg carrying timeout_time? no
+        tt = None
+    if tt is None:
+        raise TypeError("with_timeout() missing timeout_time")
+
+    if timeout_unit_kw is not None:
+        tu = timeout_unit_kw
+    elif len(args) > 1:
+        tu = args[1]
+    else:
+        tu = "step"
+
+    if round_mode_kw is not None:
+        rm = round_mode_kw
+    elif len(args) > 2:
+        rm = args[2]
+    else:
+        rm = None
+
+    def decorator(func: Any) -> Any:
+        if inspect.iscoroutinefunction(func) or callable(func):
+
+            async def wrapped(*a: Any, **kw: Any) -> Any:
+                return await with_timeout(func(*a, **kw), tt, tu, rm)
+
+            functools.update_wrapper(wrapped, func)
+            return wrapped
+        return func
+
+    return decorator

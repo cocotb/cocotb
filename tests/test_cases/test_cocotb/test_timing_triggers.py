@@ -182,6 +182,28 @@ async def test_timeout_func_pass(dut: object) -> None:
     assert res == 1
 
 
+@cocotb.test
+async def test_timeout_decorator_fail(dut: object) -> None:
+    @with_timeout(1, "ns")
+    async def my_thing() -> int:
+        await Timer(10, "ns")
+        return 1
+
+    with pytest.raises(SimTimeoutError):
+        await my_thing()
+
+
+@cocotb.test
+async def test_timeout_decorator_pass(dut: object) -> None:
+    @with_timeout(100, "ns")
+    async def my_thing() -> int:
+        await Timer(10, "ns")
+        return 1
+
+    res = await my_thing()
+    assert res == 1
+
+
 class MyAwaitable:
     def __await__(self) -> Generator[Trigger, None, int]:
         yield from Timer(10, "ns").__await__()
