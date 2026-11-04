@@ -17,8 +17,6 @@ from functools import wraps
 from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
-from cocotb._py_compat import StrEnum
-
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
 
@@ -169,17 +167,6 @@ class DocIntEnum(IntEnum):
 
     def __new__(cls, value: int, doc: str | None = None) -> Self:
         self = int.__new__(cls, value)
-        self._value_ = value
-        if doc is not None:
-            self.__doc__ = doc
-        return self
-
-
-class DocStrEnum(StrEnum):
-    """Like DocEnum but for :class:`StrEnum` enum types."""
-
-    def __new__(cls, value: str, doc: str | None = None) -> Self:
-        self = str.__new__(cls, value)
         self._value_ = value
         if doc is not None:
             self.__doc__ = doc
