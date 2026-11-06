@@ -411,17 +411,7 @@ class Task(Generic[ResultType]):
                     remove_traceback_frames(e, ["_resume"]), _TaskState.ERRORED
                 )
         else:
-            if self._must_cancel:
-                if debug.debug:
-                    self._log.debug("Task %r was cancelled but continued running", self)
-                self._coro.close()
-                self._set_outcome(
-                    RuntimeError(
-                        "Task was cancelled, but continued running. Did you forget to re-raise the CancelledError?"
-                    ),
-                    _TaskState.ERRORED,
-                )
-            elif not isinstance(trigger, Trigger):
+            if not isinstance(trigger, Trigger):
                 if debug.debug:
                     self._log.debug(
                         "Task %r yielded non-Trigger of type: %r", self, type(trigger)
@@ -583,49 +573,21 @@ class Task(Generic[ResultType]):
 
         return True
 
-    def _cancel_now(self, msg: str | None = None) -> bool:
-        """Like cancel(), but throws CancelledError into the Task and puts it into a "done" state immediately.
+    def cancelling(self) -> int:
+        """Return the number of cancellation requests the Task has.
 
-        Not safe to be called from a running Task.
-        Only from done callbacks or scheduler or Task internals.
+        .. versionadded:: 2.2
         """
-        state = self._state
-        if state is _TaskState.PENDING:
-            # Unprime triggers if pending.
-            self._trigger_callback.cancel()
-        elif state is _TaskState.SCHEDULED:
-            # Unschedule if scheduled.
-            self._schedule_callback.cancel()
-        elif state is _TaskState.UNSTARTED:
-            # Resume anyways, the error will come out when calling coro.throw() on an
-            # unstarted coroutine and this will prevent ResourceWarnings from un-awaited
-            # coroutines.
-            pass
-        elif state is _TaskState.RUNNING:
-            raise RuntimeError("Can't _cancel_now() currently running Task")
-        else:  # FINISHED, ERRORED, CANCELLED
-            return False
+        return self._must_cancel
 
-        # Set state to do cancel
-        if msg is None:
-            cancelled_error = CancelledError()
-        else:
-            cancelled_error = CancelledError(msg)
-        self._must_cancel += 1
+    def _uncancel(self) -> bool:
+        """Decrease the cancellation count by one.
 
-        # Throw CancelledError now
-        self._exc = cancelled_error
-        self._resume()
-
-        return True
-
-    def _uncancel(self) -> None:
-        """Prevents :exc:`RuntimeError` from occurring when cancelled Tasks suppress :exc:`asyncio.CancelledError`.
-
-        Currently only useful for :class:`.TaskManager`.
+        Returns: ``True`` if there are still pending cancellation requests; ``False`` otherwise.
         """
         if self._must_cancel > 0:
             self._must_cancel -= 1
+        return self._must_cancel > 0
 
     def _unstarted(self) -> bool:
         """Return ``True`` if the Task has not started executing."""

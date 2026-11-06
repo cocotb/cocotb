@@ -774,6 +774,73 @@ async def test_cancel_task(_: object) -> None:
     assert task.done()
 
 
+@cocotb.test
+async def test_await_during_cancellation(_: object) -> None:
+    async def coro() -> None:
+        try:
+            await Timer(10)
+        except CancelledError:
+            await Timer(2)
+            await Timer(3)
+            raise
+
+    task = cocotb.start_soon(coro())
+    await Timer(1)
+    task.cancel("cleanup requested")
+
+    with (
+        assert_takes(5, "step"),
+        pytest.raises(CancelledError, match="cleanup requested"),
+    ):
+        await task
+
+    assert task.cancelled()
+
+
+async def test_task_cancelling(_: object) -> None:
+    task = cocotb.start_soon(Timer(10))
+    assert task.cancelling() == 0
+    await NullTrigger()
+
+    assert task.cancel()
+    assert task.cancelling() == 1
+    assert task.cancel()
+    assert task.cancelling() == 2
+
+    await task.complete
+    assert task.cancelled()
+    assert task.cancelling() == 2
+    assert not task.cancel()
+    assert task.cancelling() == 2
+
+
+@cocotb.test
+async def test_task_uncancel(_: object) -> None:
+    async def coro() -> int:
+        try:
+            await Timer(10)
+        except CancelledError:
+            assert task.cancelling() == 2
+            assert task._uncancel() is True
+            assert task.cancelling() == 1
+            assert task._uncancel() is False
+            assert task.cancelling() == 0
+            assert task._uncancel() is False
+            assert task.cancelling() == 0
+        return 123
+
+    task = cocotb.start_soon(coro())
+    assert task._uncancel() is False
+    assert task.cancelling() == 0
+    await NullTrigger()
+    task.cancel()
+    task.cancel()
+
+    assert await task == 123
+    assert not task.cancelled()
+    assert task.cancelling() == 0
+
+
 @cocotb.test(expect_error=RuntimeError)
 async def test_cancel_task_cancellation_error(_: object) -> None:
     a = Event()
@@ -1193,3 +1260,10 @@ async def test_task_closes_coro_when_never_started(_: object) -> None:
 
     # Ensure child was closed
     assert inspect.getcoroutinestate(c) == inspect.CORO_CLOSED
+
+
+@cocotb.test()
+async def test_cancel_then_return(dut: object) -> None:
+    task = cocotb.start_soon(First(Timer(10, unit="ns")))
+    await Timer(1, unit="ns")
+    task.cancel()
