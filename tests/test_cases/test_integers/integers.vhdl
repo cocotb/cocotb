@@ -7,6 +7,7 @@ use work.integers_pkg.all;
 
 entity top is
 port (
+    enum_input: in my_enum;
     integer_input: in integer;
     natural_input: in natural;
     positive_input: in positive;
@@ -15,6 +16,7 @@ port (
 end entity top;
 
 architecture rtl of top is
+    signal enum_signal: my_enum;
     signal integer_signal: integer;
     signal natural_signal: natural;
     signal positive_signal: positive;
