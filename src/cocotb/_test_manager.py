@@ -218,11 +218,27 @@ def start_soon(
 ) -> Task[TriggerT]: ...
 
 
+@overload
 def start_soon(
-    coro: Awaitable[Any],
+    coro: Callable[..., Awaitable[ResultType]],
     *,
     name: str | None = None,
-) -> Task[ResultType]:
+) -> Task[ResultType]: ...
+
+
+@overload
+def start_soon(
+    coro: None = None,
+    *,
+    name: str | None = None,
+) -> Callable[[Callable[..., Awaitable[ResultType]]], Task[ResultType]]: ...
+
+
+def start_soon(
+    coro: Awaitable[Any] | Callable[..., Awaitable[Any]] | None = None,
+    *,
+    name: str | None = None,
+) -> Task[Any] | Callable[[Callable[..., Awaitable[Any]]], Task[Any]]:
     """
     Schedule a :term:`coroutine` to be run concurrently in a :class:`~cocotb.task.Task`.
 
@@ -251,6 +267,20 @@ def start_soon(
             If you are passing a bespoke :class:`~collections.abc.Awaitable` object to this function,
             read the :ref:`design note <awaitable-design-note>` for important information about how to use it correctly.
     """
+    # Support using as a decorator.
+    if coro is None:
+
+        def decorator(
+            func: Callable[..., Awaitable[ResultType]],
+        ) -> Task[ResultType]:
+            return start_soon(func, name=name)
+
+        return decorator
+
+    if not isinstance(coro, Awaitable):
+        task_name = name if name is not None else getattr(coro, "__name__", None)
+        return start_soon(coro(), name=task_name)
+
     task = create_task(coro, name=name)
     if task._unstarted():
         task._start_soon()
