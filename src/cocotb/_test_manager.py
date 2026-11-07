@@ -455,5 +455,75 @@ def end_test(msg: str | None = None) -> NoReturn:
     raise EndTest(msg)
 
 
+class TestFailure(BaseException):
+    """Implementation of :func:`fail_test`.
+
+    Users are *not* intended to catch or raise this exception type.
+    """
+
+    def __init__(self, msg: str | None, cause: BaseException | None) -> None:
+        super().__init__(msg)
+        self.msg = msg
+        if cause is not None:
+            self.__cause__ = cause
+
+
+def fail_test(msg: str | None = None, *, exc: BaseException | None = None) -> NoReturn:
+    r"""Fail the currently running test.
+
+    The test will end after this function is called,
+    and its outcome will be *forced* to fail:
+    :deco:`cocotb.xfail` decorators and ``expect_error`` / ``expect_fail``
+    arguments to :func:`cocotb.test` are *not* respected.
+
+    This is intended for *out-of-context* failure handlers that cannot raise
+    through the test coroutine themselves, such as a :mod:`warnings` hook
+    promoting a warning to a test failure
+    (see :issue:`5491`).
+    The exception raised by the handler can be attached with *exc*
+    so it appears as the failure cause in the results.
+
+    Raises:
+        RuntimeError: If no test is currently running.
+
+    Args:
+        msg: The failure message.
+        exc: An exception of the caller's choice to record as the failure cause.
+
+    .. versionadded:: 2.2
+    """
+    if _current_test is None:
+        raise RuntimeError("No test is currently running; cannot fail a test.")
+    raise TestFailure(msg, exc)
+
+
+def fail_regression(msg: str | None = None, *, exc: BaseException | None = None) -> None:
+    r"""Fail the current regression.
+
+    The currently running test (if any) is failed, and every remaining test
+    in the regression is recorded as failed without being run.
+
+    Unlike :func:`fail_test`, this returns normally, so it is safe to call
+    from out-of-context handlers that must not unwind the caller's stack.
+
+    Args:
+        msg: The failure message.
+        exc: An exception of the caller's choice to record as the failure cause.
+
+    .. versionadded:: 2.2
+    """
+    from cocotb import regression  # noqa: PLC0415
+
+    try:
+        manager = regression._manager_inst
+    except AttributeError:
+        # _manager_inst is only set by the classic runner; the pytest plugin
+        # regression manager does not (yet) support regression-wide failure.
+        raise RuntimeError(
+            "fail_regression() is not supported by this test runner"
+        ) from None
+    manager.fail_regression(msg=msg, exc=exc)
+
+
 _current_test: TestManager | None = None
 """The currently executing test's state."""
