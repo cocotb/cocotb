@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import inspect
 import pdb  # noqa: T100
 import sys
 from asyncio import CancelledError
@@ -12,6 +13,7 @@ from typing import (
     Callable,
     NoReturn,
     TypeVar,
+    cast,
     overload,
 )
 
@@ -278,8 +280,15 @@ def start_soon(
         return decorator
 
     if not isinstance(coro, Awaitable):
-        task_name = name if name is not None else getattr(coro, "__name__", None)
-        return start_soon(coro(), name=task_name)
+        # Only coroutine functions can be called on the user's behalf. Anything else
+        # (an async generator, a non-callable object, ...) is handed to create_task(),
+        # which raises the canonical, descriptive TypeError.
+        if inspect.iscoroutinefunction(coro):
+            task_name = name if name is not None else coro.__name__
+            return start_soon(coro(), name=task_name)
+        # Not a coroutine function either: forward it unchanged so that
+        # create_task() raises the canonical, descriptive TypeError.
+        coro = cast("Awaitable[Any]", coro)
 
     task = create_task(coro, name=name)
     if task._unstarted():
