@@ -288,7 +288,7 @@ async def test_discover_all(dut):
         dut.port_rec_out  # noqa: B018
 
     if cocotb.SIM_NAME.lower().startswith("ghdl"):
-        pass_total = 56
+        pass_total = 66
     elif (
         LANGUAGE in ["vhdl"]
         and cocotb.SIM_NAME.lower().startswith("modelsim")
@@ -303,7 +303,7 @@ async def test_discover_all(dut):
         # VCS is unable to access signals in generate loops through VPI (#4328).
         pass_total = 172
     elif LANGUAGE in ["vhdl"]:
-        pass_total = 244
+        pass_total = 494
     else:
         # verilog
         pass_total = 206
@@ -406,3 +406,44 @@ async def test_extended_identifiers(dut):
 
     assert isinstance(dut["\\ext_id\\"], LogicObject)
     assert isinstance(dut["\\!\\"], LogicObject)
+
+
+# GHDL cannot do complex types in ports
+@cocotb.test(skip=(LANGUAGE in ["verilog"]), expect_fail=SIM_NAME.startswith("ghdl"))
+async def test_record_of_multidim_array(dut):
+    """Test handling of multi-dim arrays in / of records (complex hierarchies)"""
+
+    # this catches ghdl early
+    assert "port_rec_of_arr" in dir(dut)
+
+    # record with a field that is a 2d array
+    data = dut.port_rec_of_arr.data
+    assert isinstance(data, ArrayObject)
+    first_row = data[0]
+    assert isinstance(first_row, ArrayObject)
+    elem = first_row[0]
+    assert isinstance(elem, LogicArrayObject)
+    assert elem.value == 0x42
+
+    # 1d array of record with 2d array
+    array_of_record = dut.port_1darr_of_rec_of_arr
+    assert isinstance(array_of_record, ArrayObject)
+    record_elem = array_of_record[2]
+    assert isinstance(record_elem, HierarchyObject)
+    data = record_elem.data
+    assert isinstance(data, ArrayObject)
+    first_row = data[1]
+    assert isinstance(first_row, ArrayObject)
+    elem = first_row[2]
+    assert isinstance(elem, LogicArrayObject)
+    assert elem.value == 0x43
+    # double-check with another index
+    other_elem = dut.port_1darr_of_rec_of_arr[1].data[1][0]
+    assert other_elem.value == 0x44
+
+    # 2d array of record with 2d array, for good measure
+    # If this and the above works, chances are good that more complicated structures work as well
+    elem = dut.port_2darr_of_rec_of_arr[0][0].data[0][0]
+    assert elem.value == 0x45
+    elem = dut.port_2darr_of_rec_of_arr[7][2].data[1][2]
+    assert elem.value == 0x46

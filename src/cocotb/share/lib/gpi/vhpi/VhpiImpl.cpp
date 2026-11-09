@@ -680,11 +680,26 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
 
         vhpiIntT num_dim = vhpi_get(vhpiNumDimensionsP, base_hdl);
         int idx = 0;
-
         /* Need to translate the index into a zero-based flattened array index
          */
         if (num_dim > 1) {
-            std::string hdl_name = vhpi_get_str(vhpiCaseNameP, vhpi_hdl);
+            /* full name to avoid mismatch with parent->get_fullname() from GPI
+             */
+            std::string hdl_name = vhpi_get_str(vhpiFullCaseNameP, vhpi_hdl);
+            /* remove leading ":" that is only in the vhpiFullCaseNameP */
+            if (!hdl_name.empty() && hdl_name[0] == ':') {
+                hdl_name.erase(0, 1);
+            }
+            /* Also, vhpiFullCaseNameP accesses arrays like my_array(1, 2),
+             * while parent->get_fullname() builds them like my_array(1)(2).
+             * Since it is only used for comparing, we "convert" it to "GPI
+             * style"
+             */
+            std::size_t comma_pos;
+            while ((comma_pos = hdl_name.find(',')) != std::string::npos) {
+                hdl_name.replace(comma_pos, 1, ")(");
+            }
+
             std::vector<int> indices;
 
             /* Need to determine how many indices have been received.  A valid
@@ -692,9 +707,10 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
              * otherwise need a pseudo-handle.
              *
              * When working with pseudo-handles:
-             *              hdl_name:   sig_name
-             *    parent->get_name():   sig_name(x)(y)...  where x,y,... are the
-             * indices to a multi-dimensional array. pseudo_idx:   (x)(y)...
+             *                  hdl_name:   hierarchy:sig_name
+             *    parent->get_fullname():   hierarchy.sig_name(x)(y)...
+             * (where x,y,...are the indices to a multi-dimensional array)
+             *                pseudo_idx:   (x)(y)...
              */
             if (hdl_name.length() < parent->get_fullname().length()) {
                 std::string pseudo_idx =
