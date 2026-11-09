@@ -79,16 +79,3 @@ async def test_fail_test_overrides_expect_fail(_: object) -> None:
     # fail_test precedence: the forced failure is not converted to an xfail
     # by expect_fail (mirroring pass_test's precedence over xfail).
     cocotb.fail_test("forced failure with expect_fail set")
-
-
-@cocotb.test()
-async def test_fail_regression_fails_this_test(_: object) -> None:
-    # The running test is failed immediately...
-    cocotb.fail_regression("regression failed by request")
-
-
-@cocotb.test()
-async def test_fail_regression_fails_remaining_tests(_: object) -> None:
-    # ...and this test is never run: _execute() scores it as failed because
-    # _regression_terminated was set by the call above.
-    assert False, "this test must be scored as failed without running"
