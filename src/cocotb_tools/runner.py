@@ -270,6 +270,25 @@ class Runner(ABC):
 
         return hdl_toplevel_lang, source_langs
 
+    def _default_gpi_interface(self, lang: str) -> str:
+        """Return the GPI interface to use for *lang* if none was given explicitly.
+
+        For VHDL, the :make:var:`VHDL_GPI_INTERFACE` environment variable selects
+        the interface if set, like in the Makefile flow.
+        """
+        supported = self.supported_gpi_interfaces[lang]
+        if lang == "vhdl":
+            env_intf = os.getenv("VHDL_GPI_INTERFACE", "").strip()
+            if env_intf:
+                if env_intf not in supported:
+                    raise ValueError(
+                        f"VHDL_GPI_INTERFACE={env_intf!r} is not supported by "
+                        f"{type(self).__qualname__}; supported values for VHDL "
+                        f"are: {', '.join(supported)}"
+                    )
+                return env_intf
+        return supported[0]
+
     def _set_env_common(self) -> None:
         self.env.update(os.environ)
 
@@ -513,6 +532,8 @@ class Runner(ABC):
             hdl_toplevel_library: The library name for HDL toplevel module.
             hdl_toplevel_lang: Language of the HDL toplevel module.
             gpi_interfaces: List of GPI interfaces to use, with the first one being the entry point.
+                If not set, the default interface of the simulator is used for each language of the design.
+                For VHDL, the :make:var:`VHDL_GPI_INTERFACE` environment variable overrides that default.
             testcase: Name(s) of a specific testcase(s) to run.
                 If not set, run all testcases found in *test_module*.
                 Can be a comma-separated list.
@@ -593,12 +614,10 @@ class Runner(ABC):
             self.gpi_interfaces = gpi_interfaces
         else:
             # Force language of toplevel to be first in GPI Impl load order.
-            self.gpi_interfaces = [
-                self.supported_gpi_interfaces[self.hdl_toplevel_lang][0]
-            ]
+            self.gpi_interfaces = [self._default_gpi_interface(self.hdl_toplevel_lang)]
             # Add remaining languages GPI Impls in any order.
             for lang in other_langs:
-                gpi_if = self.supported_gpi_interfaces[lang][0]
+                gpi_if = self._default_gpi_interface(lang)
                 if gpi_if not in self.gpi_interfaces:
                     self.gpi_interfaces.append(gpi_if)
 

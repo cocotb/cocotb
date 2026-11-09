@@ -69,6 +69,8 @@ Make Variables
 
     Setting this variable is rarely needed as cocotb chooses a suitable default value depending on the simulator used.
 
+    The :ref:`Python runner <howto-python-runner>` uses this environment variable as well if no *gpi_interfaces* are passed to :meth:`Runner.test() <cocotb_tools.runner.Runner.test>`.
+
 .. make:var:: VERILOG_SOURCES
 
       A list of the Verilog source files to include.
