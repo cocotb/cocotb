@@ -127,7 +127,7 @@ def extract_coro_stack(
 
     Args:
         coro: The :class:`coroutine` object from which to extract a stack.
-        level: The maximum number of frames from *coro*\ s stack to extract.
+        limit: The maximum number of frames from *coro*\ s stack to extract.
 
     Returns:
         The stack of *coro*.

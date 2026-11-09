@@ -319,6 +319,12 @@ class Task(Generic[ResultType]):
         self._join._react()
 
     def _schedule_resume(self, exc: BaseException | None = None) -> None:
+        """Schedule the Task to resume on the next event loop iteration.
+
+        Args:
+            exc: :exc:`BaseException` to throw into the coroutine, or ``None`` to resume it
+                normally.
+        """
         self._state = _TaskState.SCHEDULED
         self._exc = exc
         self._schedule_callback = cocotb._event_loop._inst.schedule(self._resume)
@@ -327,13 +333,9 @@ class Task(Generic[ResultType]):
         """Resume execution of the Task.
 
         Runs until the coroutine ends, raises, or yields a Trigger.
-        Can optionally throw an Exception into the Task.
 
-        Args:
-            exc: :exc:`BaseException` to throw into the coroutine or nothing.
-
-        Returns:
-            The object yielded from the coroutine or ``None`` if coroutine finished.
+        If an exception was passed to :meth:`_schedule_resume`, it is thrown into the
+        coroutine; otherwise the coroutine is advanced normally.
         """
         if debug.debug:
             self._log.debug("Resuming %r", self)
