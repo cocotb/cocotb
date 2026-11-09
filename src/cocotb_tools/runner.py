@@ -1173,22 +1173,25 @@ class Questa(Runner):
         if not self.gui:
             do_script += "run -all; quit"
 
+        # Keep the design accessible to cocotb through all interfaces; without
+        # this, vopt is free to optimize away objects such as unused signals.
+        lib_opts = ["-voptargs=-access=rw+/."]
+
         gpi_if_entry = self.gpi_interfaces[0]
         if gpi_if_entry == "fli":
-            lib_opts = [
+            lib_opts += [
                 "-foreign",
                 "cocotb_bootstrap_entry "
                 + cocotb_tools.config.lib_entry("fli", "questa"),
             ]
         elif gpi_if_entry == "vhpi":
-            lib_opts = ["-voptargs=-access=rw+/."]
             lib_opts += [
                 "-foreign",
                 "cocotb_bootstrap_entry "
                 + cocotb_tools.config.lib_entry("vhpi", "questa"),
             ]
         else:
-            lib_opts = [
+            lib_opts += [
                 "-pli",
                 cocotb_tools.config.lib_entry("vpi", "questa"),
             ]
