@@ -497,7 +497,9 @@ def fail_test(msg: str | None = None, *, exc: BaseException | None = None) -> No
     raise TestFailure(msg, exc)
 
 
-def fail_regression(msg: str | None = None, *, exc: BaseException | None = None) -> None:
+def fail_regression(
+    msg: str | None = None, *, exc: BaseException | None = None
+) -> None:
     r"""Fail the current regression.
 
     The currently running test (if any) is failed, and every remaining test

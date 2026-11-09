@@ -36,13 +36,26 @@ class EventLoop:
     def __init__(self) -> None:
         self._callbacks: deque[ScheduledCallback] = deque()
         self._cycles: int = 0
+        self._running: bool = False
 
     @cached_property
     def log(self) -> logging.Logger:
         return logging.getLogger("cocotb.event_loop")
 
+    @property
+    def running(self) -> bool:
+        """Whether :meth:`run` is executing, so a caller can tell if pumping is possible."""
+        return self._running
+
     def run(self) -> None:
         self._cycles = 0
+        self._running = True
+        try:
+            self._run_callbacks()
+        finally:
+            self._running = False
+
+    def _run_callbacks(self) -> None:
         while self._callbacks:
             while self._callbacks:
                 do_debug = debug.debug

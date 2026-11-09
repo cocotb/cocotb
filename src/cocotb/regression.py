@@ -1151,7 +1151,10 @@ class RegressionManager:
         # or due to an end of events from the simulator.
         self._regression_terminated = SimFailure(msg)
         self._running_test.cancel(msg)
-        cocotb._event_loop._inst.run()
+        # Pumping the loop is only possible from outside it: re-entering run() from a
+        # callback already executing in the loop aborts the simulation.
+        if not cocotb._event_loop._inst.running:
+            cocotb._event_loop._inst.run()
 
     def fail_regression(
         self,
