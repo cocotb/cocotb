@@ -18,7 +18,7 @@ VpiSignalObjHdl::~VpiSignalObjHdl() {
     if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
-static bool may_lack_range(int32_t type) {
+static bool is_struct_or_union_type(int32_t type) {
     switch (type) {
         case vpiStructVar:
         case vpiStructNet:
@@ -33,7 +33,7 @@ static bool may_lack_range(int32_t type) {
 int VpiSignalObjHdl::initialise(const std::string &name,
                                 const std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
-    bool rangeless_ok = may_lack_range(type);
+    bool is_struct_or_union = is_struct_or_union_type(type);
     bool unknown_range = false;
     if ((vpiIntVar == type) || (vpiIntegerVar == type) ||
         (vpiIntegerNet == type)) {
@@ -69,7 +69,7 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                                                    m_range_right);
                         if (res) {
                             // LCOV_EXCL_START
-                            if (!rangeless_ok) {
+                            if (!is_struct_or_union) {
                                 LOG_ERROR(
                                     "VPI: Unable to get range bounds for %s of "
                                     "type %s (%d)",
@@ -81,7 +81,7 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                             // LCOV_EXCL_STOP
                             unknown_range = true;
                         }
-                    } else if (rangeless_ok) {
+                    } else if (is_struct_or_union) {
                         unknown_range = true;
                     }
                     // LCOV_EXCL_START
@@ -92,19 +92,24 @@ int VpiSignalObjHdl::initialise(const std::string &name,
                         return -1;
                     }
                     // LCOV_EXCL_STOP
+                } else if (is_struct_or_union) {
+                    // Some simulators (e.g. VCS) report a packed array of
+                    // structs or unions as a struct/union object, with the
+                    // array's dimensions available through vpiRange (handled
+                    // above). A packed struct or union itself has no range,
+                    // and the object has no vpiLeftRange/vpiRightRange
+                    // relations, but Questa still returns handles for them
+                    // that hold garbage bounds. Do not query them.
+                    unknown_range = true;
                 } else if (get_range_bounds(hdl, m_range_left, m_range_right) <
                            0) {
-                    if (rangeless_ok) {
-                        unknown_range = true;
-                    } else {
-                        // TODO is this the best behavior? Do simulators
-                        // actually hit this case?
-                        LOG_WARN(
-                            "VPI: Cannot discover range bounds, guessing based "
-                            "on elements");
-                        m_range_left = 0;
-                        m_range_right = m_num_elems - 1;
-                    }
+                    // TODO is this the best behavior? Do simulators
+                    // actually hit this case?
+                    LOG_WARN(
+                        "VPI: Cannot discover range bounds, guessing based "
+                        "on elements");
+                    m_range_left = 0;
+                    m_range_right = m_num_elems - 1;
                 }
 
                 if (unknown_range) {
