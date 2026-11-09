@@ -150,6 +150,17 @@ int VhpiImpl::get_simulator_args(int *argc, char const *const **argv) {
     return 0;
 }
 
+static void release_prefix_handle(vhpiHandleT hdl) {
+#ifdef ALDEC
+    // Releasing handles obtained through vhpiPrefix corrupts handles that are
+    // still in use in Riviera-PRO (objects are discovered with garbage names
+    // and the simulator crashes on exit), so leak them instead.
+    (void)hdl;
+#else
+    vhpi_release_handle(hdl);
+#endif
+}
+
 // Determine whether a VHPI object type is a constant or not
 bool is_const(vhpiHandleT hdl) {
     vhpiHandleT tmp = hdl;
@@ -166,11 +177,11 @@ bool is_const(vhpiHandleT hdl) {
         }
         vhpiHandleT prefix = vhpi_handle(vhpiPrefix, tmp);
         // hdl is borrowed from the caller; every prefix handle is ours.
-        if (tmp != hdl) vhpi_release_handle(tmp);
+        if (tmp != hdl) release_prefix_handle(tmp);
         tmp = prefix;
     } while (tmp != NULL);
 
-    if (tmp != NULL && tmp != hdl) vhpi_release_handle(tmp);
+    if (tmp != NULL && tmp != hdl) release_prefix_handle(tmp);
 
     return result;
 }
