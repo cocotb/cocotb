@@ -7,13 +7,8 @@ VERILOG_SOURCES = $(shell pwd)/top.sv
 COCOTB_TEST_MODULES = test_sv_if_ref
 COCOTB_TOPLEVEL = top
 
-# Simulator behavior:
-# Verilator exposes interface ports as vpiRefObj, which must be resolved via
-#   vpiActual to reach the interface instance. Arrays of interface references
-#   are only visible as individual elements, so the array itself is a
-#   pseudo-region.
-# Xcelium exposes interface ports as vpiRefObj too, but supports
-#   vpiInterfaceArray, so an array of references is a real array object.
+# Verilator exposes array-port elements individually; Xcelium uses vpiRefObj
+# targeting vpiInterfaceArray. Both become pseudo-regions in cocotb.
 
 ifneq ($(TOPLEVEL_LANG),verilog)
 all:

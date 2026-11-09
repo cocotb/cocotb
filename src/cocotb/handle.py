@@ -367,7 +367,7 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         """Translate a discovered child object name into a key.
 
         Args:
-            name: The GPI name of the child object.
+            name: The child's name in this parent, before resolving references.
 
         Returns:
             A unique key for the child object.
@@ -576,13 +576,13 @@ class HierarchyArrayObject(
         # FLI and VHPI:       _name(X) where X is the index
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
-        result = re.match(rf"{re.escape(self._name)}__(?P<index>\d+)$", name)
+        result = re.match(rf"{re.escape(self._name)}__(?P<index>-?\d+)$", name)
         if not result:
             result = re.match(
-                rf"{re.escape(self._name)}\((?P<index>\d+)\)$", name, re.IGNORECASE
+                rf"{re.escape(self._name)}\((?P<index>-?\d+)\)$", name, re.IGNORECASE
             )
         if not result:
-            result = re.match(rf"{re.escape(self._name)}\[(?P<index>\d+)\]$", name)
+            result = re.match(rf"{re.escape(self._name)}\[(?P<index>-?\d+)\]$", name)
 
         if result:
             return int(result.group("index"))
@@ -1875,11 +1875,6 @@ def _make_sim_object(
         raise NotImplementedError(
             f"Couldn't find a matching object for GPI type {handle.get_type_string()}({t}) (path={path})"
         )
-    # A handle reached through a reference (e.g. an interface port) is the
-    # referenced object itself, so its path is the concrete path of the
-    # referenced object regardless of which path was used to reach it first.
-    if path is not None and (concrete_path := handle.get_concrete_path()) is not None:
-        path = concrete_path
     obj = cls(handle, path)
     _handle2obj[handle] = obj
     return obj

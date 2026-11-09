@@ -325,21 +325,21 @@ GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl);
  */
 GPI_EXPORT const char *gpi_get_signal_fullname_str(gpi_sim_hdl sig_hdl);
 
-/** Get the concrete full path of an object.
+/** Get the actual object reached through a reference.
  *
  * If the object was created by resolving a reference (e.g. an interface
- * passed through a module port), this is the full path of the referenced
- * object rather than the path used to reach it.
+ * passed through a module port), this returns the referenced object with
+ * its own name, full name, and bounds.
  *
- * Objects are shared by full name, so the referenced object reports its
- * concrete path even when later reached directly. This function therefore
- * cannot be used to deduce whether a handle was obtained through a reference.
+ * The object's name and full name retain the reference's name and path.
+ * The reference and its target are separate GPI objects using the same
+ * underlying simulator object for operations.
  *
  * @param obj_hdl   Object handle.
- * @return          Concrete full path, or NULL if the object has no path
- *                  other than the one used to reach it.
+ * @return          Actual object handle, or NULL if the object is not a
+ *                  reference or its actual object cannot be obtained.
  */
-GPI_EXPORT const char *gpi_get_concrete_path_str(gpi_sim_hdl obj_hdl);
+GPI_EXPORT gpi_sim_hdl gpi_get_actual(gpi_sim_hdl obj_hdl);
 
 /** Get signal object type as a string.
  * @param sig_hdl   Signal object handle.

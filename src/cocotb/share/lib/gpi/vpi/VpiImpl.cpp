@@ -187,10 +187,45 @@ static gpi_objtype const_type_to_gpi_objtype(int32_t const_type) {
     }
 }
 
+/* vpiRefObj has no range; use the matching IO declaration instead
+ * (IEEE 1800-2023 37.13, 37.15). Returns false if bounds are unavailable.
+ */
+static bool get_range_from_io_decl(const std::string &name, vpiHandle ref_hdl,
+                                   int &left, int &right) {
+    vpiHandle scope = vpi_handle(vpiScope, ref_hdl);
+    if (scope == NULL) {
+        return false;
+    }
+    DEFER(vpi_free_object(scope));
+
+    vpiHandle iter = vpi_iterate(vpiIODecl, scope);
+    if (iter == NULL) {
+        return false;
+    }
+
+    bool found = false;
+    for (vpiHandle decl = vpi_scan(iter); decl != NULL; decl = vpi_scan(iter)) {
+        DEFER(vpi_free_object(decl));
+        const char *decl_name = vpi_get_str(vpiName, decl);
+        if (decl_name == NULL || name != decl_name) {
+            continue;
+        }
+
+        found = get_range_bounds(decl, left, right) == 0;
+
+        /* Only an exhausted iterator is freed by vpi_scan(). */
+        vpi_free_object(iter);
+        break;
+    }
+
+    return found;
+}
+
 GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                                                const std::string &name,
                                                const std::string &fq_name,
-                                               bool owns_handle) {
+                                               bool owns_handle,
+                                               const std::string &pseudo_path) {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
@@ -198,16 +233,49 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         return NULL;
     }
 
-    // resolve via reference if possible
-    std::string resolved_name = name;
-    std::string resolved_fq_name = fq_name;
-    vpiHandle resolved_hdl = NULL;
+    // Resolve the simulator handle while retaining the reference's name/path.
+    vpiHandle ref_hdl = NULL;
+    const bool owns_ref = owns_handle;
     if (type == vpiRefObj) {
         vpiHandle actual_hdl = vpi_handle(vpiActual, new_hdl);
         if (actual_hdl == NULL) {
             LOG_WARN("VPI: Could not resolve vpiActual for vpiRefObj %s",
                      fq_name.c_str());
             return NULL;
+        }
+
+        /* The pseudo-array has the port's bounds and resolves each port[index]
+         * separately, so the simulator supplies the positional binding.
+         * Keep the actual handle for operations and release the reference.
+         */
+        if (vpi_get(vpiType, actual_hdl) == vpiInterfaceArray) {
+            LOG_DEBUG(
+                "VPI: Creating pseudo-region %s for an interface array port",
+                fq_name.c_str());
+
+            std::string concrete_path;
+            if (const char *full_name = vpi_get_str(vpiFullName, actual_hdl)) {
+                concrete_path = full_name;
+            }
+            if (concrete_path.empty() && pseudo_path != fq_name) {
+                concrete_path = pseudo_path;
+            }
+            int left, right;
+            VpiObjHdl *arr_obj;
+            if (get_range_from_io_decl(name, new_hdl, left, right)) {
+                arr_obj =
+                    new VpiObjHdl(this, actual_hdl, left, right, concrete_path);
+            } else {
+                LOG_ERROR(
+                    "VPI: Could not determine declared range of interface "
+                    "array port %s from its IO declaration",
+                    fq_name.c_str());
+                arr_obj = new VpiObjHdl(this, actual_hdl, GPI_GENARRAY, true,
+                                        concrete_path);
+            }
+            arr_obj->initialise(name, fq_name);
+            if (owns_handle) vpi_free_object(new_hdl);
+            return arr_obj;
         }
 
         if (vpi_get(vpiType, actual_hdl) == vpiModport) {
@@ -222,23 +290,23 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             actual_hdl = iface_hdl;
         }
 
-        // The wrapper owns the resolved handle from here on. The original
-        // vpiRefObj handle is no longer needed.
-        if (owns_handle) vpi_free_object(new_hdl);
+        // Release the reference only once construction succeeds. On failure,
+        // the caller still owns the original handle.
+        ref_hdl = new_hdl;
         owns_handle = true;
-        resolved_hdl = actual_hdl;
         new_hdl = actual_hdl;
         type = vpi_get(vpiType, new_hdl);
+    }
 
-        if (const char *actual_name = vpi_get_str(vpiName, new_hdl)) {
-            resolved_name = actual_name;
-        }
+    std::string concrete_path;
+    if (owns_handle) {
+        // Also covers simulators that resolve references during lookup and
+        // native children reached through a referenced interface.
         if (const char *full_name = vpi_get_str(vpiFullName, new_hdl)) {
-            resolved_fq_name = full_name;
+            if (fq_name != full_name) concrete_path = full_name;
         }
-        LOG_DEBUG("VPI: Resolved vpiRefObj %s to %s(%d) at %s", fq_name.c_str(),
-                  vpi_get_str(vpiType, new_hdl), type,
-                  resolved_fq_name.c_str());
+    } else if (pseudo_path != fq_name) {
+        concrete_path = pseudo_path;
     }
 
     /* What sort of instance is this ?*/
@@ -309,7 +377,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 gpi_type = GPI_PACKED;
             }
             new_obj = new VpiSignalObjHdl(this, new_hdl, gpi_type, false,
-                                          owns_handle);
+                                          owns_handle, concrete_path);
             break;
         }
         case vpiParameter:
@@ -317,7 +385,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             auto const_type = vpi_get(vpiConstType, new_hdl);
             new_obj = new VpiSignalObjHdl(this, new_hdl,
                                           const_type_to_gpi_objtype(const_type),
-                                          true, owns_handle);
+                                          true, owns_handle, concrete_path);
             break;
         }
         case vpiRegArray:
@@ -329,7 +397,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             const auto num_elements = vpi_get(vpiSize, new_hdl);
             new_obj = new VpiArrayObjHdl(
                 this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
-                owns_handle);
+                owns_handle, concrete_path);
             break;
         }
         case vpiStructVar:
@@ -340,7 +408,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             if (vpi_get(vpiPacked, new_hdl)) {
                 LOG_DEBUG("VPI: Found packed struct/union data type");
                 new_obj = new VpiSignalObjHdl(this, new_hdl, GPI_PACKED, false,
-                                              owns_handle);
+                                              owns_handle, concrete_path);
                 break;
             } else if (vpi_get(vpiVector, new_hdl)) {
                 is_vector = true;
@@ -348,7 +416,7 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             const auto num_elements = vpi_get(vpiSize, new_hdl);
             new_obj = new VpiObjHdl(
                 this, new_hdl, to_gpi_objtype(type, num_elements, is_vector),
-                owns_handle);
+                owns_handle, concrete_path);
             break;
         }
         case vpiModule:
@@ -359,18 +427,11 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiPrimTerm:
         case vpiGenScope:
         case vpiGenScopeArray: {
-            std::string hdl_name = vpi_get_str(vpiName, new_hdl);
-
-            if (hdl_name != resolved_name) {
-                LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)",
-                          fq_name.c_str(), hdl_name.c_str(),
-                          resolved_name.c_str());
-                new_obj =
-                    new VpiObjHdl(this, new_hdl, GPI_GENARRAY, owns_handle);
-            } else {
-                new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type),
-                                        owns_handle);
-            }
+            // Hierarchy pseudo-regions explicitly borrow their parent's handle.
+            new_obj =
+                new VpiObjHdl(this, new_hdl,
+                              owns_handle ? to_gpi_objtype(type) : GPI_GENARRAY,
+                              owns_handle, concrete_path);
             break;
         }
         default:
@@ -387,17 +448,44 @@ GpiObjHdl *VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                 LOG_WARN("VPI: Simulator does not know this type (%d) via VPI",
                          type);
             }
-            if (resolved_hdl) vpi_free_object(resolved_hdl);
+            if (ref_hdl) vpi_free_object(new_hdl);
             return NULL;
     }
 
-    new_obj->initialise(resolved_name, resolved_fq_name);
-    new_obj->set_is_resolved_reference(resolved_hdl != NULL);
+    new_obj->initialise(name, fq_name);
+    if (ref_hdl && owns_ref) vpi_free_object(ref_hdl);
 
     LOG_DEBUG("VPI: Created GPI object from type %s(%d)",
               vpi_get_str(vpiType, new_hdl), type);
 
     return new_obj;
+}
+
+GpiObjHdl *VpiImpl::get_actual(GpiObjHdl *obj_hdl) {
+    auto *vpi_obj = dynamic_cast<VpiObj *>(obj_hdl);
+    if (vpi_obj == nullptr) return NULL;
+    const auto &path = vpi_obj->get_concrete_path();
+    if (path.empty()) return NULL;
+
+    // Pseudo-regions and partial array indices have no native handle of their
+    // own. Recreate the same view in the actual object's namespace.
+    if (!obj_hdl->owns_handle()) {
+        return create_gpi_obj_from_handle(obj_hdl->get_handle<vpiHandle>(),
+                                          obj_hdl->get_name(), path, false);
+    }
+
+    // Obtain an independently owned handle so the actual object can be cached
+    // alongside the reference without sharing ownership of a VPI handle.
+    vpiHandle actual_hdl =
+        vpi_handle_by_name(const_cast<char *>(path.c_str()), NULL);
+    if (actual_hdl == NULL) {
+        LOG_WARN("VPI: Unable to obtain actual object %s", path.c_str());
+        return NULL;
+    }
+    std::string name = vpi_get_str(vpiName, actual_hdl);
+    auto *actual = create_gpi_obj_from_handle(actual_hdl, name, path);
+    if (actual == NULL) vpi_free_object(actual_hdl);
+    return actual;
 }
 
 GpiObjHdl *VpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
@@ -429,9 +517,16 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name =
         parent->get_fullname() + get_type_delimiter(parent) + name;
+    // Name lookup can cross into VPI from another implementation.
+    auto *vpi_parent = dynamic_cast<VpiObj *>(parent);
+    const std::string &parent_path =
+        vpi_parent && !vpi_parent->get_concrete_path().empty()
+            ? vpi_parent->get_concrete_path()
+            : parent->get_fullname();
+    std::string lookup_name = parent_path + get_type_delimiter(parent) + name;
 
     vpiHandle new_hdl =
-        vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
+        vpi_handle_by_name(const_cast<char *>(lookup_name.c_str()), NULL);
     bool owns_handle = true;
 
 #ifdef IUS
@@ -443,10 +538,17 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
         vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
         if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-                is_valid = VpiImpl::compare_generate_labels(
-                    vpi_get_str(vpiName, rgn), name);
+                std::string rgn_name = vpi_get_str(vpiName, rgn);
+                is_valid = VpiImpl::compare_generate_labels(rgn_name, name);
                 vpi_free_object(rgn);
                 if (is_valid) {
+                    if (rgn_name.rfind('[') == name.size()) {
+                        // An indexed child identifies a generate array even
+                        // when the lookup handle's full name does not.
+                        vpi_free_object(new_hdl);
+                        new_hdl = parent_hdl;
+                        owns_handle = false;
+                    }
                     // Not exhausted, so the iterator is still ours to free.
                     vpi_free_object(iter);
                     break;
@@ -536,16 +638,30 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
      * If this unique case is hit, we need to create the Pseudo-region, with the
      * handle being equivalent to the parent handle.
      */
-    if (owns_handle && vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
-        vpi_free_object(new_hdl);
-
-        // Pseudo-region: borrow the parent's handle.
-        new_hdl = parent_hdl;
-        owns_handle = false;
+    if (owns_handle) {
+        auto type = vpi_get(vpiType, new_hdl);
+        bool pseudo_region = type == vpiGenScopeArray;
+        if (type == vpiGenScope || type == vpiModule || type == vpiInterface) {
+            // Some simulators return an array element for the array's name.
+            // Compare against the lookup path, which may be reached through
+            // a reference. GHDL uses parentheses for generate indices.
+            const char *full_name = vpi_get_str(vpiFullName, new_hdl);
+            std::string hdl_name = full_name ? full_name : "";
+            pseudo_region =
+                hdl_name.size() > lookup_name.size() &&
+                hdl_name.compare(0, lookup_name.size(), lookup_name) == 0 &&
+                (hdl_name[lookup_name.size()] == '[' ||
+                 hdl_name[lookup_name.size()] == '(');
+        }
+        if (pseudo_region) {
+            vpi_free_object(new_hdl);
+            new_hdl = parent_hdl;
+            owns_handle = false;
+        }
     }
 
-    GpiObjHdl *new_obj =
-        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
+    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name,
+                                                    owns_handle, lookup_name);
     if (new_obj == NULL) {
         if (owns_handle) vpi_free_object(new_hdl);
         LOG_DEBUG("Unable to create object '%s'", fq_name.c_str());
@@ -563,6 +679,11 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                     // string form ('['+'-'10+']'+'\0')
 
     gpi_objtype obj_type = parent->get_type();
+    auto *vpi_parent = dynamic_cast<VpiObj *>(parent);
+    const std::string &parent_path =
+        vpi_parent && !vpi_parent->get_concrete_path().empty()
+            ? vpi_parent->get_concrete_path()
+            : parent->get_fullname();
 
     if (obj_type == GPI_GENARRAY) {
         snprintf(buff, 14, "[%d]", index);
@@ -571,7 +692,11 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                   index, parent->get_name_str());
 
         std::string idx = buff;
-        std::string hdl_name = parent->get_fullname() + idx;
+        // Array ports must be indexed in the formal namespace. Other
+        // pseudo-regions can be reached through a referenced interface.
+        bool array_port = vpi_get(vpiType, vpi_hdl) == vpiInterfaceArray;
+        std::string hdl_name =
+            (array_port ? parent->get_fullname() : parent_path) + idx;
         std::vector<char> writable(hdl_name.begin(), hdl_name.end());
         writable.push_back('\0');
 
@@ -633,7 +758,7 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             snprintf(buff, 14, "[%d]", index);
 
             std::string idx = buff;
-            std::string hdl_name = parent->get_fullname() + idx;
+            std::string hdl_name = parent_path + idx;
 
             std::vector<char> writable(hdl_name.begin(), hdl_name.end());
             writable.push_back('\0');
@@ -683,7 +808,8 @@ GpiObjHdl *VpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
     std::string name = parent->get_name() + idx;
     std::string fq_name = parent->get_fullname() + idx;
     GpiObjHdl *new_obj =
-        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
+        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle,
+                                   owns_handle ? "" : parent_path + idx);
     // LCOV_EXCL_START
     if (new_obj == NULL) {
         if (owns_handle) vpi_free_object(new_hdl);
