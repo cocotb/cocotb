@@ -1,0 +1,1 @@
+The :ref:`Python runner <howto-python-runner>` now uses the :make:var:`VHDL_GPI_INTERFACE` environment variable to select the GPI interface for VHDL if no *gpi_interfaces* are passed to :meth:`Runner.test() <cocotb_tools.runner.Runner.test>`, like the Makefile flow. Previously, the variable was ignored and the simulator's default interface was used.
