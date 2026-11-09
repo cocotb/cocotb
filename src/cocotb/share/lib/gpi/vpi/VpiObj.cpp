@@ -16,6 +16,16 @@ VpiArrayObjHdl::~VpiArrayObjHdl() {
     if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());
 }
 
+VpiObjHdl::VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, int left, int right,
+                     const std::string &concrete_path)
+    : VpiObjHdl(impl, hdl, GPI_GENARRAY, true, concrete_path) {
+    m_range_left = left;
+    m_range_right = right;
+    m_range_dir = (left > right) ? GPI_RANGE_DOWN : GPI_RANGE_UP;
+    m_num_elems = (left > right) ? (left - right + 1) : (right - left + 1);
+    m_indexable = true;
+}
+
 VpiObjHdl::~VpiObjHdl() {
     // Generate pseudo-regions borrow their containing region's handle.
     if (m_owns_handle) vpi_free_object(get_handle<vpiHandle>());

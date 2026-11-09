@@ -109,15 +109,10 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
     virtual int initialise(const std::string &name,
                            const std::string &full_name);
 
-    bool is_resolved_reference() const { return m_is_resolved_reference; }
-    void set_is_resolved_reference(bool resolved) {
-        m_is_resolved_reference = resolved;
-    }
-
     /** Whether the destructor releases the underlying simulator handle.
      *
-     * Pseudo-regions and pseudo-handles borrow the handle of another object
-     * and must never release it. The caller that hands a borrowed handle to a
+     * Pseudo-regions and pseudo-handles that borrow another object's handle
+     * must never release it. The caller that hands a borrowed handle to a
      * constructor passes owns_handle=false.
      */
     bool owns_handle() const { return m_owns_handle; }
@@ -125,7 +120,6 @@ class GPI_EXPORT GpiObjHdl : public GpiHdl {
 
   protected:
     int m_num_elems = 0;
-    bool m_is_resolved_reference = false;
     bool m_indexable = false;
     int m_range_left = -1;
     int m_range_right = -1;
@@ -267,6 +261,7 @@ class GPI_EXPORT GpiImplInterface {
     virtual GpiObjHdl *get_child_from_handle(void *raw_hdl,
                                              GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
+    virtual GpiObjHdl *get_actual(GpiObjHdl *) { return nullptr; }
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                         gpi_iterator_sel type) = 0;
 

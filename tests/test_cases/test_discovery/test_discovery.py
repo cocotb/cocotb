@@ -24,7 +24,12 @@ from cocotb.handle import (
 )
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
-from cocotb_tools.sim_versions import NvcVersion, RivieraVersion, VerilatorVersion
+from cocotb_tools.sim_versions import (
+    GhdlVersion,
+    NvcVersion,
+    RivieraVersion,
+    VerilatorVersion,
+)
 
 SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
@@ -195,7 +200,7 @@ async def discover_module_values(dut):
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     with pytest.raises(AttributeError):
-        dut.fake_signal  # noqa: B018
+        _ = dut.fake_signal
 
 
 @cocotb.test()
@@ -269,7 +274,7 @@ async def access_integer(dut):
 @cocotb.test(skip=LANGUAGE in ["verilog"])
 async def access_ulogic(dut):
     """Access a std_ulogic as enum"""
-    dut.stream_in_valid  # noqa: B018
+    _ = dut.stream_in_valid
 
 
 # GHDL discovers generics as vpiParameter (gh-2722)
@@ -447,21 +452,17 @@ async def custom_type(dut):
     assert expected_outer == outer_count
 
 
-# GHDL cannot find signal in "block" statement, may be related to (gh-2594)
-@cocotb.test(
-    skip=LANGUAGE in ["verilog"],
-    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else (),
-)
+@cocotb.test(skip=LANGUAGE in ["verilog"])
 async def access_block_vhdl(dut):
     """Access a VHDL block statement"""
 
-    dut.isample_module1.SAMPLE_BLOCK  # noqa: B018
-    dut.isample_module1.SAMPLE_BLOCK.clk_inv  # noqa: B018
+    _ = dut.isample_module1.SAMPLE_BLOCK
+    _ = dut.isample_module1.SAMPLE_BLOCK.clk_inv
 
 
 @cocotb.test(skip=LANGUAGE in ["verilog"])
 async def discover_all_in_component_vhdl(dut):
-    """Access a non local indexed name"""
+    """Discover the expected objects inside a VHDL component."""
 
     questa_vhpi = (
         SIM_NAME.startswith("modelsim")
@@ -481,11 +482,16 @@ async def discover_all_in_component_vhdl(dut):
             count += _discover(thing)
         return count
 
-    total_count = _discover(dut.isample_module1)
+    component = dut.isample_module1
+    # Some simulators allow generic lookup but omit generics from iteration.
+    # Populate the cache explicitly instead of relying on earlier tests.
+    _ = component.EXAMPLE_STRING
+    _ = component.EXAMPLE_BOOL
+    _ = component.EXAMPLE_WIDTH
+    _ = component.SAMPLE_BLOCK.clk_inv
+    total_count = _discover(component)
 
-    sim = SIM_NAME
-
-    # ideally should be 9:
+    # Ideally should be 9:
     #   1   EXAMPLE_STRING
     #   1   EXAMPLE_BOOL
     #   1   EXAMPLE_WIDTH
@@ -495,13 +501,17 @@ async def discover_all_in_component_vhdl(dut):
     #   1   stream_out_data_valid
     #   1   SAMPLE_BLOCK
     #   1   SAMPLE_BLOCK.clk_inv
-    if sim.startswith("ghdl"):
-        # finds SAMPLE_BLOCK twice
-        assert total_count == 10
-    elif sim.startswith("nvc") and NvcVersion(cocotb.SIM_VERSION) < NvcVersion(
-        "1.16.0"
-    ):
-        # old versions of NVC find clk_inv twice
+    if SIM_NAME.startswith("ghdl"):
+        # GHDL lowercases identifiers over VPI, so the cached SAMPLE_BLOCK,
+        # SAMPLE_BLOCK.clk_inv, and on newer versions the generics are found
+        # a second time by iteration. Keep exact counts so fixing duplicate
+        # discovery requires updating this test.
+        if GhdlVersion(SIM_VERSION) > GhdlVersion("6.0.0"):
+            assert total_count == 14
+        else:
+            assert total_count == 11
+    elif SIM_NAME.startswith("nvc") and NvcVersion(SIM_VERSION) < NvcVersion("1.16.0"):
+        # Old versions of NVC find clk_inv twice.
         assert total_count == 10
     else:
         assert total_count == 9

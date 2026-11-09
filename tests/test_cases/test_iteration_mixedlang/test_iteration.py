@@ -35,6 +35,16 @@ async def discovery_method(dut) -> None:
 ########################################################################################
 
 
+@cocotb.test
+async def boundary_iteration_names(dut):
+    """Iteration preserves child names across Verilog/VHDL boundaries."""
+    names = {
+        child.get_name_string()
+        for child in dut._handle.iterate(cocotb.simulator.OBJECTS)
+    }
+    assert {"i_verilog", "i_vhdl"} <= names
+
+
 def recursive_dump(parent, log):
     """
     Recursively iterate through every object and log a message
