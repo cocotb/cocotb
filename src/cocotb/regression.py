@@ -1185,13 +1185,21 @@ class RegressionManager:
             )
             self.log.warning(str(self._regression_terminated))
 
-        # If a test is running, end it now so the failure is not delayed until
-        # the test completes naturally. The cancellation is scored as a
-        # failure because _test_complete() overrides the test outcome with
-        # _regression_terminated when it is set.
+        # If a test is running, end it so the failure is not delayed until the test
+        # completes naturally. _test_complete() scores it as failed because
+        # _regression_terminated is set. The cancellation is deferred: this is reachable
+        # from inside the running test's own coroutine, and ending it there would finish
+        # the test, advance the regression and start the next test inside the current
+        # test's callback.
         running = getattr(self, "_running_test", None)
         if running is not None and not running.done():
-            running.cancel("regression failed by user request")
+            cocotb._event_loop._inst.schedule(
+                lambda: (
+                    None
+                    if running.done()
+                    else running.cancel("regression failed by user request")
+                )
+            )
 
     def list_tests(self) -> None:
         """List the tests that would be run, without running them."""
