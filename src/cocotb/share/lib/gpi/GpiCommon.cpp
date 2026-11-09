@@ -513,9 +513,9 @@ const char *gpi_get_signal_fullname_str(gpi_sim_hdl sig_hdl) {
     return sig_hdl->get_fullname_str();
 }
 
-const char *gpi_get_concrete_path_str(gpi_sim_hdl obj_hdl) {
-    if (!obj_hdl->is_resolved_reference()) return NULL;
-    return obj_hdl->get_fullname_str();
+gpi_sim_hdl gpi_get_actual(gpi_sim_hdl obj_hdl) {
+    auto *actual = obj_hdl->m_impl->get_actual(obj_hdl);
+    return actual ? CHECK_AND_STORE(actual) : NULL;
 }
 
 const char *gpi_get_signal_type_str(gpi_sim_hdl sig_hdl) {
