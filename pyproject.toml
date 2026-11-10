@@ -377,6 +377,8 @@ test_common = [
     "pexpect",
     # Needed for leak testing.
     "psutil",
+    # Needed for examples/mixed_signal.
+    "matplotlib",
 ]
 dev_test = [
     {include-group = "test_common"},
