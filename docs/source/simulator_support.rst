@@ -223,7 +223,8 @@ Limitations of the VHDL support
   or any other option starting with ``+``, and rejects some other options, such as ``-suppress``.
   Designs which also contain Verilog sources accept plusargs.
 * In designs with a Verilog toplevel, the VHDL parts of the design can be simulated, but cocotb cannot access objects inside VHDL instances.
-* In designs with a VHDL toplevel, cocotb can access only the ports of Verilog instances.
+* In designs with a VHDL toplevel, iterating over a Verilog instance finds only its ports.
+  Other objects inside Verilog instances can be accessed by name.
 * Iterations of a for-generate statement cannot be accessed by index if the range of the statement depends on a deferred constant
   (a constant whose value is given in a package body).
 * VCS reports the names of generics and record elements in upper case.

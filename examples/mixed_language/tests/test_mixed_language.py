@@ -39,11 +39,6 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
     reason="VCS does not provide access to VHDL below a Verilog toplevel",
     raises=AttributeError,
 )
-@cocotb.xfail(
-    "vcs" in cocotb.SIM_NAME.lower() and LANGUAGE == "vhdl",
-    reason="VCS provides access only to the ports of Verilog instances below a VHDL toplevel",
-    raises=AttributeError,
-)
 async def mixed_language_accessing_test(dut):
     """Try accessing handles and setting values in a mixed language environment."""
     await Timer(100, unit="ns")

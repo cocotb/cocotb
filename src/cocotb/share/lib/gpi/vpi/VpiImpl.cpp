@@ -8,6 +8,8 @@
 #include <gpi.h>
 #include <vpi_user_ext.h>
 
+#include <cctype>
+
 #include "../logging.hpp"
 #include "_vendor/vpi/sv_vpi_user.h"
 #include "_vendor/vpi/vpi_user.h"
@@ -424,11 +426,44 @@ GpiObjHdl *VpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
     return new_obj;
 }
 
+#ifdef VCS
+/* VCS presents Verilog instances below VHDL as additional top-level modules.
+ * Their names are escaped identifiers made of the VHDL path in upper case,
+ * with "." separating the hierarchy levels and "[i]" for for-generate
+ * iterations, e.g. "\TOP.G[0].INST " for the VHDL path "top:g(0):inst". */
+static std::string vcs_vpi_name_from_vhdl_path(const std::string &vhdl_path) {
+    std::string vpi_name = "\\";
+    for (char c : vhdl_path) {
+        if (c == ':') {
+            if (vpi_name.size() > 1) vpi_name += '.';
+        } else if (c == '(') {
+            vpi_name += '[';
+        } else if (c == ')') {
+            vpi_name += ']';
+        } else {
+            vpi_name +=
+                static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        }
+    }
+    return vpi_name + " ";
+}
+#endif
+
 GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
                                       GpiObjHdl *parent) {
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name =
         parent->get_fullname() + get_type_delimiter(parent) + name;
+#ifdef VCS
+    if (!parent->is_this_impl(this)) {
+        /* The parent is a VHDL object. If it is a Verilog instance, its
+         * children are found below the top-level module VCS presents it as.
+         * The name of this module becomes part of the full name of the new
+         * object, so that its children can be found by name as well. */
+        fq_name =
+            vcs_vpi_name_from_vhdl_path(parent->get_fullname()) + "." + name;
+    }
+#endif
 
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
