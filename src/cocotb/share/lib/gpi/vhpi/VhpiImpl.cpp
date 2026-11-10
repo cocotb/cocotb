@@ -563,6 +563,42 @@ static std::string fully_qualified_name(const std::string &name,
     return fq_name;
 }
 
+/* Look up the child of a parent by its name.
+ *
+ * The full names cocotb uses (e.g. "top.inst.sig") are not in the format of
+ * the FullName property ":top:inst:sig" (IEEE 1076-2019 19.4.7), which some
+ * simulators do not use either. Instead, look up the child with a relative
+ * search string and the parent as the scope (IEEE 1076-2019 23.22).
+ */
+static vhpiHandleT handle_by_name(VhpiImpl *impl, const std::string &name,
+                                  const std::string &fq_name,
+                                  GpiObjHdl *parent) {
+    std::string search_name = fq_name;
+    vhpiHandleT scope = NULL;
+
+#ifndef ALDEC
+    /* With a parent from another implementation (in a mixed-language design),
+     * the parent's handle is not a VHPI handle: look up the full name. */
+    if (parent->is_this_impl(impl)) {
+        search_name = name;
+        scope = parent->get_handle<vhpiHandleT>();
+    }
+#else
+    /* Riviera-PRO does not find objects with a relative search string if the
+     * scope is its vhpiRootInst (a pseudo-region named ":"), nor generate
+     * statement iterations or record elements in any scope. It accepts the
+     * non-standard full names. */
+    (void)impl;
+    (void)name;
+    (void)parent;
+#endif
+
+    std::vector<char> writable(search_name.begin(), search_name.end());
+    writable.push_back('\0');
+
+    return vhpi_handle_by_name(&writable[0], scope);
+}
+
 GpiObjHdl *VhpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
     LOG_DEBUG("VHPI: Trying to convert raw to VHPI handle");
 
@@ -595,10 +631,7 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
     bool owns_handle = true;
     std::string fq_name = fully_qualified_name(name, parent);
 
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
-
-    new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+    new_hdl = handle_by_name(this, name, fq_name, parent);
 
     /* The fallbacks below iterate over the parent, which is only possible if
      * the parent is from this implementation: the parent's handle is not a
@@ -710,10 +743,9 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
         fq_name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
 
-        std::vector<char> writable(fq_name.begin(), fq_name.end());
-        writable.push_back('\0');
-
-        new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+        /* The pseudo-region borrows the handle of the region containing the
+         * generate statement, which is the scope of the iteration. */
+        new_hdl = handle_by_name(this, name, fq_name, parent);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
                obj_type == GPI_ARRAY || obj_type == GPI_FIXED_STRING) {
         LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,
