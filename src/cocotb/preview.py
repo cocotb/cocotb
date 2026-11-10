@@ -28,7 +28,7 @@ class Feature(DocStrEnum):
     )
     HANDLE_LEN_IS_SUBELEMENTS = (
         "handle_len_is_subelements",
-        "Make ``len()`` on packed objects return the number of elements in the outermost dimension instead of the number of bits",
+        "Make ``len()`` on packed arrays return the number of elements in the outermost dimension instead of the number of bits.",
     )
 
 
