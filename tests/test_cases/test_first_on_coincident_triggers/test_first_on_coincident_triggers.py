@@ -61,6 +61,10 @@ async def test_first_on_coincident_trigger(dut) -> None:
     reason="Questa will segfault",
 )
 @cocotb.xfail(
+    "vcs" in SIM_NAME and LANGUAGE in ["vhdl"],
+    reason="VCS doesn't fire second RisingEdge trigger for dut.b when it is registered the same time step that a change occurred (gh-5112)",
+)
+@cocotb.xfail(
     SIM_NAME.startswith("ghdl"),
     reason="GHDL doesn't fire second RisingEdge trigger for dut.b when it is registered the same time step that a change occurred (gh-5112)",
 )

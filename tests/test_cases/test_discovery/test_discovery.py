@@ -37,14 +37,14 @@ riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
-# VCS is unable to access signals in generate loops (gh-4328)
+# VCS is unable to access signals in generate loops through VPI (gh-4328)
 @cocotb.test(
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
     else AttributeError
     if SIM_NAME.startswith("verilator")
     else AttributeError
-    if "vcs" in SIM_NAME
+    if "vcs" in SIM_NAME and LANGUAGE in ["verilog"]
     else ()
 )
 async def pseudo_region_access(dut):

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cocotb_tools.runner import get_runner
+from cocotb_tools.runner import VHDL, get_runner
 
 
 @pytest.mark.skipif(
@@ -43,6 +43,8 @@ def test_matrix_multiplier_runner():
             build_args = ["-2008"]
         elif sim == "nvc":
             build_args = ["--std=08"]
+        elif sim == "vcs":
+            build_args = [VHDL("-vhdl08")]
     else:
         raise ValueError(
             f"A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG={hdl_toplevel_lang}"

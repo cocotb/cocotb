@@ -2225,11 +2225,20 @@ class Vcs(Runner):
     .. admonition:: Simulator-specific Usage
 
        * Does not support the ``pre_cmd`` argument to :meth:`~Runner.test`.
-       * Does not support VHDL.
-       * Does not support the ``timescale`` argument to :meth:`~Runner.build` or :meth:`~Runner.test`.
+       * Supports the ``timescale`` argument to :meth:`~Runner.build` only for designs with VHDL sources.
+         Does not support the ``timescale`` argument to :meth:`~Runner.test`.
+       * VHDL requires VCS 2026.03 or newer.
+         See :ref:`sim-vcs-vhdl-limitations` for limitations of the VHDL support.
+       * A simulation executable built from VHDL sources only rejects *plusargs*.
+       * Designs with VHDL sources are analyzed with ``vhdlan`` and ``vlogan`` and then elaborated with ``vcs``.
+         *build_args* tagged with :class:`VHDL` or :class:`Verilog` are passed to ``vhdlan`` or ``vlogan``, respectively;
+         untagged *build_args* are passed to ``vcs``.
     """
 
-    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {"verilog": ["vpi"]}
+    supported_gpi_interfaces: ClassVar[dict[str, list[str]]] = {
+        "verilog": ["vpi"],
+        "vhdl": ["vhpi"],
+    }
 
     def _simulator_in_path(self) -> None:
         if shutil.which("vcs") is None:
@@ -2243,7 +2252,68 @@ class Vcs(Runner):
 
     def _set_env_test(self) -> None:
         super()._set_env_test()
-        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("vcs", "vpi")
+        self.env["GPI_IMPL"] = cocotb_tools.config.gpi_impl("vcs", *self.gpi_interfaces)
+        self._set_env_vhpi()
+
+    def _set_env_vhpi(self) -> None:
+        # VCS looks up VHPI libraries by name in LD_LIBRARY_PATH.
+        ld_library_path = self.env.get("LD_LIBRARY_PATH")
+        libs_dir = str(cocotb_tools.config.libs_dir)
+        self.env["LD_LIBRARY_PATH"] = (
+            libs_dir + os.pathsep + ld_library_path if ld_library_path else libs_dir
+        )
+        # Library mappings for vhdlan, vlogan and vcs.
+        self.env["SYNOPSYS_SIM_SETUP"] = str(self._sim_setup_file)
+
+    @staticmethod
+    def _has_vhpi_2008() -> bool:
+        """Check if VCS provides the IEEE 1076-2008 VHPI.
+
+        VCS provides it with a ``_v2008`` suffix on the function names.
+        """
+        vcs = shutil.which("vcs")
+        vcs_home = os.environ.get("VCS_HOME")
+        if vcs_home is None and vcs is not None:
+            vcs_home = str(Path(vcs).resolve().parent.parent)
+        if vcs_home is None or shutil.which("nm") is None:
+            # Unable to check, assume it is supported.
+            return True
+        lib = Path(vcs_home) / "linux64" / "lib" / "libvcsmx.so"
+        result = subprocess.run(
+            ["nm", "-D", "--defined-only", str(lib)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        return any(
+            line.endswith(" vhpi_handle_v2008") for line in result.stdout.splitlines()
+        )
+
+    def _simv_has_verilog_kernel(self) -> bool:
+        """Check if the simulation executable contains the Verilog kernel.
+
+        VCS builds a simulation executable without the Verilog kernel
+        (``libvcsnew.so``) for designs with VHDL sources only. Such an
+        executable rejects all options starting with ``+`` and some options
+        starting with ``-``, such as ``-suppress``.
+        """
+        if shutil.which("readelf") is None:
+            # Unable to check, assume the kernel is present.
+            return True
+        result = subprocess.run(
+            ["readelf", "--dynamic", str(self.sim_file)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        return result.returncode != 0 or "[libvcsnew.so]" in result.stdout
+
+    @property
+    def _sim_setup_file(self) -> Path:
+        assert self.build_dir is not None
+        return self.build_dir / "synopsys_sim.setup"
 
     def _get_include_options(self, includes: Sequence[PathLike]) -> _Command:
         return [f"+incdir+{include}" for include in includes]
@@ -2257,6 +2327,15 @@ class Vcs(Runner):
         return [
             f"-pvalue+{self.hdl_toplevel}.{name}={value}"
             for name, value in parameters.items()
+        ]
+
+    def _get_generic_options(self, parameters: Mapping[str, object]) -> _Command:
+        # VCS ignores -pvalue for VHDL generics. -gv applies to VHDL generics
+        # and Verilog parameters.
+        return [
+            arg
+            for name, value in parameters.items()
+            for arg in ("-gv", f"/{self.hdl_toplevel}/{name}={value}")
         ]
 
     @property
@@ -2289,6 +2368,9 @@ class Vcs(Runner):
             if source.tag not in (VHDL, Verilog):
                 raise ValueError(f"Unsupported file type: {source.value}")
 
+        if any(source.tag is VHDL for source in sources):
+            return self._build_command_vhdl(sources)
+
         if outdated(self.sim_file, (source.value for source in sources)) or self.always:
             cmds = [
                 ["vcs"]
@@ -2307,6 +2389,108 @@ class Vcs(Runner):
 
         return cmds
 
+    def _update_sim_setup_file(self) -> None:
+        """Map *hdl_library* to a directory in the build directory."""
+        setup_file = self._sim_setup_file
+        build_dir = setup_file.parent
+        lines = []
+        if setup_file.exists():
+            lines = setup_file.read_text().splitlines()
+        if not lines:
+            lines = ["WORK > DEFAULT", f"DEFAULT : {build_dir / 'work'}"]
+            (build_dir / "work").mkdir(exist_ok=True)
+        library = self.hdl_library
+        mapped = {line.split(":")[0].strip().lower() for line in lines if ":" in line}
+        if library.lower() not in ("work", *mapped):
+            (build_dir / library).mkdir(exist_ok=True)
+            lines.append(f"{library} : {build_dir / library}")
+        setup_file.write_text("\n".join(lines) + "\n")
+
+    def _build_command_vhdl(self, sources: list[_ValueAndTag]) -> list[_Command]:
+        """Analyze all sources into *hdl_library*, then elaborate the toplevel."""
+        if self.hdl_toplevel is None:
+            raise ValueError("A HDL toplevel is required in all VCS compiles.")
+
+        if not self._has_vhpi_2008():
+            raise RuntimeError(
+                "VHDL requires VCS 2026.03 or newer (a VCS version which provides "
+                "the IEEE 1076-2008 VHPI)."
+            )
+
+        self._set_env_vhpi()
+        self._update_sim_setup_file()
+
+        if not (
+            outdated(self.sim_file, (source.value for source in sources)) or self.always
+        ):
+            self.log.warning("Skipping compilation of %s", self.sim_file)
+            return []
+
+        # Bootstrap cocotb through VHPI.
+        # VCS looks up the library by name in LD_LIBRARY_PATH.
+        bootstrap_lib = cocotb_tools.config.lib_entry("vhpi", "vcs")
+        bootstrap_name = Path(bootstrap_lib).stem.removeprefix("lib")
+
+        vhdl_args = [arg.value for arg in self._build_args if arg.tag is VHDL]
+        verilog_args = [arg.value for arg in self._build_args if arg.tag is Verilog]
+        elab_args = [arg.value for arg in self._build_args if arg.tag is None]
+        quiet = [] if self.verbose else ["-q"]
+
+        # VHDL has no `timescale directive: the simulator resolution is set
+        # when elaborating.
+        vlogan_timescale: _Command = []
+        elab_timescale: _Command = []
+        if self.timescale is not None:
+            vlogan_timescale = ["-timescale=" + "/".join(self.timescale)]
+            elab_timescale = ["-time_res", self.timescale[1]]
+
+        cmds: list[_Command] = []
+        for source in sources:
+            if source.tag is VHDL:
+                cmds.append(
+                    [
+                        "vhdlan",
+                        "-full64",
+                        *quiet,
+                        "-work",
+                        self.hdl_library,
+                        *vhdl_args,
+                        str(source.value),
+                    ]
+                )
+            else:
+                cmds.append(
+                    [
+                        "vlogan",
+                        "-full64",
+                        *quiet,
+                        "-sverilog",
+                        *vlogan_timescale,
+                        "-work",
+                        self.hdl_library,
+                        *verilog_args,
+                        *self._get_include_options(self.includes),
+                        *self._get_define_options(self.defines),
+                        str(source.value),
+                    ]
+                )
+
+        cmds.append(
+            [
+                "vcs",
+                *self._build_opts,
+                "-vhpi",
+                f"{bootstrap_name}:cocotb_bootstrap_entry:cocotb",
+                *elab_timescale,
+                *elab_args,
+                *self._get_generic_options(self.parameters),
+                f"{self.hdl_library}.{self.hdl_toplevel}",
+                "-o",
+                str(self.sim_file),
+            ]
+        )
+        return cmds
+
     def _test_command(self) -> list[_Command]:
         if self.pre_cmd is not None:
             raise RuntimeError("pre_cmd is not implemented for Vcs.")
@@ -2314,7 +2498,7 @@ class Vcs(Runner):
         verbosity_opts = []
         if self.verbose:
             verbosity_opts += ["-diag all"]
-        else:
+        elif self._simv_has_verilog_kernel():
             verbosity_opts += ["-suppress=ASLR_DETECTED_INFO"]
 
         cmds = [
