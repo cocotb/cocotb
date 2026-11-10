@@ -68,7 +68,11 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
 
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
-    if (0 > vhpi_get_value(get_handle<vhpiHandleT>(), &m_value)) {
+    /* With the vhpiObjTypeVal format, vhpi_get_value() determines the native
+     * format of the object, and returns the buffer size required to hold the
+     * value if it is an array or a string (IEEE 1076-2019 23.19). */
+    int size_needed = vhpi_get_value(get_handle<vhpiHandleT>(), &m_value);
+    if (0 > size_needed) {
         LOG_ERROR("VHPI: vhpi_get_value failed for %s (%s)", fq_name.c_str(),
                   vhpi_get_str(vhpiKindStrP, handle));
         return -1;
@@ -104,12 +108,36 @@ int VhpiSignalObjHdl::initialise(const std::string &name,
             m_indexable = true;
             m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
             int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+#ifdef VCS
+            /* VCS requires a larger buffer than the length of the string plus
+             * the terminating null character (IEEE 1076-2019 22.2.8 and
+             * 23.19). */
+            if (size_needed > bufSize) bufSize = size_needed;
+#endif
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
             m_value.value.str = new vhpiCharT[static_cast<size_t>(bufSize)];
             m_value.numElems = m_num_elems;
             LOG_DEBUG("VHPI: Overriding num_elems to %d", m_num_elems);
             break;
         }
+
+#ifdef VCS
+        /* VCS reports strings (arrays of characters) with the native format
+         * vhpiEnumVecVal instead of vhpiStrVal. Keep reading and writing them
+         * in that format, but convert from/to strings. */
+        case vhpiEnumVecVal: {
+            m_indexable = true;
+            m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
+            int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
+            m_value.bufSize = static_cast<bufSize_type>(bufSize);
+            m_value.value.enumvs =
+                new vhpiEnumT[static_cast<size_t>(m_num_elems)];
+            m_value.numElems = m_num_elems;
+            m_str_value.assign(static_cast<size_t>(m_num_elems) + 1, '\0');
+            LOG_DEBUG("VHPI: Overriding num_elems to %d", m_num_elems);
+            break;
+        }
+#endif
 
         default: {
             LOG_ERROR(
@@ -437,6 +465,21 @@ int VhpiSignalObjHdl::set_signal_value_str(std::string &value,
             break;
         }
 
+#ifdef VCS
+        case vhpiEnumVecVal: {
+            /* The enumeration values of type CHARACTER are the character
+             * codes. Pad short strings with NUL like the vhpiStrVal case. */
+            for (int i = 0; i < m_value.numElems; ++i) {
+                m_value.value.enumvs[i] =
+                    (static_cast<size_t>(i) < value.size())
+                        ? static_cast<unsigned char>(
+                              value[static_cast<size_t>(i)])
+                        : 0;
+            }
+            break;
+        }
+#endif
+
         default: {
             LOG_ERROR("VHPI: Unable to handle this format type: %s",
                       VhpiImpl::format_to_string(m_value.format));
@@ -501,6 +544,28 @@ const char *VhpiSignalObjHdl::get_signal_value_str() {
             }
             break;
         }
+#ifdef VCS
+        case vhpiEnumVecVal: {
+            if (m_num_elems == 0) {
+                return "";
+            }
+            int ret =
+                vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
+            if (ret) {
+                check_vhpi_error();
+                LOG_ERROR(
+                    "VHPI: Size of m_value.value.enumvs was not large enough: "
+                    "req=%d have=%d for type %s",
+                    ret, m_value.bufSize,
+                    VhpiImpl::format_to_string(m_value.format));
+            }
+            for (int i = 0; i < m_num_elems; ++i) {
+                m_str_value[static_cast<size_t>(i)] =
+                    static_cast<char>(m_value.value.enumvs[i]);
+            }
+            return m_str_value.data();
+        }
+#endif
         default: {
             LOG_ERROR("VHPI: Reading strings not valid for this handle");
             return "";

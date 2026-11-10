@@ -253,6 +253,10 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
     vhpiEnumT chr2vhpi(char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
+#ifdef VCS
+    /* String representation of a vhpiEnumVecVal string, see initialise(). */
+    std::vector<char> m_str_value;
+#endif
 };
 
 class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {
