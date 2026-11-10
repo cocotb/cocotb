@@ -601,6 +601,15 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
+    /* The fallbacks below iterate over the parent, which is only possible if
+     * the parent is from this implementation: the parent's handle is not a
+     * VHPI handle otherwise. */
+    if (new_hdl == NULL && !parent->is_this_impl(this)) {
+        LOG_DEBUG("VHPI: Unable to query vhpi_handle_by_name %s",
+                  fq_name.c_str());
+        return NULL;
+    }
+
     if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
         /* vhpi_handle_by_name() doesn't always work for records, specifically
          * records in generics */
