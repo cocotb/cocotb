@@ -408,8 +408,9 @@ async def test_extended_identifiers(dut):
     assert isinstance(dut["\\!\\"], LogicObject)
 
 
-# GHDL cannot do complex types in ports
-@cocotb.test(skip=(LANGUAGE in ["verilog"]), expect_fail=SIM_NAME.startswith("ghdl"))
+@cocotb.test
+@cocotb.skipif(LANGUAGE == "verilog")
+@cocotb.xfail(SIM_NAME.startswith("ghdl"), reason="Cannot access ports of complex type in GHDL")
 async def test_record_of_multidim_array(dut):
     """Test handling of multi-dim arrays in / of records (complex hierarchies)"""
 
