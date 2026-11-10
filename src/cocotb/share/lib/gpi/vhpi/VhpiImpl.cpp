@@ -335,16 +335,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 
     /* We need to delve further here to determine how to later set
        the values of an object */
-    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
-
-    if (base_hdl == NULL) {
-        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, new_hdl);
-
-        if (st_hdl != NULL) {
-            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
-            vhpi_release_handle(st_hdl);
-        }
-    }
+    vhpiHandleT base_hdl = get_base_type_handle(new_hdl);
 
     vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : new_hdl;
 
@@ -361,12 +352,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 vhpiHandleT elem_base_type_hdl = NULL;
                 vhpiIntT elem_base_type = 0;
 
-                vhpiHandleT elem_sub_type_hdl =
-                    vhpi_handle(vhpiElemType, query_hdl);
-                /* vhpiElemType is not supported in all simulators. */
-                if (!elem_sub_type_hdl) {
-                    elem_sub_type_hdl = vhpi_handle(vhpiElemSubtype, query_hdl);
-                }
+                vhpiHandleT elem_sub_type_hdl = get_elem_type_handle(query_hdl);
 
                 if (elem_sub_type_hdl != NULL) {
                     elem_base_type_hdl =
@@ -758,16 +744,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         name += idx_str;
         fq_name += idx_str;
 
-        vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, vhpi_hdl);
-
-        if (base_hdl == NULL) {
-            vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
-
-            if (st_hdl != NULL) {
-                base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
-                vhpi_release_handle(st_hdl);
-            }
-        }
+        vhpiHandleT base_hdl = get_base_type_handle(vhpi_hdl);
 
         if (base_hdl == NULL) {
             LOG_ERROR("VHPI: Unable to get the vhpiBaseType of %s",
@@ -814,15 +791,6 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             indices.push_back(index);
 
             if (indices.size() == num_dim) {
-#ifdef IUS
-                /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP
-                 * property.  IUS Docs say it will return -1 if unconstrained,
-                 * but with vhpiIntT being unsigned, the value returned is
-                 * below.
-                 */
-                const vhpiIntT UNCONSTRAINED = 2147483647;
-#endif
-
                 std::vector<vhpiHandleT> constraints;
                 auto release_constraints = [&constraints]() {
                     for (auto c : constraints) vhpi_release_handle(c);
@@ -831,28 +799,16 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                 DEFER(release_constraints());
 
                 /* All necessary indices are available, need to iterate over
-                 * dimension constraints to determine the index into the
-                 * zero-based flattened array.
-                 *
-                 * Check the constraints on the base type first. (always works
-                 * for Aldec, but not unconstrained types in IUS/Xcelium) If the
-                 * base type fails, then try the sub-type.  (sub-type is listed
-                 * as deprecated for Aldec)
+                 * the index constraints of the subtype to determine the index
+                 * into the zero-based flattened array (see get_range()).
                  */
                 vhpiHandleT it, constraint;
+                vhpiHandleT sub_hdl = get_constrained_type_handle(vhpi_hdl);
 
-                it = vhpi_iterator(vhpiConstraints, base_hdl);
-
+                it = sub_hdl ? vhpi_iterator(vhpiConstraints, sub_hdl) : NULL;
                 if (it != NULL) {
                     while ((constraint = vhpi_scan(it)) != NULL) {
-#ifdef IUS
-                        vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
-                        vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
-                        if (l_rng == UNCONSTRAINED || r_rng == UNCONSTRAINED) {
-#else
-                        if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
-#endif
-                            /* Bail and try the sub-type handle */
+                        if (is_unconstrained(constraint)) {
                             vhpi_release_handle(constraint);
                             vhpi_release_handle(it);
                             break;
@@ -860,34 +816,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                         constraints.push_back(constraint);
                     }
                 }
-
-                /* If all the dimensions were not obtained, try again with the
-                 * sub-type handle */
-                if (constraints.size() != num_dim) {
-                    vhpiHandleT sub_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
-
-                    release_constraints();
-
-                    if (sub_hdl != NULL) {
-                        it = vhpi_iterator(vhpiConstraints, sub_hdl);
-
-                        if (it != NULL) {
-                            while ((constraint = vhpi_scan(it)) != NULL) {
-                                /* IUS/Xcelium only sets the
-                                 * vhpiIsUnconstrainedP incorrectly on the base
-                                 * type */
-                                if (vhpi_get(vhpiIsUnconstrainedP,
-                                             constraint)) {
-                                    vhpi_release_handle(constraint);
-                                    vhpi_release_handle(it);
-                                    break;
-                                }
-                                constraints.push_back(constraint);
-                            }
-                        }
-                        vhpi_release_handle(sub_hdl);
-                    }
-                }
+                if (sub_hdl != NULL) vhpi_release_handle(sub_hdl);
 
                 if (constraints.size() == num_dim) {
                     int scale = 1;

@@ -148,16 +148,7 @@ int VhpiLogicSignalObjHdl::initialise(const std::string &name,
     m_binvalue.value.str = NULL;
 
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
-    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, handle);
-
-    if (base_hdl == NULL) {
-        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, handle);
-
-        if (st_hdl != NULL) {
-            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
-            vhpi_release_handle(st_hdl);
-        }
-    }
+    vhpiHandleT base_hdl = get_base_type_handle(handle);
 
     vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : handle;
 
