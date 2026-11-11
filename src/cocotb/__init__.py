@@ -24,6 +24,8 @@ from cocotb._decorators import Param, parametrize, skipif, test, xfail  # noqa: 
 from cocotb._test_manager import (  # noqa: E402
     create_task,
     end_test,
+    fail_regression,
+    fail_test,
     pass_test,
     start,
     start_soon,
@@ -41,6 +43,8 @@ __all__ = (
     "argv",
     "create_task",
     "end_test",
+    "fail_regression",
+    "fail_test",
     "is_simulation",
     "log",
     "packages",
@@ -67,6 +71,8 @@ for thing in [
     create_task,
     pass_test,
     end_test,
+    fail_test,
+    fail_regression,
 ]:
     thing.__module__ = __name__
 
