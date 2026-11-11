@@ -259,19 +259,18 @@ class Event:
 
 
 class _InternalEvent(Trigger):
-    """Event used internally for triggers that need cross-:class:`~cocotb.task.Task` synchronization.
+    """Event used by concurrent waiters to provide better debugging experience.
 
-    This Event can only be waited on once, by a single :class:`~cocotb.task.Task`.
-
-    Provides transparent :func`repr` pass-through to the :class:`Trigger` using this event,
-    providing a better debugging experience.
+    This Trigger should only be used by one :class:`~cocotb.task.Task`.
+    That :class:`!Task` should pass a *repr_func* which ties the ``__repr__`` of the event to the behavior of the :class:`!Task` using it.
+    This allows for better debugging by returning a meaningful representation of the state of the :class:`!Task` awaiting this Event.
+    For example, this is used for :class:`~cocotb.triggers.First` and overrides the ``__repr__`` method to print ``First`` along with all child triggers.
     """
 
     def __init__(self, repr_func: Callable[[], str]) -> None:
         super().__init__()
         self._repr_func = repr_func
         self._fired: bool = False
-        self._awaited: bool = False
 
     def _prime(self) -> None:
         if self.is_set():
@@ -294,9 +293,6 @@ class _InternalEvent(Trigger):
     def __await__(
         self,
     ) -> Generator[Self, None, Self]:
-        if self._awaited:
-            raise RuntimeError("Only one Task may await this Trigger")
-        self._awaited = True
         return (yield from super().__await__())
 
     def __repr__(self) -> str:

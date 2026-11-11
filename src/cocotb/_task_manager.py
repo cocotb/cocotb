@@ -13,7 +13,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
 from cocotb.task import Task, current_task
-from cocotb.triggers import Event, NullTrigger
+from cocotb.triggers import Event
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -226,77 +226,77 @@ class TaskManager:
         return self
 
     async def __aexit__(
-        self, exc_type: object, exc: BaseException | None, traceback: object
+        self, exc_type: object, body_exc: BaseException | None, traceback: object
     ) -> None:
         self._finishing = True
 
-        # Propagate special exceptions immediately.
+        # Propagate special exceptions immediately after best-effort child cancellation.
         # The GeneratorExit case is there so if the block is cancelled due to a child Task failure,
         # and the block squashes the CancelledError and does an await, a GeneratorExit is thrown at the await, which may end up here.
-        if isinstance(exc, (KeyboardInterrupt, SystemExit, BdbQuit, GeneratorExit)):
+        if isinstance(
+            body_exc, (KeyboardInterrupt, SystemExit, BdbQuit, GeneratorExit)
+        ):
             self._cancel()
             return None  # re-raise exception
 
+        external_cancellation: CancelledError | None = None
+
         if self._cancelled:
             # The context block was cancelled due to a child Task failure.
-            if isinstance(exc, CancelledError):
+            if isinstance(body_exc, CancelledError):
                 # Suppress CancelledError in this case to allow child Tasks to finish cancelling.
-                exc = None
-                self._parent_task._uncancel()
+                if self._parent_task._uncancel():
+                    # If we account for our own cancellation request and there are still pending ones,
+                    # we assume there was an external cancellation request before the body ended.
+                    external_cancellation = body_exc
             else:
                 # The context block ignored the cancellation and either threw some other exception or finished successfully.
-                # We await a token NullTrigger to allow the parent Task to kill the Task due to ignored CancelledError.
-                await NullTrigger()
-                # This will never run as a GeneratorExit will be thrown at the above await.
-                raise RuntimeError("Reached unreachable code")  # pragma: no cover
-        elif exc is not None:
-            if isinstance(exc, CancelledError):
-                # Something else cancelled the parent task.
-                # Cancel the children first, then propagate error
+                # We have to have this here as we are basically treating the body as a separate Task,
+                # but we can't use the logic in Task, so we have to repeat it here.
+                self._exceptions.add(
+                    RuntimeError("TaskManager context block ignored cancellation")
+                )
+        elif body_exc is not None:
+            if isinstance(body_exc, CancelledError):
+                # We don't record CancelledErrors in the exceptions set.
+                # Just as if it were a child Task, we cancel all children when one fails.
+                # We unconditionally cancel here as context block cancellation really means the parent was externally cancelled.
+                external_cancellation = body_exc
                 self._cancel()
-                self._parent_task._uncancel()
-
-                while not self._none_remaining.is_set():
-                    try:
-                        await self._none_remaining.wait()
-                    except CancelledError:
-                        # parent got cancelled again, so we also need to uncancel ourselves
-                        self._parent_task._uncancel()
-
-                return None  # re-raise CancelledError
-            elif not self._context_continue_on_error:
-                # Block finished with an exception and we are not continuing on error.
-                self._cancel()
+            else:
+                # The context block raised an exception.
+                # Just as if it were a child Task, we record the exception and cancel the other children if not continue_on_error.
+                self._exceptions.add(body_exc)
+                if not self._context_continue_on_error:
+                    self._cancel()
+        else:
+            # The context block finished successfully without something else causing a cancellation.
+            pass  # pragma: no cover  # empty branches are optimized out by the interpreter
 
         # Wait for all Tasks to finish / finish cancelling.
-        try:
-            await self._none_remaining.wait()
-        except CancelledError:
-            # Cancel all child Tasks if the current Task is cancelled by the user while
-            # waiting for all child Tasks to finish. If the TaskManager is already
-            # cancelling due to a child Task failure, this will no-op.
-            self._cancel()
-            self._parent_task._uncancel()
+        while not self._none_remaining.is_set():
+            try:
+                await self._none_remaining.wait()
+            except CancelledError as exc:
+                # Got an external cancellation while waiting for all child Tasks to finish.
+                # If the TaskManager is already cancelling due to a child Task failure, this will no-op.
+                # If we get a cancellation after another cancellation while wait, this will also no-op.
+                external_cancellation = exc
+                self._cancel()
+            except BaseException:
+                # Something horrible has happened, cancel children as a best-effort and immediately propagate the exception.
+                self._cancel()
+                raise
 
-            while not self._none_remaining.is_set():
-                try:
-                    await self._none_remaining.wait()
-                except CancelledError:
-                    # parent got cancelled again, so we also need to uncancel ourselves
-                    self._parent_task._uncancel()
+        # We have to propagate the external cancellation if it occurred either in the context block
+        # (task was externally cancelled while in the block), or while waiting for all child Tasks to finish.
+        # The assumption is that if someone called `parent_task.cancel()`, the CancelledError must be propagated
+        # to the caller after all children have finished.
+        # We don't have to worry about CancelledErrors from child Tasks here, as no one should be able to get a reference to them.
+        # (Well... current_task() could allow someone to do something convoluted.)
+        if external_cancellation:
+            raise external_cancellation from None
 
-            raise
-        except BaseException:
-            # The current Task failed while waiting for child Tasks to finish.
-            # This is likely because we ignored a CancelledError since there is no other
-            # way to fail this await AFAICT. Cancel children and let it pass up as there's
-            # nothing we can do.
-            self._cancel()
-            raise
-
-        # Build BaseExceptionGroup if there were any errors. Ignore CancelledError.
-        if exc is not None and not isinstance(exc, CancelledError):
-            self._exceptions.add(exc)
         if self._exceptions:
             # BaseExceptionGroup constructor will automatically return an ExceptionGroup if all elements are Exceptions.
             raise BaseExceptionGroup(

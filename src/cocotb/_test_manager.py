@@ -64,22 +64,24 @@ class TestManager:
         self._done = Event()
 
     def _test_done_callback(self, task: Task[None]) -> None:
-        self.remove_task(task)
-        # If cancelled, end the Test without additional error. This case would only
-        # occur if a child threw a CancelledError or if the Test was forced to shutdown.
-        if task.cancelled():
-            self._abort()
-            return
-        # Handle outcome appropriately and shut down the Test.
-        e = task.exception()
-        if e is None:
-            self._abort()
-        elif isinstance(e, EndTest):
-            msg_str = f": {e.msg}" if e.msg else ""
-            task._log.info("Test stopped early by this task%s", msg_str)
-            self._abort()
-        else:
-            self._abort(e)
+        try:
+            # If cancelled, end the Test without additional error. This case would only
+            # occur if a child threw a CancelledError or if the Test was forced to shutdown.
+            if task.cancelled():
+                self._abort()
+                return
+            # Handle outcome appropriately and shut down the Test.
+            e = task.exception()
+            if e is None:
+                self._abort()
+            elif isinstance(e, EndTest):
+                msg_str = f": {e.msg}" if e.msg else ""
+                task._log.info("Test stopped early by this task%s", msg_str)
+                self._abort()
+            else:
+                self._abort(e)
+        finally:
+            self.remove_task(task)
 
     def start(self) -> None:
         # set global current test manager
@@ -149,7 +151,7 @@ class TestManager:
 
         # Cancel Tasks.
         for task in list(self._tasks):
-            task._cancel_now()
+            task.cancel()
 
         # Register function to clean up global state once all Tasks have ended.
         if self._done.is_set():
@@ -178,23 +180,25 @@ class TestManager:
             self._done.set()
 
     def _task_done_callback(self, task: Task[Any]) -> None:
-        self.remove_task(task)
-        # if cancelled, do nothing
-        if task.cancelled():
-            return
-        # if there's a Task awaiting this one, don't fail
-        if task.complete._callbacks:
-            return
-        # if no failure, do nothing
-        e = task.exception()
-        if e is None:
-            return
-        elif isinstance(e, EndTest):
-            msg_str = f": {e.msg}" if e.msg else ""
-            task._log.info("Test stopped early by this task%s", msg_str)
-            self._abort()
-        else:
-            self._abort(e)
+        try:
+            # if cancelled, do nothing
+            if task.cancelled():
+                return
+            # if there's a Task awaiting this one, don't fail
+            if task.complete._callbacks:
+                return
+            # if no failure, do nothing
+            e = task.exception()
+            if e is None:
+                return
+            elif isinstance(e, EndTest):
+                msg_str = f": {e.msg}" if e.msg else ""
+                task._log.info("Test stopped early by this task%s", msg_str)
+                self._abort()
+            else:
+                self._abort(e)
+        finally:
+            self.remove_task(task)
 
 
 TriggerT = TypeVar("TriggerT", bound=Trigger)
