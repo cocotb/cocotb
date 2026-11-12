@@ -439,8 +439,12 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
         // verify that this xcelium scope is valid, or else we segfault on the
         // invalid scope. Xcelium only returns vpiGenScope, no vpiGenScopeArray
 
+        // The parent's handle is only a VPI handle if the parent is from
+        // this implementation.
         bool is_valid = false;
-        vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
+        vpiHandle iter = parent->is_this_impl(this)
+                             ? vpi_iterate(vpiInternalScope, parent_hdl)
+                             : NULL;
         if (iter != NULL) {
             for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
                 is_valid = VpiImpl::compare_generate_labels(
@@ -492,7 +496,9 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
      * Verilator exposes only as individual elements: bus[n] is found, but
      * bus itself is not.
      */
-    if (new_hdl == NULL) {
+    /* Looking for generate scopes is only possible if the parent is from this
+     * implementation: the parent's handle is not a VPI handle otherwise. */
+    if (new_hdl == NULL && parent->is_this_impl(this)) {
         LOG_DEBUG(
             "Unable to find '%s' through vpi_handle_by_name, looking for "
             "matching generate scope array using fallback",
