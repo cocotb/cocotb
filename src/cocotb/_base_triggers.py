@@ -433,16 +433,15 @@ class Lock(AbstractAsyncContextManager[None]):
             self._pending_primed.append(lock)
 
     def _unprime_lock(self, lock: _Lock) -> None:
-        if lock not in self._pending_primed:
-            return
-        if lock._owner is None:
-            # Not made from a Task, so nobody can come back for it.
-            self._pending_primed.remove(lock)
-            return
-        # Keep the place in line, in case the Task that made this attempt tries again.
-        # Release skips attempts that nobody is waiting on.
-        self._abandoned[lock._owner] = lock
-        self._forget_finished_owners()
+        if lock in self._pending_primed:
+            if lock._owner is None:
+                # Not made from a Task, so nobody can come back for it.
+                self._pending_primed.remove(lock)
+            else:
+                # Keep the place in line, in case the Task that made this attempt tries again.
+                # Release skips attempts that nobody is waiting on.
+                self._abandoned[lock._owner] = lock
+                self._forget_finished_owners()
 
     def _forget_finished_owners(self) -> None:
         """Remove abandoned attempts whose Task is done, as they can never be retried."""

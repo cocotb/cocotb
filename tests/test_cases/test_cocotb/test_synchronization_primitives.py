@@ -15,6 +15,7 @@ import pytest
 from common import assert_takes
 
 import cocotb
+import cocotb.task
 from cocotb._base_triggers import Trigger, _InternalEvent
 from cocotb.task import Task
 from cocotb.triggers import (
@@ -275,6 +276,109 @@ async def test_Lock_given_up_attempt_is_skipped(_) -> None:
     await gather(w1, w2)
 
     assert acquired == ["w1", "w2"]
+    assert not lock.locked()
+
+
+@cocotb.test
+async def test_Lock_await_given_up_trigger_again(_) -> None:
+    """Test that a Lock.acquire() Trigger which was given up can be awaited again, and keeps its place in line."""
+    lock = Lock()
+    give_up = Event()
+    acquired: list[str] = []
+
+    async def user(name: str) -> None:
+        await lock.acquire()
+        acquired.append(name)
+        lock.release()
+
+    async def retrier() -> None:
+        trigger = lock.acquire()
+        await select(trigger, give_up.wait())
+        # Wait on the same Trigger again, instead of calling acquire() again.
+        await trigger
+        acquired.append("retrier")
+        lock.release()
+
+    await lock.acquire()
+    retrier_task = cocotb.start_soon(retrier())
+    await NullTrigger()
+    give_up.set()
+    await NullTrigger()
+    w1 = cocotb.start_soon(user("w1"))
+    await NullTrigger()
+    await NullTrigger()
+
+    lock.release()
+    await gather(retrier_task, w1)
+
+    assert acquired == ["retrier", "w1"]
+    assert not lock.locked()
+
+    # The Lock is not left in a state where the retrier's Trigger is mistaken for a used one.
+    await lock.acquire()
+    lock.release()
+
+
+@cocotb.test
+async def test_Lock_forgets_given_up_attempts_of_finished_tasks(_) -> None:
+    """Test that a Lock does not keep the attempts of Tasks that gave up and ended."""
+    lock = Lock()
+
+    async def quitter() -> None:
+        # Gives up while waiting, as it is cancelled by select(), and then ends.
+        await select(lock.acquire(), NullTrigger())
+
+    await lock.acquire()
+    # Each Task ends after giving up, so its place in line can never be used again.
+    for _i in range(5):
+        await cocotb.start_soon(quitter())
+        await NullTrigger()
+
+    # Nothing is waiting, and the places in line of the finished Tasks do not pile up.
+    assert re.search(r"\[0 waiting\]", repr(lock))
+    assert len(lock._pending_primed) <= 1
+
+    lock.release()
+    assert not lock.locked()
+    # Everything given up has been dropped, the Lock still works.
+    await lock.acquire()
+    lock.release()
+
+
+@cocotb.test
+async def test_Lock_acquire_without_running_task(_) -> None:
+    """Test that Lock.acquire() works when called outside of a Task."""
+    lock = Lock()
+    acquired: list[str] = []
+
+    async def wait_for(trigger: Trigger, name: str) -> None:
+        await trigger
+        acquired.append(name)
+        lock.release()
+
+    await lock.acquire()
+
+    # Simulate calling acquire() from outside a Task, for example from a callback.
+    running_task = cocotb.task._current_task
+    cocotb.task._current_task = None
+    try:
+        trigger = lock.acquire()
+    finally:
+        cocotb.task._current_task = running_task
+
+    waiter = cocotb.start_soon(wait_for(trigger, "outside"))
+    other = cocotb.start_soon(wait_for(lock.acquire(), "other"))
+    await NullTrigger()
+    assert re.search(r"\[2 waiting\]", repr(lock))
+
+    # Nobody can come back for an attempt made outside of a Task, so it is dropped when its waiter is cancelled.
+    waiter.cancel()
+    await NullTrigger()
+    assert re.search(r"\[1 waiting\]", repr(lock))
+
+    lock.release()
+    await other
+    assert acquired == ["other"]
     assert not lock.locked()
 
 
