@@ -23,6 +23,8 @@ from cocotb.triggers import (
     NullTrigger,
     ReadOnly,
     Timer,
+    gather,
+    select,
     with_timeout,
 )
 
@@ -208,6 +210,72 @@ async def test_Lock_fair_scheduling(_) -> None:
         )
         # So we don't depend upon the relative scheduling order of the waiter Timers and the above Timer.
         await ReadOnly()
+
+
+@cocotb.test
+async def test_Lock_retry_keeps_place_in_line(_) -> None:
+    """Test that a Task which gives up acquiring a Lock and tries again keeps its place in line."""
+    lock = Lock()
+    give_up = Event()
+    acquired: list[str] = []
+
+    async def user(name: str) -> None:
+        await lock.acquire()
+        acquired.append(name)
+        lock.release()
+
+    async def retrier() -> None:
+        # The first attempt is cancelled by select(), like a timeout would do.
+        await select(lock.acquire(), give_up.wait())
+        await user("retrier")
+
+    await lock.acquire()
+    retrier_task = cocotb.start_soon(retrier())
+    await NullTrigger()
+    give_up.set()
+    await NullTrigger()
+    # These Tasks start waiting after the retrier's first attempt.
+    w1 = cocotb.start_soon(user("w1"))
+    w2 = cocotb.start_soon(user("w2"))
+    await NullTrigger()
+    await NullTrigger()
+
+    lock.release()
+    await gather(retrier_task, w1, w2)
+
+    assert acquired == ["retrier", "w1", "w2"]
+
+
+@cocotb.test
+async def test_Lock_given_up_attempt_is_skipped(_) -> None:
+    """Test that a Lock is not held up by a Task which gave up acquiring it and never came back."""
+    lock = Lock()
+    acquired: list[str] = []
+
+    async def user(name: str) -> None:
+        await lock.acquire()
+        acquired.append(name)
+        lock.release()
+
+    await lock.acquire()
+    quitter = cocotb.start_soon(user("quitter"))
+    await NullTrigger()
+    w1 = cocotb.start_soon(user("w1"))
+    w2 = cocotb.start_soon(user("w2"))
+    await NullTrigger()
+    assert re.search(r"\[3 waiting\]", repr(lock))
+
+    # The quitter gives up while it is still waiting, then ends.
+    quitter.cancel()
+    await NullTrigger()
+    assert quitter.cancelled()
+    assert re.search(r"\[2 waiting\]", repr(lock))
+
+    lock.release()
+    await gather(w1, w2)
+
+    assert acquired == ["w1", "w2"]
+    assert not lock.locked()
 
 
 @cocotb.test(expect_error=RuntimeError)

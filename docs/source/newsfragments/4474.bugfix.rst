@@ -1,0 +1,1 @@
+Fixed :class:`~cocotb.triggers.Lock` sending a :class:`~cocotb.task.Task` to the back of the line when it gave up waiting on :meth:`Lock.acquire() <cocotb.triggers.Lock.acquire>` (for example by being cancelled by :func:`~cocotb.triggers.select` or :func:`~cocotb.triggers.with_timeout`) and tried again, which could prevent it from ever acquiring the :class:`!Lock`.
