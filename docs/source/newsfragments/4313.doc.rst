@@ -1,0 +1,1 @@
+Documented how to debug tests from an IDE with the ``debugpy`` package, including starting the debug server in the test module and attaching Visual Studio Code with a ``launch.json`` entry.

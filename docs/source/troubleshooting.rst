@@ -128,6 +128,75 @@ accessible via a TCP socket:
 
       telnet 127.0.0.1 4000
 
+For a graphical debugging experience, the `debugpy`_ package offers the same TCP-based approach
+through the Debug Adapter Protocol, which is supported by editors such as Visual Studio Code.
+Because the Python interpreter runs inside the simulator process,
+the debug server has to be started from within the test module;
+:command:`python -m debugpy` cannot be used to launch the simulation.
+
+1. Install the package:
+
+   .. code:: shell
+
+      pip install debugpy
+
+2. Start the debug server in the test module and wait until a debugger client is attached:
+
+   .. code:: python
+
+      import debugpy
+
+      debugpy.listen(("127.0.0.1", 5678))
+      debugpy.wait_for_client()  # <-- the simulation blocks here until a client is attached
+
+   Guarding the calls behind an environment variable keeps the test runnable without a debugger:
+
+   .. code:: python
+
+      import os
+
+      import debugpy
+
+      if os.getenv("COCOTB_DEBUGPY"):
+          debugpy.listen(("127.0.0.1", 5678))
+          debugpy.wait_for_client()
+
+3. Run the Makefile so that the simulation starts and then *hangs*:
+
+   .. code:: shell
+
+      COCOTB_DEBUGPY=1 make
+
+4. Attach the debugger from the IDE.
+   The following entry in ``launch.json`` attaches Visual Studio Code to the running simulation:
+
+   .. code:: json
+
+      {
+          "name": "Attach to cocotb",
+          "type": "debugpy",
+          "request": "attach",
+          "connect": {
+              "host": "127.0.0.1",
+              "port": 5678
+          },
+          "pathMappings": [
+              {
+                  "localRoot": "${workspaceFolder}",
+                  "remoteRoot": "/absolute/path/to/project"
+              }
+          ],
+          "justMyCode": false
+      }
+
+   ``pathMappings`` is only needed if the simulation runs on a different file system,
+   for example in a container or on a remote host.
+
+5. Set breakpoints once the client is attached and resume the simulation.
+   Alternatively, call ``debugpy.breakpoint()`` where the debugger should stop;
+   that call does nothing if no client is attached,
+   so the test keeps running unchanged without a debugger.
+
 
 Embedding an IPython shell
 ==========================
