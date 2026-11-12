@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 [![codecov](https://codecov.io/gh/cocotb/cocotb/branch/master/graph/badge.svg)](https://codecov.io/gh/cocotb/cocotb)
 
-* Check out the [tutorial](https://docs.cocotb.org/en/stable/quickstart.html)
+* Check out the [tutorial](https://docs.cocotb.org/en/stable/first_steps.html)
 * Read the [docs](https://docs.cocotb.org/en/stable/)
 * Find more info in the [wiki](https://github.com/cocotb/cocotb/wiki)
 * Discover [useful extensions](https://github.com/cocotb/cocotb/wiki/Further-Resources#utility-libraries-and-frameworks)
