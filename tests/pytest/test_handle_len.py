@@ -9,8 +9,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import cocotb.preview
 import cocotb.simulator
+import cocotb_previews
 from cocotb.handle import (
     EnumObject,
     IntegerObject,
@@ -19,16 +19,16 @@ from cocotb.handle import (
     RealObject,
 )
 
-FEATURE = cocotb.preview.Feature.HANDLE_LEN_IS_SUBELEMENTS
+FEATURE = cocotb_previews.Feature.HANDLE_LEN_IS_SUBELEMENTS
 
 
 @pytest.fixture(autouse=True)
 def isolate_previews() -> Generator[None, None, None]:
-    enabled_features = cocotb.preview._enabled_features.copy()
-    cocotb.preview._enabled_features.clear()
+    enabled_features = cocotb_previews._enabled_features.copy()
+    cocotb_previews._enabled_features.clear()
     yield
-    cocotb.preview._enabled_features.clear()
-    cocotb.preview._enabled_features.update(enabled_features)
+    cocotb_previews._enabled_features.clear()
+    cocotb_previews._enabled_features.update(enabled_features)
 
 
 def _packed_array() -> PackedObject:
@@ -57,7 +57,7 @@ def _packed_struct() -> PackedObject:
 @pytest.mark.parametrize("enabled", [False, True])
 def test_logic_object_len_is_deprecated(enabled: bool) -> None:
     if enabled:
-        cocotb.preview.enable(FEATURE)
+        cocotb_previews.enable(FEATURE)
     handle = object.__new__(LogicObject)
 
     with pytest.warns(DeprecationWarning):
@@ -67,7 +67,7 @@ def test_logic_object_len_is_deprecated(enabled: bool) -> None:
 @pytest.mark.parametrize("enabled", [False, True])
 def test_integer_object_len_is_deprecated(enabled: bool) -> None:
     if enabled:
-        cocotb.preview.enable(FEATURE)
+        cocotb_previews.enable(FEATURE)
     handle = object.__new__(IntegerObject)
     handle._handle = SimpleNamespace(get_num_elems=lambda: 8)
 
@@ -78,7 +78,7 @@ def test_integer_object_len_is_deprecated(enabled: bool) -> None:
 @pytest.mark.parametrize("enabled", [False, True])
 def test_enum_object_len_is_deprecated(enabled: bool) -> None:
     if enabled:
-        cocotb.preview.enable(FEATURE)
+        cocotb_previews.enable(FEATURE)
     handle = object.__new__(EnumObject)
     handle._handle = SimpleNamespace(get_num_elems=lambda: 8)
 
@@ -102,7 +102,7 @@ def test_packed_array_len_is_size_without_preview() -> None:
 
 
 def test_packed_array_len_is_range_with_preview() -> None:
-    cocotb.preview.enable(FEATURE)
+    cocotb_previews.enable(FEATURE)
     handle = _packed_array()
 
     with warnings.catch_warnings():
@@ -120,7 +120,7 @@ def test_packed_struct_len_is_size_without_preview() -> None:
 
 
 def test_packed_struct_len_raises_with_preview() -> None:
-    cocotb.preview.enable(FEATURE)
+    cocotb_previews.enable(FEATURE)
     handle = _packed_struct()
 
     with pytest.raises(TypeError):

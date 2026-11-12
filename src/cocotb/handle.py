@@ -22,8 +22,8 @@ from typing import (
     cast,
 )
 
-import cocotb.preview
 import cocotb.simulator
+import cocotb_previews
 from cocotb._base_triggers import TriggerCallback
 from cocotb._deprecation import deprecated
 from cocotb._gpi_triggers import (
@@ -1416,7 +1416,9 @@ class PackedObject(_LogicArrayObjectBase[ChildObjectT], Generic[ChildObjectT]):
         return super().__getitem__(index)
 
     def __len__(self) -> int:
-        if cocotb.preview.is_enabled(cocotb.preview.Feature.HANDLE_LEN_IS_SUBELEMENTS):
+        if cocotb_previews.is_enabled(
+            cocotb_previews.Feature.HANDLE_LEN_IS_SUBELEMENTS
+        ):
             return len(self.range)
         return self.size
 
