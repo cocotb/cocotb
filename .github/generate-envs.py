@@ -339,7 +339,7 @@ ENVS = [
     {
         "lang": "verilog",
         "sim": "vcs",
-        "sim-version": "synopsys/vcs/X-2025.06",
+        "sim-version": "synopsys/vcs/Y-2026.03",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -348,7 +348,7 @@ ENVS = [
     {
         "lang": "vhdl",
         "sim": "vcs",
-        "sim-version": "synopsys/vcs/X-2025.06",
+        "sim-version": "synopsys/vcs/Y-2026.03",
         "os": "ubuntu-22.04",
         "self-hosted": True,
         "python-version": "3.9",
@@ -527,7 +527,7 @@ for version in xcelium_versions:
     ]
 
 # VCS: test more versions as part of the extended tests.
-vcs_versions = ("W-2024.09",)
+vcs_versions = ("W-2024.09", "X-2025.06")
 for version in vcs_versions:
     ENVS += [
         {
@@ -539,8 +539,7 @@ for version in vcs_versions:
             "python-version": "3.9",
             "group": "extended",
         },
-        # Don't run extended tests for VCS/VHDL yet until we have a version that
-        # works.
+        # VHDL requires VCS 2026.03 or newer, which is tested in the regular CI.
     ]
 
 

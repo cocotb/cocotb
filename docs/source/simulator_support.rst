@@ -203,7 +203,33 @@ see :class:`cocotb_tools.runner.Vcs`.
 
     A working installation of the simulator itself is required.
 
-cocotb currently only supports :term:`VPI` for Synopsys VCS, not :term:`VHPI`.
+cocotb supports :term:`VPI` and :term:`VHPI` for Synopsys VCS.
+
+.. note::
+
+    **Designs with VHDL sources (VHDL and mixed-language designs) require VCS 2026.03 or newer.**
+
+With older versions of VCS, the Makefile flow skips designs with VHDL sources,
+and the :ref:`Python Runner <howto-python-runner>` raises an error.
+
+Designs with VHDL sources are analyzed with ``vhdlan`` and ``vlogan`` and elaborated with ``vcs``.
+
+.. _sim-vcs-vhdl-limitations:
+
+Limitations of the VHDL support
+-------------------------------
+
+* A simulation executable built from VHDL sources only does not accept plusargs (:make:var:`COCOTB_PLUSARGS`),
+  or any other option starting with ``+``, and rejects some other options, such as ``-suppress``.
+  Designs which also contain Verilog sources accept plusargs.
+* In designs with a Verilog toplevel, the VHDL parts of the design can be simulated, but cocotb cannot access objects inside VHDL instances.
+* In designs with a VHDL toplevel, iterating over a Verilog instance finds only its ports.
+  Other objects inside Verilog instances can be accessed by name.
+* Iterations of a for-generate statement cannot be accessed by index if the range of the statement depends on a deferred constant
+  (a constant whose value is given in a package body).
+* VCS reports the names of generics and record elements in upper case.
+  When iterating over the design, these objects are found with upper-case names,
+  and record elements which have been accessed before by their lower-case name are found twice.
 
 .. _sim-vcs-issues:
 

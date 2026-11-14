@@ -36,6 +36,20 @@
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
                gpi_range_dir *dir);
 
+/* Get a handle to the subtype of an object (vhpiType), whose index
+ * constraints are the index ranges of an array object, or NULL. */
+vhpiHandleT get_constrained_type_handle(vhpiHandleT hdl);
+
+/* Check if a constraint (a range) is unconstrained (vhpiIsUnconstrainedP). */
+bool is_unconstrained(vhpiHandleT constraint);
+
+/* Get a handle to the base type of an object (vhpiBaseType), or NULL. */
+vhpiHandleT get_base_type_handle(vhpiHandleT hdl);
+
+/* Get a handle to the element subtype of an array type (vhpiElemType), or
+ * NULL. */
+vhpiHandleT get_elem_type_handle(vhpiHandleT array_type);
+
 // Should be run after every VHPI call to check error status
 static inline void __check_vhpi_error(const char *file, const char *func,
                                       long line) {
@@ -239,6 +253,10 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
     vhpiEnumT chr2vhpi(char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
+#ifdef VCS
+    /* String representation of a vhpiEnumVecVal string, see initialise(). */
+    std::vector<char> m_str_value;
+#endif
 };
 
 class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {

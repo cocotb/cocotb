@@ -40,6 +40,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
         SIM_ARGS += -gDATA_WIDTH=$(DATA_WIDTH) -gA_ROWS=$(A_ROWS) -gB_COLUMNS=$(B_COLUMNS) -gA_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     else ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -generic "matrix_multiplier:DATA_WIDTH=>$(DATA_WIDTH)" -generic "matrix_multiplier:A_ROWS=>$(A_ROWS)" -generic "matrix_multiplier:B_COLUMNS=>$(B_COLUMNS)" -generic "matrix_multiplier:A_COLUMNS_B_ROWS=>$(A_COLUMNS_B_ROWS)"
+    else ifeq ($(SIM),vcs)
+        COMPILE_ARGS += -gv /matrix_multiplier/DATA_WIDTH=$(DATA_WIDTH) -gv /matrix_multiplier/A_ROWS=$(A_ROWS) -gv /matrix_multiplier/B_COLUMNS=$(B_COLUMNS) -gv /matrix_multiplier/A_COLUMNS_B_ROWS=$(A_COLUMNS_B_ROWS)
     endif
 
     ifeq ($(SIM),ghdl)
@@ -52,6 +54,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
         COMPILE_ARGS += -v200x
     else ifneq ($(filter $(SIM),questa modelsim riviera activehdl),)
         COMPILE_ARGS += -2008
+    else ifeq ($(SIM),vcs)
+        VHDLAN_ARGS += -vhdl08
     endif
 else
     $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))

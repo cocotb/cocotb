@@ -34,6 +34,11 @@ LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
     reason="Riviera < 2024.10 fails to find dut.i_swapper_sv (gh-2921)",
     raises=AttributeError,
 )
+@cocotb.xfail(
+    "vcs" in cocotb.SIM_NAME.lower() and LANGUAGE == "verilog",
+    reason="VCS does not provide access to VHDL below a Verilog toplevel",
+    raises=AttributeError,
+)
 async def mixed_language_accessing_test(dut):
     """Try accessing handles and setting values in a mixed language environment."""
     await Timer(100, unit="ns")
