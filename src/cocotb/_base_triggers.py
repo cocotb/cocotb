@@ -15,11 +15,14 @@ from abc import abstractmethod
 from collections.abc import Generator
 from contextlib import AbstractAsyncContextManager
 from functools import cached_property
-from typing import Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from cocotb import debug
 from cocotb._deprecation import deprecated
 from cocotb._utils import pointer_str
+
+if TYPE_CHECKING:
+    from cocotb.task import Task
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -310,9 +313,16 @@ class _Lock(Trigger):
     can maintain a unique mapping of triggers to tasks.
     """
 
-    def __init__(self, parent: Lock) -> None:
+    def __init__(self, parent: Lock, owner: Task[Any] | None = None) -> None:
         super().__init__()
         self._parent = parent
+        # The Task that called Lock.acquire(). It is not necessarily the Task that awaits
+        # this Trigger, for example when using select() or with_timeout().
+        self._owner = owner
+
+    def _has_waiter(self) -> bool:
+        """Whether a Task is currently waiting for this Trigger."""
+        return bool(self._callbacks)
 
     def _prime(self) -> None:
         self._parent._prime_lock(self)
@@ -363,6 +373,11 @@ class Lock(AbstractAsyncContextManager[None]):
 
         The lock can be used as an asynchronous context manager in an
         :keyword:`async with` statement
+
+    .. versionchanged:: 2.2
+
+        A :class:`~cocotb.task.Task` which gives up waiting for the lock and calls :meth:`acquire` again
+        keeps its place in line.
     """
 
     def __init__(self, name: str | None = None) -> None:
@@ -376,6 +391,9 @@ class Lock(AbstractAsyncContextManager[None]):
             )
             self._name = name
         self._current_acquired: _Lock | None = None
+        # Attempts to acquire the Lock whose Task gave up waiting, indexed by the Task that made the attempt.
+        # They keep their place in `_pending_primed` so the Task can try again without going to the back of the line.
+        self._abandoned: dict[Task[Any], _Lock] = {}
 
     @property
     @deprecated("The 'name' field will be removed in a future release.")
@@ -405,21 +423,58 @@ class Lock(AbstractAsyncContextManager[None]):
         lock._react()
 
     def _prime_lock(self, lock: _Lock) -> None:
-        if self._current_acquired is None:
+        if lock in self._pending_primed:
+            # A Task is waiting again on an attempt it gave up earlier. It keeps its place in line.
+            if lock._owner is not None and self._abandoned.get(lock._owner) is lock:
+                del self._abandoned[lock._owner]
+        elif self._current_acquired is None:
             self._acquire_and_fire(lock)
         else:
             self._pending_primed.append(lock)
 
     def _unprime_lock(self, lock: _Lock) -> None:
         if lock in self._pending_primed:
-            self._pending_primed.remove(lock)
+            if lock._owner is None:
+                # Not made from a Task, so nobody can come back for it.
+                self._pending_primed.remove(lock)
+            else:
+                # Keep the place in line, in case the Task that made this attempt tries again.
+                # Release skips attempts that nobody is waiting on.
+                self._abandoned[lock._owner] = lock
+                self._forget_finished_owners()
+
+    def _forget_finished_owners(self) -> None:
+        """Remove abandoned attempts whose Task is done, as they can never be retried."""
+        for owner, lock in list(self._abandoned.items()):
+            if owner.done():
+                del self._abandoned[owner]
+                if not lock._has_waiter() and lock in self._pending_primed:
+                    self._pending_primed.remove(lock)
 
     def _is_used(self, lock: _Lock) -> bool:
-        return lock is self._current_acquired or lock in self._pending_primed
+        return lock is self._current_acquired or (
+            lock in self._pending_primed and lock._has_waiter()
+        )
 
     def acquire(self) -> Trigger:
-        """Produce a trigger which fires when the lock is acquired."""
-        return _Lock(self)
+        """Produce a trigger which fires when the lock is acquired.
+
+        If the calling :class:`~cocotb.task.Task` gave up an earlier attempt to acquire the lock
+        (for example because it was cancelled by :func:`~cocotb.triggers.select`
+        or :func:`~cocotb.triggers.with_timeout`),
+        the new attempt keeps the place in line of the earlier one.
+        """
+        from cocotb.task import current_task  # noqa: PLC0415
+
+        try:
+            owner: Task[Any] | None = current_task()
+        except RuntimeError:
+            owner = None
+        if owner is not None:
+            lock = self._abandoned.pop(owner, None)
+            if lock is not None and lock in self._pending_primed:
+                return lock
+        return _Lock(self, owner)
 
     def release(self) -> None:
         """Release the lock."""
@@ -428,12 +483,15 @@ class Lock(AbstractAsyncContextManager[None]):
 
         self._current_acquired = None
 
-        # nobody waiting for this lock
-        if not self._pending_primed:
-            return
-
-        lock = self._pending_primed.pop(0)
-        self._acquire_and_fire(lock)
+        # Give the lock to the first attempt that a Task is still waiting on.
+        # Attempts which were given up are discarded, their Task has to ask again.
+        while self._pending_primed:
+            lock = self._pending_primed.pop(0)
+            if lock._owner is not None and self._abandoned.get(lock._owner) is lock:
+                del self._abandoned[lock._owner]
+            if lock._has_waiter():
+                self._acquire_and_fire(lock)
+                return
 
     def __repr__(self) -> str:
         if self._name is None:
@@ -443,7 +501,7 @@ class Lock(AbstractAsyncContextManager[None]):
         return fmt.format(
             type(self).__qualname__,
             self._name,
-            len(self._pending_primed),
+            sum(1 for lock in self._pending_primed if lock._has_waiter()),
             pointer_str(self),
         )
 
