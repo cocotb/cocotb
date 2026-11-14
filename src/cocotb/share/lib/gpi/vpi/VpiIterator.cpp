@@ -93,6 +93,11 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
 
     int type = vpi_get(vpiType, vpi_hdl);
 
+    if (m_parent->get_type() == GPI_GENARRAY && type == vpiInterfaceArray) {
+        m_next_index = m_parent->get_range_left();
+        return;
+    }
+
     try {
         selected = &iterate_over.at(type);
     } catch (std::out_of_range const &) {
@@ -284,6 +289,32 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     vpiHandle iter_obj = m_parent->get_handle<vpiHandle>();
     bool owns_handle = true;
 
+    if (m_parent->get_type() == GPI_GENARRAY &&
+        vpi_get(vpiType, iter_obj) == vpiInterfaceArray) {
+        // We operate over the indexes rather than iteration for interface array
+        // references so we can return the reference objects instead of the
+        // concrete ones.
+        auto direction = m_parent->get_range_dir();
+        if (direction == GPI_RANGE_NO_DIR ||
+            (direction == GPI_RANGE_UP &&
+             m_next_index > m_parent->get_range_right()) ||
+            (direction == GPI_RANGE_DOWN &&
+             m_next_index < m_parent->get_range_right())) {
+            return GpiIterator::END;
+        }
+        auto index = static_cast<int32_t>(m_next_index);
+        m_next_index += direction == GPI_RANGE_UP ? 1 : -1;
+        auto *vpi_impl = static_cast<VpiImpl *>(m_impl);
+        *hdl = vpi_impl->get_child_by_index(index, m_parent);
+        if (*hdl == NULL) {
+            LOG_ERROR("VPI: Unable to find interface array port element %s[%d]",
+                      m_parent->get_fullname_str(), index);
+            return GpiIterator::NATIVE_NO_NAME;
+        }
+        name = (*hdl)->get_name();
+        return GpiIterator::NATIVE;
+    }
+
     if (!selected) return GpiIterator::END;
 
     gpi_objtype obj_type = m_parent->get_type();
@@ -430,8 +461,18 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     LOG_DEBUG("vpi_scan found '%s'", fq_name.c_str());
-    new_obj =
-        vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name, owns_handle);
+
+    // For pseudo-objects in references, we have to build a path using the
+    // reference's path + the object's relative path to the shared concrete
+    // base.
+    std::string pseudo_path;
+    auto *vpi_parent = dynamic_cast<VpiObj *>(m_parent);
+    if (vpi_parent && !vpi_parent->get_concrete_path().empty()) {
+        pseudo_path = vpi_parent->get_concrete_path() +
+                      fq_name.substr(m_parent->get_fullname().size());
+    }
+    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name,
+                                                   owns_handle, pseudo_path);
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;

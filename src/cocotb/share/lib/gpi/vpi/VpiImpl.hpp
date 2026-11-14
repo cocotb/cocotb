@@ -191,33 +191,53 @@ class VpiShutdownCbHdl : public VpiCbHdl {
     }
 };
 
-class VpiArrayObjHdl : public GpiObjHdl {
+class VpiObj {
+  public:
+    explicit VpiObj(const std::string &concrete_path)
+        : m_concrete_path(concrete_path) {}
+    virtual ~VpiObj() = default;
+
+    const std::string &get_concrete_path() const { return m_concrete_path; }
+
+  private:
+    std::string m_concrete_path;
+};
+
+class VpiArrayObjHdl : public GpiObjHdl, public VpiObj {
   public:
     VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
-                   bool owns_handle = true)
-        : GpiObjHdl(impl, hdl, objtype, false, owns_handle) {}
+                   bool owns_handle = true,
+                   const std::string &concrete_path = "")
+        : GpiObjHdl(impl, hdl, objtype, false, owns_handle),
+          VpiObj(concrete_path) {}
     ~VpiArrayObjHdl() override;
 
     int initialise(const std::string &name,
                    const std::string &fq_name) override;
 };
 
-class VpiObjHdl : public GpiObjHdl {
+class VpiObjHdl : public GpiObjHdl, public VpiObj {
   public:
     VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
-              bool owns_handle = true)
-        : GpiObjHdl(impl, hdl, objtype, false, owns_handle) {}
+              bool owns_handle = true, const std::string &concrete_path = "")
+        : GpiObjHdl(impl, hdl, objtype, false, owns_handle),
+          VpiObj(concrete_path) {}
+    // An interface-array port pseudo-object with its declared bounds.
+    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, int left, int right,
+              const std::string &concrete_path);
     ~VpiObjHdl() override;
 
     const char *get_definition_name() override;
     const char *get_definition_file() override;
 };
 
-class VpiSignalObjHdl : public GpiSignalObjHdl {
+class VpiSignalObjHdl : public GpiSignalObjHdl, public VpiObj {
   public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype objtype,
-                    bool is_const, bool owns_handle = true)
-        : GpiSignalObjHdl(impl, hdl, objtype, is_const, owns_handle) {}
+                    bool is_const, bool owns_handle = true,
+                    const std::string &concrete_path = "")
+        : GpiSignalObjHdl(impl, hdl, objtype, is_const, owns_handle),
+          VpiObj(concrete_path) {}
     ~VpiSignalObjHdl() override;
 
     const char *get_signal_value_binstr() override;
@@ -255,9 +275,10 @@ class VpiIterator : public GpiIterator {
 
   private:
     vpiHandle m_iterator;
+    int64_t m_next_index = 0;
     static std::map<int32_t, std::vector<int32_t>>
-        iterate_over;               /* Possible mappings */
-    std::vector<int32_t> *selected; /* Mapping currently in use */
+        iterate_over;                         /* Possible mappings */
+    std::vector<int32_t> *selected = nullptr; /* Mapping currently in use */
     std::vector<int32_t>::iterator one2many;
 };
 
@@ -359,6 +380,7 @@ class VpiImpl : public GpiImplInterface {
 
     /* Hierarchy related */
     GpiObjHdl *get_root_handle(const char *name) override;
+    GpiObjHdl *get_actual(GpiObjHdl *obj_hdl) override;
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
                                 gpi_iterator_sel type) override;
     GpiObjHdl *next_handle(GpiIterator *iter);
@@ -386,11 +408,14 @@ class VpiImpl : public GpiImplInterface {
      * On success the returned object takes ownership of new_hdl when
      * owns_handle is true. On failure (NULL return) the caller still owns
      * new_hdl.
+     * pseudo_path supplies the concrete path of a pseudo-object whose handle
+     * belongs to its parent; native objects use their own VPI full name.
      */
     GpiObjHdl *create_gpi_obj_from_handle(vpiHandle new_hdl,
                                           const std::string &name,
                                           const std::string &fq_name,
-                                          bool owns_handle = true);
+                                          bool owns_handle = true,
+                                          const std::string &pseudo_path = "");
 
     static bool compare_generate_labels(const std::string &a,
                                         const std::string &b);
