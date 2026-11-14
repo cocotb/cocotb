@@ -43,7 +43,11 @@ entity array_module is
         port_char_out                  :   out character;
         port_str_out                   :   out string(1 to 8);
         port_rec_out                   :   out rec_type;
-        port_cmplx_out                 :   out rec_array(0 to 1)
+        port_cmplx_out                 :   out rec_array(0 to 1);
+
+        port_rec_of_arr                :   out record_of_array2d;
+        port_1darr_of_rec_of_arr       :   out array1d_of_record_of_array(0 to 5-1);
+        port_2darr_of_rec_of_arr       :   out array2d_of_record(0 to 8-1, 0 to 3-1)
     );
 end;
 
@@ -120,6 +124,12 @@ begin
             end if;
         end if;
     end process sig_proc;
+
+    port_rec_of_arr.data(0, 0)                <= x"42";
+    port_1darr_of_rec_of_arr(2).data(1, 2)    <= x"43";
+    port_1darr_of_rec_of_arr(1).data(1, 0)    <= x"44";
+    port_2darr_of_rec_of_arr(0, 0).data(0, 0) <= x"45";
+    port_2darr_of_rec_of_arr(7, 2).data(1, 2) <= x"46";
 
     asc_gen : for idx1 in sig_asc'range generate
         constant OFFSET : natural   := sig_asc'left - port_asc_in'left;
