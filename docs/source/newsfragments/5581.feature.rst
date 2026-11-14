@@ -1,0 +1,1 @@
+Added simulator version constructors for ``cocotb.SIM_VERSION`` and command-line output, and improved comparison of simulator-specific version strings.
