@@ -429,6 +429,8 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
     const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name =
         parent->get_fullname() + get_type_delimiter(parent) + name;
+    std::string canonical_name = name;
+    std::string canonical_fq_name = fq_name;
 
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(fq_name.c_str()), NULL);
@@ -507,6 +509,14 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
                     rgn_type == vpiInterface || rgn_type == vpiRefObj) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
                     found = VpiImpl::compare_generate_labels(rgn_name, name);
+                    if (found) {
+                        std::size_t found_idx = rgn_name.rfind("[");
+                        if (found_idx != std::string::npos && found_idx != 0) {
+                            canonical_name = rgn_name.substr(0, found_idx);
+                            canonical_fq_name =
+                                parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+                        }
+                    }
                 }
                 vpi_free_object(rgn);
                 if (found) {
@@ -537,6 +547,13 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
      * handle being equivalent to the parent handle.
      */
     if (owns_handle && vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
+        const char *c_name = vpi_get_str(vpiName, new_hdl);
+        if (c_name != NULL) {
+            canonical_name = c_name;
+            canonical_fq_name =
+                parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+        }
+
         vpi_free_object(new_hdl);
 
         // Pseudo-region: borrow the parent's handle.
@@ -544,8 +561,17 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
         owns_handle = false;
     }
 
+    if (owns_handle) {
+        const char *c_name = vpi_get_str(vpiName, new_hdl);
+        if (c_name != NULL) {
+            canonical_name = c_name;
+            canonical_fq_name =
+                parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+        }
+    }
+
     GpiObjHdl *new_obj =
-        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
+        create_gpi_obj_from_handle(new_hdl, canonical_name, canonical_fq_name, owns_handle);
     if (new_obj == NULL) {
         if (owns_handle) vpi_free_object(new_hdl);
         LOG_DEBUG("Unable to create object '%s'", fq_name.c_str());

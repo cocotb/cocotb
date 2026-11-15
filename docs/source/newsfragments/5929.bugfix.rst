@@ -1,0 +1,1 @@
+Fixed simulator objects being cached under non-canonical lookup names instead of their canonicalized names.
