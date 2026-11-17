@@ -10,8 +10,8 @@ and documents specifics, limitations, workarounds etc.
 In general, cocotb can be used with any simulator supporting the industry-standard VPI, VHPI or FLI interfaces.
 However, in practice simulators exhibit small differences in behavior that cocotb mostly takes care of.
 
-If a simulator you would like to use with cocotb is not listed on this page
-open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`_.
+If a simulator you would like to use with cocotb is not listed on this page,
+see :ref:`sim-other`.
 
 
 .. _sim-icarus:
@@ -652,3 +652,23 @@ Reported Issues for this Simulator
 * `All issues with label category:simulators:dsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Adsim>`_
 
 .. versionadded:: 2.0
+
+
+.. _sim-other:
+
+Other Simulators
+================
+
+cocotb does not add support for new simulators.
+Every simulator listed on this page needs its own Makefile, Python runner, CI testing,
+and workarounds for the ways its VPI, VHPI or FLI differs from the standard,
+and the cocotb maintainers cannot take that on for more simulators.
+
+A simulator that implements VPI, VHPI or FLI can still be used with cocotb.
+Set :envvar:`GPI_IMPL` to the :term:`GPI Implementation Library` of the supported simulator
+whose interface behaves most like it, using ``$(cocotb-config --gpi-impl SIMULATOR INTERFACE)``,
+and set up the rest of the flow as described in :ref:`custom-flows`.
+A Makefile or Python runner for the simulator can be maintained as a separate package.
+
+If none of the existing GPI Implementation Libraries works with your simulator,
+open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`_.
