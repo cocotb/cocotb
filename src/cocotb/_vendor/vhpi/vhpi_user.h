@@ -41,6 +41,26 @@
 extern "C" {
 #endif
 
+#ifdef VCS
+/* VCS provides the IEEE 1076-2008 VHPI under a "_v2008" suffix. The functions
+ * without the suffix implement an older, incompatible interface. */
+#define vhpi_assert vhpi_assert_v2008
+#define vhpi_check_error vhpi_chk_error
+#define vhpi_get_cb_info vhpi_get_cb_info_v2008
+#define vhpi_get_next_time vhpi_get_next_time_v2008
+#define vhpi_get_phys vhpi_get_phys_v2008
+#define vhpi_get_real vhpi_get_real_v2008
+#define vhpi_get_str vhpi_get_str_v2008
+#define vhpi_get_time vhpi_get_time_v2008
+#define vhpi_get vhpi_get_v2008
+#define vhpi_get_value vhpi_get_value_v2008
+#define vhpi_handle vhpi_handle_v2008
+#define vhpi_handle_by_index vhpi_handle_by_index_v2008
+#define vhpi_iterator vhpi_iterator_v2008
+#define vhpi_put_value vhpi_put_value_v2008
+#define vhpi_register_cb vhpi_register_cb_v2008
+#endif /* VCS */
+
 #pragma pack(8)
 
 /*---------------------------------------------------------------------------*/
@@ -166,10 +186,10 @@ extern "C" {
                                         [Small]Enum,Logic,Int,Real,[Small]Phys,Time,Ptr,
                                         [Small]EnumVec,LogicVec,IntVect,RealVec,[Small]PhysVec,TimeVec,
                                         PtrVec,ObjType,RawData]Val */
-#ifndef IUS
-        size_t bufSize;  /* the size in bytes of the value buffer; this is set by the user */
+#if defined(IUS) || defined(VCS)
+        int32_t bufSize;  /* IUS/Xcelium and VCS define this as 32-bits, even when running in 64-bit mode */
 #else
-        int32_t bufSize;  /* IUS/Xcelium defines this as 32-bits, even when running in 64-bit mode */
+        size_t bufSize;  /* the size in bytes of the value buffer; this is set by the user */
 #endif
         int32_t numElems;
         /* different meanings depending on the format:
@@ -178,7 +198,11 @@ extern "C" {
             scalar type values: undefined
         */
 
+#ifdef VCS
+        vhpiIntT unit;  /* VCS defines this as a 32-bit integer */
+#else
         vhpiPhysT unit;
+#endif
         union
         {
             vhpiEnumT enumv, *enumvs;

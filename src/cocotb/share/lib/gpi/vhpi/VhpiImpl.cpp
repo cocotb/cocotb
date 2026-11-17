@@ -7,17 +7,15 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 
 #include "../logging.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 #include "vhpi_user_ext.h"
-
-#ifdef NVC
-#include <algorithm>
-#endif
 
 #define CASE_STR(_X) \
     case _X:         \
@@ -309,16 +307,17 @@ bool is_enum_boolean(vhpiHandleT hdl) {
 }
 
 static bool compare_names(const std::string &a, const std::string &b) {
-#ifdef NVC
-    /* NVC does not properly implement the CaseName property and returns
-       Names instead (nickg/nvc#723). */
+    /* Basic identifiers differing only in the case of letters are the same,
+     * extended identifiers (\...\) are distinct (IEEE 1076-2019 15.4.2 and
+     * 15.4.3). */
+    if ((!a.empty() && a[0] == '\\') || (!b.empty() && b[0] == '\\')) {
+        return a == b;
+    }
     return a.size() == b.size() &&
-           equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
-               return std::toupper(x) == std::toupper(y);
+           std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
+               return std::toupper(static_cast<unsigned char>(x)) ==
+                      std::toupper(static_cast<unsigned char>(y));
            });
-#else
-    return a == b;
-#endif
 }
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
@@ -336,16 +335,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 
     /* We need to delve further here to determine how to later set
        the values of an object */
-    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
-
-    if (base_hdl == NULL) {
-        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, new_hdl);
-
-        if (st_hdl != NULL) {
-            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
-            vhpi_release_handle(st_hdl);
-        }
-    }
+    vhpiHandleT base_hdl = get_base_type_handle(new_hdl);
 
     vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : new_hdl;
 
@@ -362,12 +352,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 vhpiHandleT elem_base_type_hdl = NULL;
                 vhpiIntT elem_base_type = 0;
 
-                vhpiHandleT elem_sub_type_hdl =
-                    vhpi_handle(vhpiElemType, query_hdl);
-                /* vhpiElemType is not supported in all simulators. */
-                if (!elem_sub_type_hdl) {
-                    elem_sub_type_hdl = vhpi_handle(vhpiElemSubtype, query_hdl);
-                }
+                vhpiHandleT elem_sub_type_hdl = get_elem_type_handle(query_hdl);
 
                 if (elem_sub_type_hdl != NULL) {
                     elem_base_type_hdl =
@@ -564,6 +549,42 @@ static std::string fully_qualified_name(const std::string &name,
     return fq_name;
 }
 
+/* Look up the child of a parent by its name.
+ *
+ * The full names cocotb uses (e.g. "top.inst.sig") are not in the format of
+ * the FullName property ":top:inst:sig" (IEEE 1076-2019 19.4.7), which some
+ * simulators do not use either. Instead, look up the child with a relative
+ * search string and the parent as the scope (IEEE 1076-2019 23.22).
+ */
+static vhpiHandleT handle_by_name(VhpiImpl *impl, const std::string &name,
+                                  const std::string &fq_name,
+                                  GpiObjHdl *parent) {
+    std::string search_name = fq_name;
+    vhpiHandleT scope = NULL;
+
+#ifndef ALDEC
+    /* With a parent from another implementation (in a mixed-language design),
+     * the parent's handle is not a VHPI handle: look up the full name. */
+    if (parent->is_this_impl(impl)) {
+        search_name = name;
+        scope = parent->get_handle<vhpiHandleT>();
+    }
+#else
+    /* Riviera-PRO does not find objects with a relative search string if the
+     * scope is its vhpiRootInst (a pseudo-region named ":"), nor generate
+     * statement iterations or record elements in any scope. It accepts the
+     * non-standard full names. */
+    (void)impl;
+    (void)name;
+    (void)parent;
+#endif
+
+    std::vector<char> writable(search_name.begin(), search_name.end());
+    writable.push_back('\0');
+
+    return vhpi_handle_by_name(&writable[0], scope);
+}
+
 GpiObjHdl *VhpiImpl::get_child_from_handle(void *raw_hdl, GpiObjHdl *parent) {
     LOG_DEBUG("VHPI: Trying to convert raw to VHPI handle");
 
@@ -596,12 +617,16 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
     bool owns_handle = true;
     std::string fq_name = fully_qualified_name(name, parent);
 
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
+    new_hdl = handle_by_name(this, name, fq_name, parent);
 
-    new_hdl = vhpi_handle_by_name(&writable[0], NULL);
-
-    if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
+    /* The fallbacks below iterate over the parent, which is only possible if
+     * the parent is from this implementation: the parent's handle is not a
+     * VHPI handle otherwise. */
+    if (new_hdl == NULL && !parent->is_this_impl(this)) {
+        LOG_DEBUG("VHPI: Unable to query vhpi_handle_by_name %s",
+                  fq_name.c_str());
+        return NULL;
+    } else if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
         /* vhpi_handle_by_name() doesn't always work for records, specifically
          * records in generics */
         vhpiHandleT iter = vhpi_iterator(vhpiSelectedNames, vhpi_hdl);
@@ -704,10 +729,9 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
         fq_name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
 
-        std::vector<char> writable(fq_name.begin(), fq_name.end());
-        writable.push_back('\0');
-
-        new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+        /* The pseudo-region borrows the handle of the region containing the
+         * generate statement, which is the scope of the iteration. */
+        new_hdl = handle_by_name(this, name, fq_name, parent);
     } else if (obj_type == GPI_LOGIC || obj_type == GPI_LOGIC_ARRAY ||
                obj_type == GPI_ARRAY || obj_type == GPI_FIXED_STRING) {
         LOG_DEBUG("VHPI: Get child at index %d of parent %s (%s)", index,
@@ -720,16 +744,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
         name += idx_str;
         fq_name += idx_str;
 
-        vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, vhpi_hdl);
-
-        if (base_hdl == NULL) {
-            vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
-
-            if (st_hdl != NULL) {
-                base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
-                vhpi_release_handle(st_hdl);
-            }
-        }
+        vhpiHandleT base_hdl = get_base_type_handle(vhpi_hdl);
 
         if (base_hdl == NULL) {
             LOG_ERROR("VHPI: Unable to get the vhpiBaseType of %s",
@@ -776,15 +791,6 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
             indices.push_back(index);
 
             if (indices.size() == num_dim) {
-#ifdef IUS
-                /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP
-                 * property.  IUS Docs say it will return -1 if unconstrained,
-                 * but with vhpiIntT being unsigned, the value returned is
-                 * below.
-                 */
-                const vhpiIntT UNCONSTRAINED = 2147483647;
-#endif
-
                 std::vector<vhpiHandleT> constraints;
                 auto release_constraints = [&constraints]() {
                     for (auto c : constraints) vhpi_release_handle(c);
@@ -793,28 +799,16 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                 DEFER(release_constraints());
 
                 /* All necessary indices are available, need to iterate over
-                 * dimension constraints to determine the index into the
-                 * zero-based flattened array.
-                 *
-                 * Check the constraints on the base type first. (always works
-                 * for Aldec, but not unconstrained types in IUS/Xcelium) If the
-                 * base type fails, then try the sub-type.  (sub-type is listed
-                 * as deprecated for Aldec)
+                 * the index constraints of the subtype to determine the index
+                 * into the zero-based flattened array (see get_range()).
                  */
                 vhpiHandleT it, constraint;
+                vhpiHandleT sub_hdl = get_constrained_type_handle(vhpi_hdl);
 
-                it = vhpi_iterator(vhpiConstraints, base_hdl);
-
+                it = sub_hdl ? vhpi_iterator(vhpiConstraints, sub_hdl) : NULL;
                 if (it != NULL) {
                     while ((constraint = vhpi_scan(it)) != NULL) {
-#ifdef IUS
-                        vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
-                        vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
-                        if (l_rng == UNCONSTRAINED || r_rng == UNCONSTRAINED) {
-#else
-                        if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
-#endif
-                            /* Bail and try the sub-type handle */
+                        if (is_unconstrained(constraint)) {
                             vhpi_release_handle(constraint);
                             vhpi_release_handle(it);
                             break;
@@ -822,34 +816,7 @@ GpiObjHdl *VhpiImpl::get_child_by_index(int32_t index, GpiObjHdl *parent) {
                         constraints.push_back(constraint);
                     }
                 }
-
-                /* If all the dimensions were not obtained, try again with the
-                 * sub-type handle */
-                if (constraints.size() != num_dim) {
-                    vhpiHandleT sub_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
-
-                    release_constraints();
-
-                    if (sub_hdl != NULL) {
-                        it = vhpi_iterator(vhpiConstraints, sub_hdl);
-
-                        if (it != NULL) {
-                            while ((constraint = vhpi_scan(it)) != NULL) {
-                                /* IUS/Xcelium only sets the
-                                 * vhpiIsUnconstrainedP incorrectly on the base
-                                 * type */
-                                if (vhpi_get(vhpiIsUnconstrainedP,
-                                             constraint)) {
-                                    vhpi_release_handle(constraint);
-                                    vhpi_release_handle(it);
-                                    break;
-                                }
-                                constraints.push_back(constraint);
-                            }
-                        }
-                        vhpi_release_handle(sub_hdl);
-                    }
-                }
+                if (sub_hdl != NULL) vhpi_release_handle(sub_hdl);
 
                 if (constraints.size() == num_dim) {
                     int scale = 1;

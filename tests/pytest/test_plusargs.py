@@ -27,6 +27,9 @@ def test_toplevel_library():
     vhdl_gpi_interfaces = os.getenv("VHDL_GPI_INTERFACE", None)
     sim = os.getenv("SIM", "icarus" if hdl_toplevel_lang == "verilog" else "nvc")
 
+    if sim == "vcs" and hdl_toplevel_lang == "vhdl":
+        pytest.skip("VCS does not accept plusargs for designs with VHDL sources only")
+
     runner = get_runner(sim)
 
     build_test_args = []

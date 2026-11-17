@@ -281,6 +281,7 @@ if(UNIX)
     add_vpi_library(IUS IUS)
     add_vhpi_library(IUS IUS)
     add_vpi_library(VCS VCS)
+    add_vhpi_library(VCS VCS)
     add_vpi_library(VERILATOR VERILATOR)
     add_vpi_library(DSim DSim)
 endif()
@@ -343,7 +344,7 @@ if(SKBUILD AND NOT SKBUILD_STATE STREQUAL "editable")
 
     if(UNIX)
         list(APPEND SIM_TARGETS
-            gpi_impl_ius_vpi gpi_impl_ius_vhpi gpi_impl_vcs_vpi
+            gpi_impl_ius_vpi gpi_impl_ius_vhpi gpi_impl_vcs_vpi gpi_impl_vcs_vhpi
             gpi_impl_verilator_vpi gpi_impl_dsim_vpi)
     endif()
 

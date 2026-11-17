@@ -15,11 +15,22 @@ from cocotb.handle import (
     PackedObject,
 )
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+
+# VCS does not provide access to VHDL instances below a Verilog toplevel through
+# VHPI. Its VPI returns the VHDL instances, but not the objects inside them.
+vcs_vhdl_below_verilog = cocotb.xfail(
+    "vcs" in SIM_NAME,
+    reason="VCS does not provide access to VHDL below a Verilog toplevel",
+    raises=AssertionError,
+)
+
 ########################################################################################
 # This is testing handle caching, so it must come first!
 ########################################################################################
 
 
+@vcs_vhdl_below_verilog
 @cocotb.test
 async def discovery_method(dut) -> None:
     """Verify that the different discovery methods work."""
@@ -58,6 +69,7 @@ def recursive_dump(parent, log):
     return count
 
 
+@vcs_vhdl_below_verilog
 @cocotb.test
 async def recursive_discovery(dut):
     """Recursively discover every single object in the design."""
@@ -72,6 +84,7 @@ async def recursive_discovery(dut):
     assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, PackedObject)
 
 
+@vcs_vhdl_below_verilog
 @cocotb.test
 async def recursive_discovery_boundary(dut):
     """Iteration through the boundary works but this just double checks."""

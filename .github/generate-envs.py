@@ -539,8 +539,7 @@ for version in vcs_versions:
             "python-version": "3.9",
             "group": "extended",
         },
-        # Don't run extended tests for VCS/VHDL yet until we have a version that
-        # works.
+        # VHDL requires VCS 2026.03 or newer, which is tested in the regular CI.
     ]
 
 

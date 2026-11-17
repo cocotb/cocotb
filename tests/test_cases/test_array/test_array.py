@@ -157,7 +157,7 @@ async def test_read_write(dut):
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
     else AttributeError
-    if "vcs" in SIM_NAME
+    if "vcs" in SIM_NAME and LANGUAGE in ["verilog"]
     else ()
 )
 async def test_gen_loop(dut):
@@ -302,6 +302,11 @@ async def test_discover_all(dut):
     elif LANGUAGE in ["verilog"] and "vcs" in SIM_NAME:
         # VCS is unable to access signals in generate loops through VPI (#4328).
         pass_total = 172
+    elif LANGUAGE in ["vhdl"] and "vcs" in SIM_NAME:
+        # VCS VHPI reports the names of record elements in upper case. Record
+        # elements accessed by their (lower case) name in test_read_write are
+        # therefore found twice.
+        pass_total = 330
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
     else:

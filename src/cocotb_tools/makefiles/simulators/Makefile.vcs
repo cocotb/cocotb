@@ -4,13 +4,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-ifneq ($(VHDL_SOURCES),)
-
-$(COCOTB_RESULTS_FILE):
-	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
-
-else
-
 CMD_BIN := vcs
 
 ifdef VCS_BIN_DIR
@@ -21,12 +14,16 @@ else
     VCS_BIN_DIR := $(shell dirname $(CMD))
 endif
 
+VHDLAN := $(VCS_BIN_DIR)/vhdlan
+VLOGAN := $(VCS_BIN_DIR)/vlogan
+
 ifdef VERILOG_INCLUDE_DIRS
-    COMPILE_ARGS += $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
+    VERILOG_INCDIR_ARGS := $(addprefix +incdir+, $(VERILOG_INCLUDE_DIRS))
 endif
 
 ifeq ($(PYTHON_ARCH),64bit)
     COMPILE_ARGS += -full64
+    ANALYSIS_ARGS += -full64
 endif
 
 ifeq ($(GUI),1)
@@ -36,31 +33,120 @@ endif
 # Avoid linker "undefined reference to" error
 COMPILE_ARGS += -LDFLAGS -Wl,--no-as-needed
 
-# Enables globally access for read, write, and callback capabilities.
-COMPILE_ARGS += +acc+3
-
 # Enables globally debug capabilities.
 COMPILE_ARGS += -debug_access+all
 
 # TODO:
 # investigate +vpi+1 option which reduces memory requirements
 
+GPI_LIB_DIR := $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-dir)
+GPI_ENTRY := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-entry-point)
+
+ifneq ($(VHDL_SOURCES)$(VHDL_LIB_ORDER),)
+    # cocotb requires the IEEE 1076-2008 VHPI, which VCS 2026.03 and newer
+    # provide with a "_v2008" suffix on the function names.
+    VCS_HOME ?= $(abspath $(VCS_BIN_DIR)/..)
+    VCS_HAS_VHPI_2008 := $(shell nm -D --defined-only $(VCS_HOME)/linux64/lib/libvcsmx.so 2>/dev/null | grep -q ' vhpi_handle_v2008$$' && echo 1)
+    ifneq ($(VCS_HAS_VHPI_2008),1)
+        VCS_SKIP_VHDL := 1
+    endif
+endif
+
+ifeq ($(VCS_SKIP_VHDL),1)
+
+$(COCOTB_RESULTS_FILE):
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM) (VHDL requires VCS 2026.03 or newer)"
+
+else
+
+ifeq ($(VHDL_SOURCES)$(VHDL_LIB_ORDER),)
+
+# Verilog-only designs: compile and elaborate in one step.
+
+# Enables globally access for read, write, and callback capabilities.
+COMPILE_ARGS += +acc+3
+
+GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi)
+
 # Compilation phase
 # Load GPI and VPI for system function registration, without starting PyGPI.
 $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
-	COCOTB_BOOTSTRAP="$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-entry-point)" \
-	GPI_IMPL="$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi)" \
+	COCOTB_BOOTSTRAP="$(GPI_ENTRY)" \
+	GPI_IMPL="$(GPI_IMPL)" \
 	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
 	$(CMD) -top $(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
+	$(EXTRA_ARGS) -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi vcs) $(COMPILE_ARGS) $(VERILOG_INCDIR_ARGS) $(VERILOG_SOURCES)
+
+else
+
+# Designs with VHDL sources: analyze all sources with vhdlan/vlogan into
+# libraries, then elaborate.
+# VHDL support requires VCS 2026.03 or newer.
+
+ifdef RTL_LIBRARY
+    $(warning Using RTL_LIBRARY is deprecated, please use TOPLEVEL_LIBRARY instead.)
+    TOPLEVEL_LIBRARY ?= $(RTL_LIBRARY)
+else
+    TOPLEVEL_LIBRARY ?= work
+endif
+
+VCS_LIBS := $(sort $(TOPLEVEL_LIBRARY) $(VHDL_LIB_ORDER))
+
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    # Bootstrap cocotb through VHPI.
+    # VCS looks up the library by name in LD_LIBRARY_PATH.
+    GPI_ARGS := -vhpi cocotb_bootstrap:cocotb_bootstrap_entry:cocotb
+    ifneq ($(VERILOG_SOURCES),)
+        GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vhpi vpi)
+        COMPILE_ARGS += +acc+3
+    else
+        GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vhpi)
+    endif
+else ifeq ($(TOPLEVEL_LANG),verilog)
+    # Bootstrap cocotb through VPI.
+    GPI_ARGS := -load $(shell $(PYTHON_BIN) -m cocotb_tools.config --lib-entry vpi vcs)
+    GPI_IMPL := $(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi vhpi)
+    COMPILE_ARGS += +acc+3
+else
+    $(error A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG))
+endif
+
+# Map all libraries to directories in the build directory.
+$(SIM_BUILD)/synopsys_sim.setup: | $(SIM_BUILD)
+	@echo "WORK > DEFAULT" > $@
+	@echo "DEFAULT : ./work" >> $@
+	@mkdir -p $(SIM_BUILD)/work
+	@$(foreach LIB,$(filter-out work WORK,$(VCS_LIBS)),echo "$(LIB) : ./$(LIB)" >> $@ && mkdir -p $(SIM_BUILD)/$(LIB) && ) true
+
+# Analysis and elaboration phase
+# Load GPI and the bootstrap library without starting PyGPI.
+$(SIM_BUILD)/simv: $(VHDL_SOURCES) $(foreach LIB,$(VHDL_LIB_ORDER),$(VHDL_SOURCES_$(LIB))) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(SIM_BUILD)/synopsys_sim.setup
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
+
+	cd $(SIM_BUILD) && \
+	$(foreach LIB,$(VHDL_LIB_ORDER),$(VHDLAN) $(ANALYSIS_ARGS) $(VHDLAN_ARGS) -work $(LIB) $(abspath $(VHDL_SOURCES_$(LIB))) && ) \
+	$(if $(VHDL_SOURCES),$(VHDLAN) $(ANALYSIS_ARGS) $(VHDLAN_ARGS) -work $(TOPLEVEL_LIBRARY) $(abspath $(VHDL_SOURCES)) && ) \
+	$(if $(VERILOG_SOURCES),$(VLOGAN) $(ANALYSIS_ARGS) -sverilog $(VLOGAN_ARGS) $(VERILOG_INCDIR_ARGS) -timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) -work $(TOPLEVEL_LIBRARY) $(abspath $(VERILOG_SOURCES)) && ) \
+	LD_LIBRARY_PATH=$(GPI_LIB_DIR):$$LD_LIBRARY_PATH \
+	COCOTB_BOOTSTRAP="$(GPI_ENTRY)" \
+	GPI_IMPL="$(GPI_IMPL)" \
+	COCOTB_TOPLEVEL=$(call deprecate,TOPLEVEL,COCOTB_TOPLEVEL) \
+	$(CMD) $(TOPLEVEL_LIBRARY).$(COCOTB_TOPLEVEL) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) \
+	-time_res $(COCOTB_HDL_TIMEPRECISION) \
+	$(EXTRA_ARGS) $(GPI_ARGS) $(COMPILE_ARGS)
+
+endif
 
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)
 	$(RM) $(COCOTB_RESULTS_FILE)
 
-	GPI_IMPL=$(shell $(PYTHON_BIN) -m cocotb_tools.config --gpi-impl vcs vpi) $(COCOTB_ENV) \
+	LD_LIBRARY_PATH=$(GPI_LIB_DIR):$$LD_LIBRARY_PATH \
+	GPI_IMPL=$(GPI_IMPL) $(COCOTB_ENV) \
 	$(SIM_CMD_PREFIX) $(SIM_BUILD)/simv $(SIM_ARGS) $(EXTRA_ARGS) $(call deprecate,PLUSARGS,COCOTB_PLUSARGS) $(SIM_CMD_SUFFIX)
 
 	$(call check_results)

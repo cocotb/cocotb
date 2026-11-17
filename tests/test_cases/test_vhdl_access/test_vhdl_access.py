@@ -37,8 +37,14 @@ async def check_enum_object(dut):
 
 
 # GHDL unable to access signals in generate loops (gh-2594)
+# VCS is unable to find iterations of a for-generate statement by index if the
+# range of the statement depends on a deferred constant.
 @cocotb.test(
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+    expect_error=IndexError
+    if cocotb.SIM_NAME.lower().startswith("ghdl")
+    else AssertionError
+    if "vcs" in cocotb.SIM_NAME.lower()
+    else ()
 )
 async def check_objects(dut):
     """

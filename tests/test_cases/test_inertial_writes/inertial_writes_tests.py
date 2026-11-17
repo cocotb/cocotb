@@ -93,11 +93,11 @@ elif SIM_NAME.startswith("modelsim") and verilog:
     expect_fail = True
 elif SIM_NAME.startswith("xmsim") and intf == "vhpi":
     expect_fail = True
-elif "vcs" in SIM_NAME:
+elif "vcs" in SIM_NAME and verilog:
     expect_fail = True
 
 
-# Icarus, Questa VPI, and Xcelium VHPI inertial writes aren't actually inertial.
+# Icarus, Questa VPI, Xcelium VHPI and VCS VPI inertial writes aren't actually inertial.
 @cocotb.test(
     expect_fail=expect_fail,
     skip=riviera_vhpi_trust_inertial and not simulator_test,

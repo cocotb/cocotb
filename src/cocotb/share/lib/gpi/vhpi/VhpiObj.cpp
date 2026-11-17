@@ -25,22 +25,62 @@ VhpiObjHdl::~VhpiObjHdl() {
     if (vhpi_release_handle(get_handle<vhpiHandleT>())) check_vhpi_error();
 }
 
-bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
-               gpi_range_dir *dir) {
+/* Get a handle to the subtype of an object (vhpiType), or NULL. */
+static vhpiHandleT get_type_handle(vhpiHandleT hdl) {
 #ifdef IUS
-    /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property. IUS
-     * Docs say will return -1 if unconstrained, but with vhpiIntT being
-     * unsigned, the value returned is below.
-     */
-    const vhpiIntT UNCONSTRAINED = 2147483647;
+    /* Xcelium does not implement the vhpiType relation, only the deprecated
+     * vhpiSubtype relation. */
+    return vhpi_handle(vhpiSubtype, hdl);
+#else
+    return vhpi_handle(vhpiType, hdl);
 #endif
+}
 
-    bool error = true;
+vhpiHandleT get_constrained_type_handle(vhpiHandleT hdl) {
+#if defined(IUS)
+    /* For an object of a named constrained array type, the subtype Xcelium
+     * returns has no constraints, but the base type is the named (constrained)
+     * type. Xcelium provides the base type of indexed and selected names only
+     * through their subtype, see get_base_type_handle(). */
+    vhpiHandleT st_hdl = get_type_handle(hdl);
+    if (st_hdl != NULL) {
+        vhpiHandleT it = vhpi_iterator(vhpiConstraints, st_hdl);
+        if (it != NULL) {
+            vhpi_release_handle(it);
+            return st_hdl;
+        }
+        vhpi_release_handle(st_hdl);
+    }
+    return get_base_type_handle(hdl);
+#elif defined(ALDEC)
+    /* Riviera-PRO does not implement the vhpiType relation for many objects,
+     * e.g. ports, indexed names, and selected names, but returns the
+     * (constrained) subtype of an object as its base type. */
+    return vhpi_handle(vhpiBaseType, hdl);
+#else
+    return get_type_handle(hdl);
+#endif
+}
 
+bool is_unconstrained(vhpiHandleT constraint) {
+#ifdef IUS
+    /* Xcelium sets the vhpiIsUnconstrainedP property of the constraints of
+     * named constrained array types. Its documentation says that the bounds
+     * are -1 if the range is unconstrained, which is the value below as
+     * vhpiIntT is unsigned. */
+    const vhpiIntT UNCONSTRAINED = 2147483647;
+    return vhpi_get(vhpiLeftBoundP, constraint) == UNCONSTRAINED ||
+           vhpi_get(vhpiRightBoundP, constraint) == UNCONSTRAINED;
+#else
+    return vhpi_get(vhpiIsUnconstrainedP, constraint);
+#endif
+}
+
+vhpiHandleT get_base_type_handle(vhpiHandleT hdl) {
     vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, hdl);
 
     if (base_hdl == NULL) {
-        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, hdl);
+        vhpiHandleT st_hdl = get_type_handle(hdl);
 
         if (st_hdl != NULL) {
             base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
@@ -48,93 +88,68 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
         }
     }
 
-    if (base_hdl != NULL) {
-        vhpiHandleT it = vhpi_iterator(vhpiConstraints, base_hdl);
-        vhpiIntT curr_idx = 0;
+    return base_hdl;
+}
 
-        if (it != NULL) {
-            vhpiHandleT constraint;
-            while ((constraint = vhpi_scan(it)) != NULL) {
-                if (curr_idx == dim) {
-                    vhpi_release_handle(it);
-                    vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
-                    vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
-                    DEFER(vhpi_release_handle(constraint));
+vhpiHandleT get_elem_type_handle(vhpiHandleT array_type) {
 #ifdef IUS
-                    if (l_rng != UNCONSTRAINED && r_rng != UNCONSTRAINED) {
+    /* Xcelium does not implement the vhpiElemType relation, only the
+     * deprecated vhpiElemSubtype relation. */
+    return vhpi_handle(vhpiElemSubtype, array_type);
 #else
-                    if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+    return vhpi_handle(vhpiElemType, array_type);
 #endif
-                        error = false;
-                        *left = static_cast<int>(l_rng);
-                        *right = static_cast<int>(r_rng);
-#ifdef MODELSIM
-                        /* Issue #4236: Questa's VHPI sets vhpiIsUpP incorrectly
-                         * so we must rely on the values of `left` and `right`
-                         * to infer direction.
-                         */
-                        if (*left < *right) {
-#else
-                        if (vhpi_get(vhpiIsUpP, constraint) == 1) {
-#endif
-                            *dir = GPI_RANGE_UP;
-                        } else {
-                            *dir = GPI_RANGE_DOWN;
-                        }
-                    }
-                    break;
-                }
-                vhpi_release_handle(constraint);
-                ++curr_idx;
-            }
-        }
-        vhpi_release_handle(base_hdl);
+}
+
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right,
+               gpi_range_dir *dir) {
+    /* The index ranges of an array object are the index constraints of its
+     * subtype. Its base type is an unconstrained array type (IEEE 1076-2019
+     * 5.3.2.1), whose index constraints are the index subtypes. */
+    vhpiHandleT type_hdl = get_constrained_type_handle(hdl);
+    if (type_hdl == NULL) {
+        return true;
+    }
+    DEFER(vhpi_release_handle(type_hdl));
+
+    vhpiHandleT it = vhpi_iterator(vhpiConstraints, type_hdl);
+    if (it == NULL) {
+        return true;
     }
 
-    if (error) {
-        vhpiHandleT sub_type_hdl = vhpi_handle(vhpiSubtype, hdl);
-
-        if (sub_type_hdl != NULL) {
-            vhpiHandleT it = vhpi_iterator(vhpiConstraints, sub_type_hdl);
-            vhpiIntT curr_idx = 0;
-
-            if (it != NULL) {
-                vhpiHandleT constraint;
-                while ((constraint = vhpi_scan(it)) != NULL) {
-                    if (curr_idx == dim) {
-                        vhpi_release_handle(it);
-                        DEFER(vhpi_release_handle(constraint));
-
-                        /* IUS/Xcelium only sets the vhpiIsUnconstrainedP
-                         * incorrectly on the base type */
-                        if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
-                            error = false;
-                            *left = static_cast<int>(
-                                vhpi_get(vhpiLeftBoundP, constraint));
-                            *right = static_cast<int>(
-                                vhpi_get(vhpiRightBoundP, constraint));
-#ifdef MODELSIM
-                            /* Issue #4236: See above */
-                            if (*left < *right) {
-#else
-                            if (vhpi_get(vhpiIsUpP, constraint) == 1) {
-#endif
-                                *dir = GPI_RANGE_UP;
-                            } else {
-                                *dir = GPI_RANGE_DOWN;
-                            }
-                        }
-                        break;
-                    }
-                    vhpi_release_handle(constraint);
-                    ++curr_idx;
-                }
-            }
-            vhpi_release_handle(sub_type_hdl);
+    vhpiIntT curr_idx = 0;
+    vhpiHandleT constraint;
+    while ((constraint = vhpi_scan(it)) != NULL) {
+        if (curr_idx++ != dim) {
+            vhpi_release_handle(constraint);
+            continue;
         }
+        vhpi_release_handle(it);
+        DEFER(vhpi_release_handle(constraint));
+
+        if (is_unconstrained(constraint)) {
+            return true;
+        }
+
+        *left = static_cast<int>(vhpi_get(vhpiLeftBoundP, constraint));
+        *right = static_cast<int>(vhpi_get(vhpiRightBoundP, constraint));
+#ifdef MODELSIM
+        /* Issue #4236: Questa's VHPI sets vhpiIsUpP incorrectly so we must
+         * rely on the values of `left` and `right` to infer direction.
+         */
+        if (*left < *right) {
+#else
+        if (vhpi_get(vhpiIsUpP, constraint) == 1) {
+#endif
+            *dir = GPI_RANGE_UP;
+        } else {
+            *dir = GPI_RANGE_DOWN;
+        }
+        return false;
     }
 
-    return error;
+    /* vhpi_scan() has released the exhausted iterator. */
+    return true;
 }
 
 int VhpiArrayObjHdl::initialise(const std::string &name,
@@ -143,16 +158,7 @@ int VhpiArrayObjHdl::initialise(const std::string &name,
 
     m_indexable = true;
 
-    vhpiHandleT type = vhpi_handle(vhpiBaseType, handle);
-
-    if (type == NULL) {
-        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, handle);
-
-        if (st_hdl != NULL) {
-            type = vhpi_handle(vhpiBaseType, st_hdl);
-            vhpi_release_handle(st_hdl);
-        }
-    }
+    vhpiHandleT type = get_base_type_handle(handle);
 
     if (NULL == type) {
         LOG_ERROR("VHPI: Unable to get vhpiBaseType for %s", fq_name.c_str());

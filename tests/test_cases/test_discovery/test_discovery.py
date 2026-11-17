@@ -37,14 +37,14 @@ riviera_before_2025_04 = SIM_NAME.startswith("riviera") and RivieraVersion(
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
-# VCS is unable to access signals in generate loops (gh-4328)
+# VCS is unable to access signals in generate loops through VPI (gh-4328)
 @cocotb.test(
     expect_error=IndexError
     if SIM_NAME.startswith("ghdl")
     else AttributeError
     if SIM_NAME.startswith("verilator")
     else AttributeError
-    if "vcs" in SIM_NAME
+    if "vcs" in SIM_NAME and LANGUAGE in ["verilog"]
     else ()
 )
 async def pseudo_region_access(dut):
@@ -491,6 +491,22 @@ async def access_block_vhdl(dut):
 
     dut.isample_module1.SAMPLE_BLOCK  # noqa: B018
     dut.isample_module1.SAMPLE_BLOCK.clk_inv  # noqa: B018
+
+
+@cocotb.test(skip=LANGUAGE in ["verilog"] or SIM_NAME.startswith("ghdl"))
+async def access_vhdl_names_case_insensitive(dut):
+    """Access VHDL objects by names that differ from the declarations in case.
+
+    Basic identifiers differing only in the case of letters are the same
+    (IEEE 1076-2019 15.4.2).
+    """
+
+    assert type(dut.ISAMPLE_MODULE1) is HierarchyObject
+    assert type(dut.ISAMPLE_MODULE1.Sample_Block) is HierarchyObject
+
+    dut.STREAM_IN_DATA.value = 5
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == 5
 
 
 @cocotb.test(skip=LANGUAGE in ["verilog"])

@@ -5,19 +5,23 @@
 
 from __future__ import annotations
 
+import os
+
 import cocotb
+
+LANGUAGE = os.environ["TOPLEVEL_LANG"].lower().strip()
 
 
 # GHDL is unable to access signals in generate loops (gh-2594)
 # Verilator doesn't support vpiGenScope or vpiGenScopeArray (gh-1884)
-# VCS is unable to access signals in generate loops
+# VCS is unable to access signals in generate loops through VPI (gh-4328)
 @cocotb.test(
     expect_error=AssertionError
     if cocotb.SIM_NAME.lower().startswith("ghdl")
     else AttributeError
     if cocotb.SIM_NAME.lower().startswith("verilator")
     else AttributeError
-    if "vcs" in cocotb.SIM_NAME.lower()
+    if "vcs" in cocotb.SIM_NAME.lower() and LANGUAGE in ["verilog"]
     else ()
 )
 async def test_distinct_generates(dut):
