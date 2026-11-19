@@ -132,8 +132,11 @@ jobs:
         update: true
         install: >
           base-devel
+          flex
+          bison
           gperf
-          mingw-w64-ucrt-x86_64-toolchain
+        pacboy: >
+          toolchain:p
 
     - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
