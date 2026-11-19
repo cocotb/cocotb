@@ -659,10 +659,10 @@ Reported Issues for this Simulator
 Other Simulators
 ================
 
-cocotb does not add support for new simulators.
+cocotb rarely adds support for new simulators.
 Every simulator listed on this page needs its own Makefile, Python runner, CI testing,
 and workarounds for the ways its VPI, VHPI or FLI differs from the standard,
-and the cocotb maintainers cannot take that on for more simulators.
+and that is a lot for the cocotb maintainers to take on.
 
 A simulator that implements VPI, VHPI or FLI can still be used with cocotb.
 Set :envvar:`GPI_IMPL` to the :term:`GPI Implementation Library` of the supported simulator
