@@ -24,6 +24,11 @@ package array_module_pack is
     constant REC_TYPE_ZERO  : rec_type  := ('0', (others=>(others=>'0')));
     constant REC_TYPE_ONE   : rec_type  := ('1', (others=>(others=>'1')));
 
+    type record_of_array2d is record
+        data : t6(0 to 2 - 1, 0 to 5 - 1);
+    end record;
+    type array1d_of_record_of_array is array (integer range <>) of record_of_array2d;
+    type array2d_of_record is array (integer range <>, integer range <>) of record_of_array2d;
 end package array_module_pack;
 
 package body array_module_pack is
