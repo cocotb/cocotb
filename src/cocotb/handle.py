@@ -287,6 +287,9 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
                 )
                 continue
 
+            if key in self._sub_handles:
+                continue
+
             # compute a full path using the key name
             path = self._child_path(key)
 
@@ -335,9 +338,21 @@ class _HierarchyObjectBase(SimHandleBase, Generic[KeyType]):
         if new_handle is None:
             return None
 
-        # if successful, construct and cache
-        sub_handle = _make_sim_object(new_handle, self._child_path(key))
-        self._sub_handles[key] = sub_handle
+        # translate simulator handle name to canonical key
+        try:
+            canonical_key = self._sub_handle_key(new_handle.get_name_string())
+        except ValueError:
+            canonical_key = key
+
+        # check if object already cached under canonical key
+        try:
+            return self._sub_handles[canonical_key]
+        except KeyError:
+            pass
+
+        # if successful, construct and cache under canonical key
+        sub_handle = _make_sim_object(new_handle, self._child_path(canonical_key))
+        self._sub_handles[canonical_key] = sub_handle
 
         return sub_handle
 

@@ -25,7 +25,6 @@ from cocotb.handle import (
 from cocotb.triggers import Timer
 from cocotb.types import LogicArray
 from cocotb_tools.sim_versions import (
-    GhdlVersion,
     NvcVersion,
     RivieraVersion,
     VerilatorVersion,
@@ -501,16 +500,7 @@ async def discover_all_in_component_vhdl(dut):
     #   1   stream_out_data_valid
     #   1   SAMPLE_BLOCK
     #   1   SAMPLE_BLOCK.clk_inv
-    if SIM_NAME.startswith("ghdl"):
-        # GHDL lowercases identifiers over VPI, so the cached SAMPLE_BLOCK,
-        # SAMPLE_BLOCK.clk_inv, and on newer versions the generics are found
-        # a second time by iteration. Keep exact counts so fixing duplicate
-        # discovery requires updating this test.
-        if GhdlVersion(SIM_VERSION) > GhdlVersion("6.0.0"):
-            assert total_count == 14
-        else:
-            assert total_count == 11
-    elif SIM_NAME.startswith("nvc") and NvcVersion(SIM_VERSION) < NvcVersion("1.16.0"):
+    if SIM_NAME.startswith("nvc") and NvcVersion(SIM_VERSION) < NvcVersion("1.16.0"):
         # Old versions of NVC find clk_inv twice.
         assert total_count == 10
     else:

@@ -604,6 +604,8 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
             ? vpi_parent->get_concrete_path()
             : parent->get_fullname();
     std::string lookup_name = parent_path + get_type_delimiter(parent) + name;
+    std::string canonical_name = name;
+    std::string canonical_fq_name = fq_name;
 
     vpiHandle new_hdl =
         vpi_handle_by_name(const_cast<char *>(lookup_name.c_str()), NULL);
@@ -695,6 +697,14 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
                     rgn_type == vpiInterface || rgn_type == vpiRefObj) {
                     std::string rgn_name = vpi_get_str(vpiName, rgn);
                     found = VpiImpl::compare_generate_labels(rgn_name, name);
+                    if (found) {
+                        std::size_t found_idx = rgn_name.rfind("[");
+                        if (found_idx != std::string::npos && found_idx != 0) {
+                            canonical_name = rgn_name.substr(0, found_idx);
+                            canonical_fq_name =
+                                parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+                        }
+                    }
                 }
                 vpi_free_object(rgn);
                 if (found) {
@@ -740,14 +750,31 @@ GpiObjHdl *VpiImpl::get_child_by_name(const std::string &name,
                  hdl_name[lookup_name.size()] == '(');
         }
         if (pseudo_region) {
+            const char *c_name = vpi_get_str(vpiName, new_hdl);
+            if (c_name != NULL) {
+                canonical_name = c_name;
+                std::size_t bracket = canonical_name.find_first_of("[(");
+                if (bracket != std::string::npos && bracket != 0) {
+                    canonical_name = canonical_name.substr(0, bracket);
+                }
+                canonical_fq_name =
+                    parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+            }
             vpi_free_object(new_hdl);
             new_hdl = parent_hdl;
             owns_handle = false;
+        } else {
+            const char *c_name = vpi_get_str(vpiName, new_hdl);
+            if (c_name != NULL) {
+                canonical_name = c_name;
+                canonical_fq_name =
+                    parent->get_fullname() + get_type_delimiter(parent) + canonical_name;
+            }
         }
     }
 
-    GpiObjHdl *new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name,
-                                                    owns_handle, lookup_name);
+    GpiObjHdl *new_obj = create_gpi_obj_from_handle(
+        new_hdl, canonical_name, canonical_fq_name, owns_handle, lookup_name);
     if (new_obj == NULL) {
         if (owns_handle) vpi_free_object(new_hdl);
         LOG_DEBUG("Unable to create object '%s'", fq_name.c_str());

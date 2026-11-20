@@ -595,6 +595,8 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
     vhpiHandleT new_hdl;
     bool owns_handle = true;
     std::string fq_name = fully_qualified_name(name, parent);
+    std::string canonical_name = name;
+    std::string canonical_fq_name = fq_name;
 
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
@@ -625,6 +627,8 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
                 }
 
                 if (compare_names(selected_name, name)) {
+                    canonical_name = selected_name;
+                    canonical_fq_name = fully_qualified_name(canonical_name, parent);
                     vhpi_release_handle(iter);
                     break;
                 }
@@ -642,6 +646,13 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
                 if (vhpi_get(vhpiKindP, rgn) == vhpiForGenerateK) {
                     std::string rgn_name = vhpi_get_str(vhpiCaseNameP, rgn);
                     found = compare_generate_labels(rgn_name, name);
+                    if (found) {
+                        std::size_t found_idx = rgn_name.rfind(GEN_IDX_SEP_LHS);
+                        if (found_idx != std::string::npos && found_idx != 0) {
+                            canonical_name = rgn_name.substr(0, found_idx);
+                            canonical_fq_name = fully_qualified_name(canonical_name, parent);
+                        }
+                    }
                 }
                 vhpi_release_handle(rgn);
                 if (found) {
@@ -673,14 +684,31 @@ GpiObjHdl *VhpiImpl::get_child_by_name(const std::string &name,
      * generates) and must never be released here.
      */
     if (owns_handle && vhpi_get(vhpiKindP, new_hdl) == vhpiForGenerateK) {
+        const char *c_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
+        if (c_name != NULL) {
+            std::string rgn_name = c_name;
+            std::size_t found_idx = rgn_name.rfind(GEN_IDX_SEP_LHS);
+            if (found_idx != std::string::npos && found_idx != 0) {
+                canonical_name = rgn_name.substr(0, found_idx);
+                canonical_fq_name = fully_qualified_name(canonical_name, parent);
+            }
+        }
         vhpi_release_handle(new_hdl);
 
         new_hdl = vhpi_hdl;
         owns_handle = false;
     }
 
+    if (owns_handle) {
+        const char *c_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
+        if (c_name != NULL) {
+            canonical_name = c_name;
+            canonical_fq_name = fully_qualified_name(canonical_name, parent);
+        }
+    }
+
     GpiObjHdl *new_obj =
-        create_gpi_obj_from_handle(new_hdl, name, fq_name, owns_handle);
+        create_gpi_obj_from_handle(new_hdl, canonical_name, canonical_fq_name, owns_handle);
     if (new_obj == NULL) {
         if (owns_handle) vhpi_release_handle(new_hdl);
         LOG_DEBUG("VHPI: Unable to fetch object %s", fq_name.c_str());

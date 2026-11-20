@@ -322,9 +322,21 @@ GpiObjHdl *FliImpl::get_child_by_name(const std::string &name,
                 std::string rgn_name =
                     mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
                 if (compare_generate_labels(rgn_name, name)) {
+                    std::string gen_canon_name = name;
+                    std::string gen_canon_fq = fq_name;
+                    std::size_t found = rgn_name.rfind("(");
+                    if (found != std::string::npos && found != 0) {
+                        gen_canon_name = rgn_name.substr(0, found);
+                        std::string parent_fq = parent->get_fullname();
+                        if (parent_fq == "/") {
+                            gen_canon_fq = "/" + gen_canon_name;
+                        } else {
+                            gen_canon_fq = parent_fq + "/" + gen_canon_name;
+                        }
+                    }
                     FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
                     return create_gpi_obj_from_handle(
-                        parent->get_handle<HANDLE>(), name, fq_name,
+                        parent->get_handle<HANDLE>(), gen_canon_name, gen_canon_fq,
                         fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
                 }
             }
@@ -334,6 +346,29 @@ GpiObjHdl *FliImpl::get_child_by_name(const std::string &name,
     if (NULL == hdl) {
         LOG_DEBUG("Didn't find anything named %s", &writable[0]);
         return NULL;
+    }
+
+    std::string canonical_name = name;
+    std::string canonical_fq_name = fq_name;
+    const char *c_name = NULL;
+    if (search_rgn && (hdl != NULL)) {
+        c_name = mti_GetRegionName(static_cast<mtiRegionIdT>(hdl));
+    } else if (search_sig && (hdl != NULL)) {
+        c_name = mti_GetSignalName(static_cast<mtiSignalIdT>(hdl));
+    } else if (search_var && (hdl != NULL)) {
+        c_name = mti_GetVarName(static_cast<mtiVariableIdT>(hdl));
+    }
+
+    if (c_name != NULL) {
+        canonical_name = c_name;
+        std::string parent_fq = parent->get_fullname();
+        if (parent_fq == "/") {
+            canonical_fq_name = "/" + canonical_name;
+        } else if (obj_type == GPI_MODULE) {
+            canonical_fq_name = parent_fq + "/" + canonical_name;
+        } else if (obj_type == GPI_STRUCTURE) {
+            canonical_fq_name = parent_fq + "." + canonical_name;
+        }
     }
 
     /* Generate Loops have inconsistent behavior across fli.  A "name"
@@ -346,12 +381,12 @@ GpiObjHdl *FliImpl::get_child_by_name(const std::string &name,
      */
     if (accFullType == accForGenerate) {
         FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
-        return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name,
-                                          fq_name, fli_obj->get_acc_type(),
+        return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), canonical_name,
+                                          canonical_fq_name, fli_obj->get_acc_type(),
                                           fli_obj->get_acc_full_type());
     }
 
-    return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
+    return create_gpi_obj_from_handle(hdl, canonical_name, canonical_fq_name, accType, accFullType);
 }
 
 /**
