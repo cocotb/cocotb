@@ -5,6 +5,8 @@
 
 #include "./FliImpl.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
@@ -16,6 +18,20 @@
 #include "_vendor/fli/acc_vhdl.h"
 #include "_vendor/fli/mti.h"
 #include "_vendor/tcl/tcl.h"
+
+static bool compare_names(const std::string &a, const std::string &b) {
+    /* Basic identifiers differing only in the case of letters are the same,
+     * extended identifiers (\...\) are distinct (IEEE 1076-2019 15.4.2 and
+     * 15.4.3). */
+    if ((!a.empty() && a[0] == '\\') || (!b.empty() && b[0] == '\\')) {
+        return a == b;
+    }
+    return a.size() == b.size() &&
+           std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
+               return std::toupper(static_cast<unsigned char>(x)) ==
+                      std::toupper(static_cast<unsigned char>(y));
+           });
+}
 
 void FliImpl::sim_end() {
     if (mti_NowUpper() == 0 && mti_Now() == 0 && mti_Delta() == 0) {
@@ -105,7 +121,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl,
          */
         std::string rgn_name =
             mti_GetRegionName(static_cast<mtiRegionIdT>(hdl));
-        if (name != rgn_name) {
+        if (!compare_names(name, rgn_name)) {
             LOG_DEBUG("Found pseudo-region %s -> %p", fq_name.c_str(), hdl);
             new_obj =
                 new FliObjHdl(this, hdl, GPI_GENARRAY, accType, accFullType);
@@ -556,7 +572,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name) {
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         LOG_DEBUG("Iterating over: %s", mti_GetRegionName(root));
-        if (name == NULL || !strcmp(name, mti_GetRegionName(root))) break;
+        if (name == NULL || compare_names(name, mti_GetRegionName(root))) break;
     }
 
     if (!root) {
@@ -705,7 +721,7 @@ bool FliImpl::compare_generate_labels(const std::string &a,
     /* Compare two generate labels for equality ignoring any suffixed index. */
     std::size_t a_idx = a.rfind("(");
     std::size_t b_idx = b.rfind("(");
-    return a.substr(0, a_idx) == b.substr(0, b_idx);
+    return compare_names(a.substr(0, a_idx), b.substr(0, b_idx));
 }
 
 decltype(FliIterator::iterate_over) FliIterator::iterate_over = [] {
