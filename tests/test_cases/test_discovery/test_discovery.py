@@ -459,6 +459,24 @@ async def access_block_vhdl(dut):
     _ = dut.isample_module1.SAMPLE_BLOCK.clk_inv
 
 
+@cocotb.test(skip=LANGUAGE in ["verilog"] or SIM_NAME.startswith("ghdl"))
+async def access_vhdl_names_case_insensitive(dut):
+    """Access VHDL objects by names that differ from the declarations in case.
+
+    Basic identifiers differing only in the case of letters are the same
+    (IEEE 1076-2019 15.4.2).
+    """
+
+    assert type(dut.ISAMPLE_MODULE1) is HierarchyObject
+    assert type(dut.ISAMPLE_MODULE1.Sample_Block) is HierarchyObject
+    assert type(dut.GENBLK1) is HierarchyArrayObject
+    assert type(dut.GENBLK1[0]) is HierarchyObject
+
+    dut.STREAM_IN_DATA.value = 5
+    await Timer(1, "ns")
+    assert dut.stream_in_data.value == 5
+
+
 @cocotb.test(skip=LANGUAGE in ["verilog"])
 async def discover_all_in_component_vhdl(dut):
     """Discover the expected objects inside a VHDL component."""

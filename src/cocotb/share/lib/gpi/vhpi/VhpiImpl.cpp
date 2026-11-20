@@ -7,17 +7,15 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 
 #include "../logging.hpp"
 #include "_vendor/vhpi/vhpi_user.h"
 #include "vhpi_user_ext.h"
-
-#ifdef NVC
-#include <algorithm>
-#endif
 
 #define CASE_STR(_X) \
     case _X:         \
@@ -309,16 +307,17 @@ bool is_enum_boolean(vhpiHandleT hdl) {
 }
 
 static bool compare_names(const std::string &a, const std::string &b) {
-#ifdef NVC
-    /* NVC does not properly implement the CaseName property and returns
-       Names instead (nickg/nvc#723). */
+    /* Basic identifiers differing only in the case of letters are the same,
+     * extended identifiers (\...\) are distinct (IEEE 1076-2019 15.4.2 and
+     * 15.4.3). */
+    if ((!a.empty() && a[0] == '\\') || (!b.empty() && b[0] == '\\')) {
+        return a == b;
+    }
     return a.size() == b.size() &&
-           equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
-               return std::toupper(x) == std::toupper(y);
+           std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
+               return std::toupper(static_cast<unsigned char>(x)) ==
+                      std::toupper(static_cast<unsigned char>(y));
            });
-#else
-    return a == b;
-#endif
 }
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,

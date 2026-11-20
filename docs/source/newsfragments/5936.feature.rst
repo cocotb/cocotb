@@ -1,0 +1,1 @@
+Basic identifiers in VHDL are now compared case-insensitively on all simulators.
