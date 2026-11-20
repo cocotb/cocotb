@@ -48,13 +48,24 @@ async def test_trigger_await_gives_self(dut):
 
 
 @cocotb.test()
-async def test_fork_coroutine_function_exception(dut):
-    async def coro():
-        pass
+async def test_start_soon_decorator(dut):
+    result = []
 
-    pattern = f"Coroutine function {coro} should be called prior to being scheduled."
-    with pytest.raises(TypeError, match=pattern):
-        cocotb.start_soon(coro)
+    @cocotb.start_soon
+    async def coro():
+        await Timer(1, "ns")
+        result.append(1)
+
+    await Timer(2, "ns")
+    assert result == [1]
+
+    @cocotb.start_soon(name="named")
+    async def coro2():
+        await Timer(1, "ns")
+        result.append(2)
+
+    await Timer(2, "ns")
+    assert result == [1, 2]
 
 
 @cocotb.test()
