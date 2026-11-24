@@ -669,6 +669,7 @@ Set :envvar:`GPI_IMPL` to the :term:`GPI Implementation Library` of the supporte
 whose interface behaves most like it, using ``$(cocotb-config --gpi-impl SIMULATOR INTERFACE)``,
 and set up the rest of the flow as described in :ref:`custom-flows`.
 A Makefile or Python runner for the simulator can be maintained as a separate package.
+Limited cocotb support for Vivado is provided by `cocotb-vivado <https://github.com/themperek/cocotb-vivado>`_.
 
 If none of the existing GPI Implementation Libraries works with your simulator,
 open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`_.
