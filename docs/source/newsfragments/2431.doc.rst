@@ -1,0 +1,1 @@
+Documented that cocotb rarely adds support for new simulators, and how to use other simulators with the existing GPI Implementation Libraries.
