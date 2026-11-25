@@ -1,0 +1,3 @@
+Documented that values assigned from cocotb are deposited on a signal rather than driven onto it, and
+added a tri-state bus example that shows the difference between a deposit, :class:`Force`, and
+:class:`Freeze`, and what happens when the RTL drives the bus again.
