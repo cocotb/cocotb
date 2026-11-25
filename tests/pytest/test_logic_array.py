@@ -551,8 +551,21 @@ def test_format():
     assert f"{l:#_b}" == "0b000_0110_1001"
     assert f"{l:#x}" == "0x069"
     assert f"{l:#_X}" == "0X069"
-    assert f"{l:#_o}" == "0o0_0151"
+    assert f"{l:#_o}" == "0o0151"
     assert f"{l:#,d}" == "0d0,105"
+
+    # Padded to the number of digits of the largest value, with or without "#".
+    l = LogicArray.from_unsigned(5, 32)
+    assert f"{l:d}" == "0000000005"
+    assert f"{l:#d}" == "0d0000000005"
+    assert f"{l:_d}" == "0_000_000_005"
+    assert f"{l:o}" == "00000000005"
+    assert f"{l:#_o}" == "0o000_0000_0005"
+    l = LogicArray("0000")
+    assert f"{l:d}" == "00"
+    assert f"{l:#d}" == "0d00"
+    # The width is computed without converting 2**20000 - 1 to a string.
+    assert f"{LogicArray.from_unsigned(5, 20000):d}" == "5".rjust(6021, "0")
 
 
 def test_from_signed_wrap():

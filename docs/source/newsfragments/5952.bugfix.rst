@@ -1,0 +1,1 @@
+Fixed the zero-padding of :class:`~cocotb.types.LogicArray` formatted with ``"d"``, which now pads to the number of digits of the largest value like the other format specifiers, and the ``"#"`` alternate form adding extra digits to ``"d"`` and grouped ``"o"`` formats.
