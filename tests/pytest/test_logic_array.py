@@ -317,6 +317,19 @@ def test_equality():
     assert LogicArray("0111") != -6
 
 
+def test_equality_weak_values_after_int_conversion():
+    # Converting to int resolves L and H, but equality between LogicArrays doesn't.
+    a = LogicArray("L1")
+    assert a.to_unsigned() == 1
+    assert a == 1
+    assert a != LogicArray(1, 2)
+    assert a != LogicArray.from_unsigned(1, 2)
+    assert a == LogicArray("L1")
+    b = LogicArray(["H", "0"])
+    assert b.to_signed() == -2
+    assert b != LogicArray(0b10, 2)
+
+
 def test_repr_eval():
     r = LogicArray("X01Z")
     assert eval(repr(r)) == r

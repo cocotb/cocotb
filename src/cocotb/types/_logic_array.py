@@ -343,18 +343,23 @@ class LogicArray(AbstractMutableArray[Logic]):
             value_as_str = self._get_str()
 
             # always resolve L and H to 0 and 1
-            value_as_str = value_as_str.translate(_resolve_lh_table)
+            resolved_str = value_as_str.translate(_resolve_lh_table)
 
             try:
-                self._value_as_int = _int_from_binstr(value_as_str)
+                value = _int_from_binstr(resolved_str)
             except ValueError:
                 if RESOLVE_X is None:
                     raise ValueError(
                         f"Can't convert {type(self).__qualname__} to int: it contains non-0/1 values"
                     ) from None
                 else:
-                    value_as_str = RESOLVE_X(value_as_str)
-                    return _int_from_binstr(value_as_str)
+                    return _int_from_binstr(RESOLVE_X(resolved_str))
+
+            # Only cache the value if no L or H was resolved. Equality compares
+            # cached ints, and must not find "L" equal to "0".
+            if resolved_str != value_as_str:
+                return value
+            self._value_as_int = value
 
         return self._value_as_int
 
