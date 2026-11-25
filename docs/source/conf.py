@@ -121,7 +121,13 @@ if is_rtd_tag:
 
 autoclass_content = "class"
 
-autodoc_typehints = "signature"  # show type hints in the list of parameters
+autodoc_default_options = {
+    "members": True,
+    "member-order": "bysource",
+    "show-inheritance": True,
+}
+
+autodoc_typehints = "both"  # show type hints in signature and parameter list
 autodoc_typehints_description_target = "documented"
 maximum_signature_line_length = 78
 
@@ -460,6 +466,14 @@ def block_gpi_links(app, env, node, contnode):
         getLogger("cocotb.conf").info(f"Stopping intersphinx link for {target}")
         raise NoUri
 
+def filter_private_bases(app, name, obj, options, bases):
+    bases[:] = [
+        base for base in bases
+        if not base.__name__.startswith("_")
+    ]
+
+
 # -- Custom setup function -----------------------------------------------------
 def setup(app):
-    app.connect('missing-reference', block_gpi_links)
+    app.connect("missing-reference", block_gpi_links)
+    app.connect("autodoc-process-bases", filter_private_bases)

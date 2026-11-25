@@ -17,11 +17,11 @@ cocotb 2.1.0 (2026-08-30)
 Features
 --------
 
-- Added :external+cocotb21:class:`cocotb.Param` to tag test parameter values used in :external+cocotb21:deco:`cocotb.parametrize` with a more readable and writeable name. (:pr:`4438`)
+- Added :external+cocotb21:class:`cocotb.Param` to tag test parameter values used in :external+cocotb21:func:`cocotb.parametrize` with a more readable and writeable name. (:pr:`4438`)
 - Support null-ranged arrays (including ``std_logic_vector`` and ``string``) in VHDL. (:pr:`4519`)
-- Added :external+cocotb21:deco:`cocotb.xfail` to mark a test as expected to fail with an optional reason and expected exception type. (:pr:`5007`)
-- Added :external+cocotb21:deco:`cocotb.skipif` to mark a test as conditionally skipped, with an optional reason string. (:pr:`5007`)
-- Made :external+cocotb21:deco:`cocotb.test` and :external+cocotb21:deco:`cocotb.parametrize` stackable. Applying the decorator multiple times to the same test will combine the values of each decoration into a single test generation. (:pr:`5007`)
+- Added :external+cocotb21:func:`cocotb.xfail` to mark a test as expected to fail with an optional reason and expected exception type. (:pr:`5007`)
+- Added :external+cocotb21:func:`cocotb.skipif` to mark a test as conditionally skipped, with an optional reason string. (:pr:`5007`)
+- Made :external+cocotb21:func:`cocotb.test` and :external+cocotb21:func:`cocotb.parametrize` stackable. Applying the decorator multiple times to the same test will combine the values of each decoration into a single test generation. (:pr:`5007`)
 - Added support for Python 3.14. (:pr:`5057`)
 - Added ``cwd`` argument to :external+cocotb21:meth:`Runner.build() <cocotb_tools.runner.Runner.build>`. (:pr:`5076`)
 - Added the experimental :ref:`Pytest Plugin <pytest-plugin>` that enables using pytest as the regression manager for running cocotb tests. (:pr:`5090`)
