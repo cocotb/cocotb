@@ -282,76 +282,39 @@ Deposits and tri-state buses
 
 A value written from cocotb with ``dut.some_signal.value = <value>`` is *deposited* in the
 simulator the same way a procedural assignment in the HDL would assign it. It is **not** an
-additional driver attached to the net, and it does not have to be released again:
+additional driver attached to the net, and it does not have to be released again. That is what makes
+the difference to the RTL drivers, and what makes :class:`Force` and :class:`Freeze` necessary:
 
-* a deposit does not take part in the resolution of a signal that is driven by the RTL;
-* the deposited value stays until the signal is assigned again, so it is gone as soon as the RTL
-  drives the signal again;
-* use :class:`Force` when the value has to win over the RTL, :class:`Freeze` when the signal has
-  to keep its current value, and :class:`Release` to undo either of them.
+* A deposit does not take part in the resolution of a signal that the RTL drives.
+* A deposited value stays until the signal is assigned again, so it is gone as soon as the RTL
+  drives the signal.
+* :class:`Force` is the action to use when the value has to win over the RTL, :class:`Freeze` keeps
+  the signal at its current value, and :class:`Release` undoes either of them.
 
-The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT
-drives the bus" and "cocotb drives the bus" lead to three different values being read back:
+The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT drives
+the bus" and "cocotb drives the bus" lead to three different values being read back. The example
+below drives an 8-bit bus from the DUT while ``drive_en`` is high and walks through all of these
+cases. It is written in Verilog and in VHDL; the testbench is the same for both, except that
+Verilator is skipped because it is a two-state simulator and cannot represent the high impedance of
+the bus.
 
-.. code-block:: verilog
+.. dropdown:: :file:`bus_master.sv`
+   :icon: file
 
-    module bus_master (
-        inout  wire [7:0] bus,
-        input  wire       drive_en,
-        input  wire [7:0] data_out,
-        output wire [7:0] data_in
-    );
-        assign bus     = drive_en ? data_out : 8'hzz;
-        assign data_in = bus;
-    endmodule
+   .. literalinclude:: ../../examples/tri_state_bus/bus_master.sv
+      :language: systemverilog
 
-.. autolink-preface:: from cocotb.handle import Force, Freeze, Release
-    from cocotb.triggers import Timer
-.. code-block:: python
+.. dropdown:: :file:`bus_master.vhdl`
+   :icon: file
 
-    @cocotb.test()
-    async def tri_state_bus(dut):
-        dut.drive_en.value = 0
-        await Timer(1, unit="ns")
-        # nobody drives the bus, so it reads as high impedance
-        assert dut.bus.value == "ZZZZZZZZ"
-        assert not dut.bus.value.is_resolvable
+   .. literalinclude:: ../../examples/tri_state_bus/bus_master.vhdl
+      :language: vhdl
 
-        # the DUT drives the bus
-        dut.data_out.value = 0xA5
-        dut.drive_en.value = 1
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "10100101"
+.. dropdown:: :file:`test_tri_state_bus.py`
+   :icon: file
 
-        # a force wins over the value the DUT drives
-        dut.bus.value = Force(0x5A)
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "01011010"
-
-        # releasing brings the value the DUT drives back
-        dut.bus.value = Release()
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "10100101"
-
-        # a freeze holds the current value even though the DUT changes what it drives
-        dut.bus.value = Freeze()
-        dut.data_out.value = 0x3C
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "10100101"
-        dut.bus.value = Release()
-
-        # with the DUT no longer driving, a deposit is what the bus reads back ...
-        dut.drive_en.value = 0
-        await Timer(1, unit="ns")
-        dut.bus.value = 0xFF
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "11111111"
-
-        # ... until the DUT drives the bus again, which replaces the deposit
-        dut.data_out.value = 0x0F
-        dut.drive_en.value = 1
-        await Timer(1, unit="ns")
-        assert dut.bus.value == "00001111"
+   .. literalinclude:: ../../examples/tri_state_bus/test_tri_state_bus.py
+      :language: python
 
 
 .. _writing_tbs_accessing_underscore_identifiers:

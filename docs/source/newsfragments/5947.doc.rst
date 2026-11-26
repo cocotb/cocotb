@@ -1,0 +1,1 @@
+Documented that values assigned from cocotb are deposited on a signal rather than driven onto it, and added a tri-state bus example showing a deposit, `Force` and `Freeze`.
