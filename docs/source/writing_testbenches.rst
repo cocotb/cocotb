@@ -252,7 +252,16 @@ Forcing and freezing signals
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
-the various actions described in :ref:`assignment-methods` can be used.
+A value written from cocotb with ``dut.some_signal.value = <value>`` is :term:`deposited` on to the signal;
+it is **not** an additional driver on the signal.
+This means that:
+
+* A deposit does not take part in the resolution of a signal that the RTL drives.
+* A deposited value stays until the signal is assigned again, e.g. another cocotb deposit or RTL driving the signal.
+
+cocotb also supports other value depositing actions:
+:class:`.Force`, :class:`.Freeze`, and :class:`.Release`,
+which are described in detail in :ref:`assignment-methods`.
 
 .. autolink-preface:: from cocotb.handle import Deposit, Force, Freeze, Release
 .. code-block:: python
@@ -273,6 +282,48 @@ the various actions described in :ref:`assignment-methods` can be used.
 .. warning::
 
     Not all simulators support these features; refer to the :ref:`simulator-support` section for details or to `issues with label "upstream" <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Aupstream>`_
+
+
+.. _writing_tbs_deposits:
+
+Tri-state buses
+---------------
+
+A value written from cocotb with ``dut.some_signal.value = <value>`` is *deposited* in the simulator the same way a procedural assignment in the HDL would assign it.
+It is **not** an additional driver attached to the net, and it does not have to be released again.
+That is what makes the difference to the RTL drivers, and what makes :class:`Force` and :class:`Freeze` necessary:
+
+* A deposit does not take part in the resolution of a signal that the RTL drives.
+* A deposited value stays until the signal is assigned again, so it is gone as soon as the RTL
+  drives the signal.
+* :class:`Force` is the action to use when the value has to win over the RTL, :class:`Freeze` keeps
+  the signal at its current value, and :class:`Release` undoes either of them.
+
+The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT drives the bus" and "cocotb drives the bus" lead to three different values being read back.
+The example below drives an 8-bit bus from the DUT while ``drive_en`` is high and walks through all of these cases.
+One use case of the :class:`!Force`, :class:`!Freeze`, and :class:`!Release` deposits is in dealing with tri-state buses.
+Because cocotb :term:`!deposits` do not partake in multi-driven signal resolution,
+:term:`!forcing` a high-impedance bus to ``0`` or ``1`` is required to prevent the RTL from simply overwriting the deposited value back to ``Z``.
+
+The example below drives an 8-bit tri-state bus from the DUT while ``drive_en`` is high and drives high-impedance when ``drive_en`` is low.
+
+.. dropdown:: :file:`bus_master.sv`
+   :icon: file
+
+   .. literalinclude:: ../../examples/tri_state_bus/bus_master.sv
+      :language: systemverilog
+
+.. dropdown:: :file:`bus_master.vhdl`
+   :icon: file
+
+   .. literalinclude:: ../../examples/tri_state_bus/bus_master.vhdl
+      :language: vhdl
+
+.. dropdown:: :file:`test_tri_state_bus.py`
+   :icon: file
+
+   .. literalinclude:: ../../examples/tri_state_bus/test_tri_state_bus.py
+      :language: python
 
 
 .. _writing_tbs_accessing_underscore_identifiers:

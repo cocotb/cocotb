@@ -248,6 +248,7 @@ def dev_test_sim(
         "examples/simple_dff",
         "examples/matrix_multiplier",
         "examples/mixed_language",
+        "examples/tri_state_bus",
     ]
     for example in pytest_example_tree:
         with session.chdir(example):
