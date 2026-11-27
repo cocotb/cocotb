@@ -823,11 +823,13 @@ Simulator Objects
 .. autoclass:: PackedStructObject
     :members:
     :member-order: bysource
+    :special-members: __len__, __iter__, __getitem__
     :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
 
 .. autoclass:: PackedUnionObject
     :members:
     :member-order: bysource
+    :special-members: __len__, __iter__, __getitem__
     :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
 
 .. autoclass:: StringObject

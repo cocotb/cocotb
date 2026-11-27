@@ -496,7 +496,7 @@ PKT_VAR_PATTERN = "".join(
 
 
 @cocotb.test
-@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
+@cocotb.xfail(FLATTENS_PACKED_STRUCT)
 async def packed_struct_var_range(dut):
     """A packed struct variable has no range of its own"""
 
@@ -512,7 +512,7 @@ async def packed_struct_var_size(dut):
 
 
 @cocotb.test
-@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
+@cocotb.xfail(FLATTENS_PACKED_STRUCT)
 async def packed_struct_var_type(dut):
     """A packed struct variable is a PackedStructObject where the simulator reports it"""
 
@@ -544,7 +544,7 @@ async def packed_struct_var_read(dut):
 
 
 @cocotb.test
-@cocotb.xfail(FLATTENS_PACKED_STRUCT, reason="Simulator flattens packed structs")
+@cocotb.xfail(FLATTENS_PACKED_STRUCT)
 async def packed_struct_var_index(dut):
     """Bits of a packed struct variable cannot be indexed"""
 
@@ -599,3 +599,121 @@ async def packed_struct_var_discovery_is_quiet(dut):
 
     assert isinstance(handle, PackedObject)
     assert records == [], "\n".join(r.getMessage() for r in records)
+
+
+# Member access on packed structs and unions (simulators that report them)
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_member_types(dut):
+    """Members of a packed struct are typed by their own kind"""
+
+    assert type(dut.pkt_var.seq_idx) is PackedArrayObject
+    assert type(dut.pkt_var.dst) is PackedStructObject
+    assert type(dut.pkt_var.dst.die) is LogicObject
+    assert dut.pkt_var.seq_idx._path == "packed_array.pkt_var.seq_idx"
+    assert dut.pkt_var.dst.die._path == "packed_array.pkt_var.dst.die"
+    assert dut.pkt_var["dst"]["die"] is dut.pkt_var.dst.die
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=TypeError)
+async def packed_struct_member_name_collision(dut):
+    """A member named `value` is only reachable with index syntax"""
+
+    assert isinstance(dut.pkt_value_name_collision["value"], LogicObject)
+    assert isinstance(dut.pkt_value_name_collision.val_a, LogicObject)
+    assert isinstance(dut.pkt_value_name_collision.value, LogicArray)
+    assert len(dut.pkt_value_name_collision.value) == 3
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_member_read(dut):
+    """Read members of a packed struct"""
+
+    # Earlier tests overwrite the value from the HDL's initial block.
+    dut.pkt_var.value = LogicArray("110010011100" + "01" + "1" + "00" + "11010")
+    await Timer(1, unit="step")
+    assert str(dut.pkt_var.seq_idx.value) == "110010011100"
+    assert dut.pkt_var.dst.pkg_id.value == 1
+    assert dut.pkt_var.dst.die.value == 1
+    assert dut.pkt_var.dst.tile.value == 0
+    assert dut.pkt_var.dst_local.value == 0b11010
+    assert dut.pkt_var["dst_local"].value == 0b11010
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_member_write(dut):
+    """Write members of a packed struct"""
+
+    dut.pkt_var.value = 0
+    await Timer(1, unit="step")
+    dut.pkt_var.seq_idx.value = 0xABC
+    dut.pkt_var.dst.die.value = 1
+    dut.pkt_var["dst_local"].value = 0b11010
+    await Timer(1, unit="step")
+    assert str(dut.pkt_var.value) == "101010111100" + "00" + "1" + "00" + "11010"
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_member_iteration(dut):
+    """Iterate over the members of a packed struct"""
+
+    assert set(dut.pkt_var._keys()) == {"seq_idx", "dst", "dst_local"}
+    assert {handle._path for handle in dut.pkt_var} == {
+        "packed_array.pkt_var.seq_idx",
+        "packed_array.pkt_var.dst",
+        "packed_array.pkt_var.dst_local",
+    }
+    assert "dst_local" in dir(dut.pkt_var)
+    assert set(dut.pkt_var.dst._keys()) == {"pkg_id", "die", "tile"}
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT)
+async def packed_struct_member_assignment_guard(dut):
+    """Assigning to a member without `.value` is an error"""
+
+    with pytest.raises(AttributeError, match="forget"):
+        dut.pkt_var.seq_idx = 1
+    with pytest.raises(AttributeError, match="No such member"):
+        dut.pkt_var.nope = 1
+    # The value setter is unaffected by the guard.
+    dut.pkt_var.value = 0
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_union_element_members(dut):
+    """Access the members of a packed union element"""
+
+    dut.i_union_arr2d[0][0].raw.value = 0xBEEF
+    await Timer(1, unit="step")
+    assert dut.o_union_arr2d[0][0].halves.hi.value == 0xBE
+    assert dut.o_union_arr2d[0][0].halves.lo.value == 0xEF
+    assert set(dut.o_union_arr2d[0][0]._keys()) == {"raw", "halves"}
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_element_members(dut):
+    """Access the members of a packed struct element of a packed array"""
+
+    dut.i_pkt_arr2d[1][2].dst.tile.value = 0b10
+    await Timer(1, unit="step")
+    assert dut.o_pkt_arr2d[1][2].dst.tile.value == 0b10
+
+
+@cocotb.test
+@cocotb.xfail(FLATTENS_PACKED_STRUCT, raises=AttributeError)
+async def packed_struct_member_triggers(dut):
+    """Triggers work on members of a packed struct"""
+
+    cocotb.start_soon(_drive_edges(dut.pkt_var.dst.die, [0, 1]))
+    await RisingEdge(dut.pkt_var.dst.die)
+    cocotb.start_soon(_drive_edges(dut.pkt_var.dst_local, [0, 0b10101]))
+    await ValueChange(dut.pkt_var.dst_local)

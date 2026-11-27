@@ -86,25 +86,33 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     };
 }();
 
+static const std::vector<int32_t> packed_member_options = {vpiMember};
+
 VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
     : GpiIterator(impl, hdl), m_iterator(NULL) {
     vpiHandle iterator;
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
     int type = vpi_get(vpiType, vpi_hdl);
+    gpi_objtype parent_type = m_parent->get_type();
 
-    if (m_parent->get_type() == GPI_GENARRAY && type == vpiInterfaceArray) {
+    if (parent_type == GPI_GENARRAY && type == vpiInterfaceArray) {
         m_next_index = m_parent->get_range_left();
         return;
     }
 
-    try {
-        selected = &iterate_over.at(type);
-    } catch (std::out_of_range const &) {
-        LOG_WARN("VPI: Implementation does not know how to iterate over %s(%d)",
-                 vpi_get_str(vpiType, vpi_hdl), type);
-        selected = nullptr;
-        return;
+    if (parent_type == GPI_PACKED_STRUCT || parent_type == GPI_PACKED_UNION) {
+        selected = &packed_member_options;
+    } else {
+        try {
+            selected = &iterate_over.at(type);
+        } catch (std::out_of_range const &) {
+            LOG_WARN(
+                "VPI: Implementation does not know how to iterate over %s(%d)",
+                vpi_get_str(vpiType, vpi_hdl), type);
+            selected = nullptr;
+            return;
+        }
     }
 
     for (one2many = selected->begin(); one2many != selected->end();
@@ -132,7 +140,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
         LOG_DEBUG(
             "vpi_iterate return NULL for all relationships on %s (%d) type:%s",
             vpi_get_str(vpiName, vpi_hdl), type, vpi_get_str(vpiType, vpi_hdl));
-        selected = NULL;
+        selected = nullptr;
         return;
     }
 
@@ -446,14 +454,15 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
         }
-    } else if (obj_type == GPI_STRUCTURE) {
+    } else if (obj_type == GPI_STRUCTURE || obj_type == GPI_PACKED_STRUCT ||
+               obj_type == GPI_PACKED_UNION) {
+        // Some simulators prefix member names with the parent's name.
         std::size_t found = name.rfind(".");
 
         if (found != std::string::npos) {
             fq_name += name.substr(found);
             name = name.substr(found + 1);
         } else {
-            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
         }
     } else {
