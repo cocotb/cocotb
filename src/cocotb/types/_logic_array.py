@@ -343,23 +343,18 @@ class LogicArray(AbstractMutableArray[Logic]):
             value_as_str = self._get_str()
 
             # always resolve L and H to 0 and 1
-            resolved_str = value_as_str.translate(_resolve_lh_table)
+            value_as_str = value_as_str.translate(_resolve_lh_table)
 
             try:
-                value = _int_from_binstr(resolved_str)
+                self._value_as_int = _int_from_binstr(value_as_str)
             except ValueError:
                 if RESOLVE_X is None:
                     raise ValueError(
                         f"Can't convert {type(self).__qualname__} to int: it contains non-0/1 values"
                     ) from None
                 else:
-                    return _int_from_binstr(RESOLVE_X(resolved_str))
-
-            # Only cache the value if no L or H was resolved. Equality compares
-            # cached ints, and must not find "L" equal to "0".
-            if resolved_str != value_as_str:
-                return value
-            self._value_as_int = value
+                    value_as_str = RESOLVE_X(value_as_str)
+                    return _int_from_binstr(value_as_str)
 
         return self._value_as_int
 
@@ -613,34 +608,12 @@ class LogicArray(AbstractMutableArray[Logic]):
         elif isinstance(other, LogicArray):
             if len(self) != len(other):
                 return False
-            # Complex, but efficient chain of checking logic.
-            # Avoid conversions if it can help it at first.
-            # Prefers checking against str vs any type since that is going to be the
-            #   most common type and also the "middle" type for conversions.
-            # Always converts away from ints to prevent issues with non-0/1 data.
-            if self._value_as_str is not None and other._value_as_str is not None:
-                # (STR, STR)
-                return self._value_as_str == other._value_as_str
-            elif self._value_as_array is not None and other._value_as_array is not None:
-                # (ARRAY, ARRAY)
+            # Compare as arrays if both are arrays, otherwise as strings. Never
+            # compare cached ints: converting to int resolves L and H to 0 and
+            # 1, so an int can be equal where the values aren't.
+            if self._value_as_array is not None and other._value_as_array is not None:
                 return self._value_as_array == other._value_as_array
-            elif self._value_as_int is not None and other._value_as_int is not None:
-                # (INT, INT)
-                return self._value_as_int == other._value_as_int
-            elif self._value_as_str is not None:
-                # (STR, INT)
-                # (STR, ARRAY)
-                return self._value_as_str == other._get_str()
-            elif other._value_as_str is not None:
-                # (INT, STR)
-                # (ARRAY, STR)
-                return self._get_str() == other._value_as_str
-            elif self._value_as_array is not None:
-                # (ARRAY, INT)
-                return self._value_as_array == other._get_array()
-            else:
-                # (INT, ARRAY)
-                return self._get_array() == other._value_as_array
+            return self._get_str() == other._get_str()
         elif isinstance(other, (list, tuple)):
             try:
                 other = LogicArray(other)
