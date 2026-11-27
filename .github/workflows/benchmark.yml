@@ -53,7 +53,8 @@ jobs:
 
     - name: Install Icarus Verilog
       run: |
-        sudo apt-get install -y --no-install-recommends iverilog
+        sudo apt update
+        sudo apt install -y --no-install-recommends iverilog
 
     - name: Set up NVC (Ubuntu)
       uses: nickg/setup-nvc@v1

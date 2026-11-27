@@ -95,7 +95,7 @@ jobs:
 
     - name: Update package index (ubuntu)
       if: startsWith(matrix.os, 'ubuntu')
-      run: sudo apt-get update
+      run: sudo apt update
 
     - name: Download distribution artifacts (if any).
       uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
@@ -140,7 +140,7 @@ jobs:
 
     - name: Install XML dependencies for Python 3.14
       if: startsWith(matrix.python-version, '3.14') && startsWith(matrix.os, 'ubuntu')
-      run: sudo apt-get install -y --no-install-recommends libxml2-dev libxslt-dev
+      run: sudo apt install -y --no-install-recommends libxml2-dev libxslt-dev
 
     - name: Install uv
       uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
@@ -153,11 +153,11 @@ jobs:
     - name: Set up Icarus (Ubuntu - apt)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version == 'apt'
       run: |
-        sudo apt-get install -y --no-install-recommends iverilog
+        sudo apt install -y --no-install-recommends iverilog
     - name: Set up Icarus (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
-        sudo apt-get install -y --no-install-recommends g++ gperf flex bison make autoconf
+        sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
         git clone https://github.com/steveicarus/iverilog.git
         cd iverilog
         git reset --hard ${{matrix.sim-version}}
@@ -206,7 +206,7 @@ jobs:
     - name: Set up GHDL (Ubuntu)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl'
       run: |
-        sudo apt-get install -y --no-install-recommends gnat
+        sudo apt install -y --no-install-recommends gnat
         git clone https://github.com/ghdl/ghdl.git
         cd ghdl
         git reset --hard ${{matrix.sim-version}}
@@ -230,7 +230,7 @@ jobs:
     - name: Set up NVC (Ubuntu, source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'nvc' && (!startsWith(matrix.sim-version, 'r') || matrix.cc == 'clang')
       run: |
-        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex
+        sudo apt install -y --no-install-recommends llvm-dev libdw-dev flex
         git clone --depth=1 --no-single-branch https://github.com/nickg/nvc.git
         cd nvc
         git reset --hard ${{matrix.sim-version}}
@@ -256,11 +256,11 @@ jobs:
     - name: Install cocotb build dependencies (Ubuntu - g++)
       if: startsWith(matrix.os, 'ubuntu') && (!matrix.cxx || matrix.cxx == 'g++')
       run: |
-        sudo apt-get install g++
+        sudo apt install g++
     - name: Install cocotb build dependencies (Ubuntu - clang++)
       if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
       run: |
-        sudo apt-get install clang llvm
+        sudo apt install clang llvm
     - name: Install cocotb build dependencies (MacOS)
       if: startsWith(matrix.os, 'macos')
       run: |
