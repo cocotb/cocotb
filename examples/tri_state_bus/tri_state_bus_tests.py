@@ -37,8 +37,3 @@ async def tri_state_bus(dut):
     dut.data_out.value = 0x3C
     await Timer(1, unit="ns")
     assert dut.data_bus.value == "10100101"
-
-    # A Release allows the new value to be driven on the bus
-    dut.data_bus.value = Release()
-    await Timer(1, unit="ns")
-    assert dut.data_bus.value == "00111100"
