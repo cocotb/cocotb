@@ -473,7 +473,14 @@ def filter_private_bases(app, name, obj, options, bases):
     ]
 
 
+def skip_inherited_simhandle_path(app, what, name, obj, skip, options):
+    if name == "_path" and "SimHandleBase" in options.get("inherited-members", ()):
+        return True
+    return skip
+
+
 # -- Custom setup function -----------------------------------------------------
 def setup(app):
     app.connect("missing-reference", block_gpi_links)
     app.connect("autodoc-process-bases", filter_private_bases)
+    app.connect("autodoc-skip-member", skip_inherited_simhandle_path)
