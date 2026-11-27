@@ -252,7 +252,16 @@ Forcing and freezing signals
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
-the various actions described in :ref:`assignment-methods` can be used.
+A value written from cocotb with ``dut.some_signal.value = <value>`` is :term:`deposited` on to the signal;
+it is **not** an additional driver on the signal.
+This means that:
+
+* A deposit does not take part in the resolution of a signal that the RTL drives.
+* A deposited value stays until the signal is assigned again, e.g. another cocotb deposit or RTL driving the signal.
+
+cocotb also supports other value depositing actions:
+:class:`.Force`, :class:`.Freeze`, and :class:`.Release`,
+which are described in detail in :ref:`assignment-methods`.
 
 .. autolink-preface:: from cocotb.handle import Deposit, Force, Freeze, Release
 .. code-block:: python
@@ -277,8 +286,8 @@ the various actions described in :ref:`assignment-methods` can be used.
 
 .. _writing_tbs_deposits:
 
-Deposits and tri-state buses
-============================
+Tri-state buses
+---------------
 
 A value written from cocotb with ``dut.some_signal.value = <value>`` is *deposited* in the simulator the same way a procedural assignment in the HDL would assign it.
 It is **not** an additional driver attached to the net, and it does not have to be released again.
@@ -292,7 +301,11 @@ That is what makes the difference to the RTL drivers, and what makes :class:`For
 
 The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT drives the bus" and "cocotb drives the bus" lead to three different values being read back.
 The example below drives an 8-bit bus from the DUT while ``drive_en`` is high and walks through all of these cases.
-It is written in Verilog and in VHDL; the testbench is the same for both, except that Verilator is skipped because it is a two-state simulator and cannot represent the high impedance of the bus.
+One use case of the :class:`!Force`, :class:`!Freeze`, and :class:`!Release` deposits is in dealing with tri-state buses.
+Because cocotb :term:`!deposits` do not partake in multi-driven signal resolution,
+:term:`!forcing` a high-impedance bus to ``0`` or ``1`` is required to prevent the RTL from simply overwriting the deposited value back to ``Z``.
+
+The example below drives an 8-bit tri-state bus from the DUT while ``drive_en`` is high and drives high-impedance when ``drive_en`` is low.
 
 .. dropdown:: :file:`bus_master.sv`
    :icon: file
