@@ -180,13 +180,13 @@ int main(int argc, char **argv) {
                 VerilatedVpi::clearEvalNeeded();
                 VerilatedVpi::doInertialPuts();
                 settle_value_callbacks();
-            } while (VerilatedVpi::evalNeeded());
+            } while (VerilatedVpi::evalNeeded() && !Verilated::gotFinish());
 
             // Run ReadWrite callback as we are done processing this eval step
             VerilatedVpi::callCbs(cbReadWriteSynch);
             VerilatedVpi::doInertialPuts();
             settle_value_callbacks();
-        } while (VerilatedVpi::evalNeeded());
+        } while (VerilatedVpi::evalNeeded() && !Verilated::gotFinish());
 
         top->eval_end_step();
 
