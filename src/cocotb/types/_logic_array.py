@@ -6,7 +6,7 @@ from __future__ import annotations
 import copy
 import sys
 from collections.abc import Iterable, Iterator
-from math import ceil
+from math import ceil, log10
 from typing import Any, Literal, cast, overload
 
 from cocotb._deprecation import deprecated
@@ -1044,24 +1044,24 @@ class LogicArray(AbstractMutableArray[Logic]):
             hex_len += base_len
             return f"{int(self):{alternate}0{hex_len}{grouping}{spec}}"
         elif spec == "d":
-            # fast ceil(len(self) / 10)
-            dec_len = (len(self) + 9) // 10
+            # number of digits of the largest value, 2**len(self) - 1
+            dec_len = int(len(self) * log10(2)) + 1
             # length operator doesn't take grouping's effect on overall length into account
             if grouping:
                 dec_len += (dec_len - 1) // 3
-            dec_len += base_len
             # integer alternate form for "d" doesn't add any prefix, but we need it to
             # ensure people know it isn't hex or octal.
+            # The prefix is added outside of the format, so it doesn't count towards the length.
             if alternate:
                 alternate = "0d"
             return f"{alternate}{int(self):0{dec_len}{grouping}d}"
         elif spec == "o":
-            # fast ceil(len(self) / 8)
+            # fast ceil(len(self) / 3)
             oct_len = (len(self) + 2) // 3
-            oct_len += base_len
             # length operator doesn't take grouping's effect on overall length into account
             if grouping:
                 oct_len += (oct_len - 1) // 4
+            oct_len += base_len
             return f"{int(self):{alternate}0{oct_len}{grouping}o}"
         else:
             raise ValueError(f"Unsupported format specifier: {spec!r}")
