@@ -280,10 +280,9 @@ the various actions described in :ref:`assignment-methods` can be used.
 Deposits and tri-state buses
 ============================
 
-A value written from cocotb with ``dut.some_signal.value = <value>`` is *deposited* in the
-simulator the same way a procedural assignment in the HDL would assign it. It is **not** an
-additional driver attached to the net, and it does not have to be released again. That is what makes
-the difference to the RTL drivers, and what makes :class:`Force` and :class:`Freeze` necessary:
+A value written from cocotb with ``dut.some_signal.value = <value>`` is *deposited* in the simulator the same way a procedural assignment in the HDL would assign it.
+It is **not** an additional driver attached to the net, and it does not have to be released again.
+That is what makes the difference to the RTL drivers, and what makes :class:`Force` and :class:`Freeze` necessary:
 
 * A deposit does not take part in the resolution of a signal that the RTL drives.
 * A deposited value stays until the signal is assigned again, so it is gone as soon as the RTL
@@ -291,12 +290,9 @@ the difference to the RTL drivers, and what makes :class:`Force` and :class:`Fre
 * :class:`Force` is the action to use when the value has to win over the RTL, :class:`Freeze` keeps
   the signal at its current value, and :class:`Release` undoes either of them.
 
-The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT drives
-the bus" and "cocotb drives the bus" lead to three different values being read back. The example
-below drives an 8-bit bus from the DUT while ``drive_en`` is high and walks through all of these
-cases. It is written in Verilog and in VHDL; the testbench is the same for both, except that
-Verilator is skipped because it is a two-state simulator and cannot represent the high impedance of
-the bus.
+The difference is easiest to see on a tri-state bus, where "nothing drives the bus", "the DUT drives the bus" and "cocotb drives the bus" lead to three different values being read back.
+The example below drives an 8-bit bus from the DUT while ``drive_en`` is high and walks through all of these cases.
+It is written in Verilog and in VHDL; the testbench is the same for both, except that Verilator is skipped because it is a two-state simulator and cannot represent the high impedance of the bus.
 
 .. dropdown:: :file:`bus_master.sv`
    :icon: file

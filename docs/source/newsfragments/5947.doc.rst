@@ -1,1 +1,1 @@
-Documented that values assigned from cocotb are deposited on a signal rather than driven onto it, and added a tri-state bus example showing a deposit, `Force` and `Freeze`.
+Documented that values assigned from cocotb are deposited on a signal rather than driven onto it, and added a tri-state bus example showing a :term:`deposit`, :term:`force`, :term:`!freeze`, and :term:`release`.

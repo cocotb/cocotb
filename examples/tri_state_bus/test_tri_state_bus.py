@@ -14,14 +14,9 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 LANGUAGE = os.getenv("TOPLEVEL_LANG", "verilog").lower().strip()
 
 
-@cocotb.test(
-    skip=SIM_NAME.startswith("verilator"),
-)
+@cocotb.test
 async def tri_state_bus(dut):
-    """Show what a deposit, a force and a freeze do to a tri-state bus.
-
-    Verilator is skipped: it is a two-state simulator, so the bus cannot be high impedance there.
-    """
+    """Show what a deposit, a force and a freeze do to a tri-state bus."""
 
     # Nothing drives the bus, so it reads as high impedance.
     dut.drive_en.value = 0
