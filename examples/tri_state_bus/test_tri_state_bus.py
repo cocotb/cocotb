@@ -65,27 +65,3 @@ async def tri_state_bus(dut):
     dut.drive_en.value = 1
     await Timer(1, unit="ns")
     assert dut.data_bus.value == "00001111"
-
-
-def test_tri_state_bus_runner():
-    sim = os.getenv("SIM", "icarus")
-
-    proj_path = Path(__file__).resolve().parent
-
-    if LANGUAGE == "verilog":
-        sources = [proj_path / "bus_master.sv"]
-    else:
-        sources = [proj_path / "bus_master.vhdl"]
-
-    runner = get_runner(sim)
-    runner.build(
-        sources=sources,
-        hdl_toplevel="bus_master",
-        always=True,
-    )
-
-    runner.test(hdl_toplevel="bus_master", test_module="test_tri_state_bus")
-
-
-if __name__ == "__main__":
-    test_tri_state_bus_runner()
