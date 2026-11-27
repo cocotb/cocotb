@@ -56,17 +56,9 @@ jobs:
         sudo apt-get install -y --no-install-recommends iverilog
 
     - name: Set up NVC (Ubuntu)
-      run: |
-        sudo apt-get install -y --no-install-recommends llvm-dev libdw-dev flex libzstd-dev pkg-config
-        git clone https://github.com/nickg/nvc.git
-        cd nvc
-        git reset --hard r1.16.0
-        ./autogen.sh
-        mkdir build
-        cd build
-        ../configure
-        make -j $(nproc)
-        sudo make install
+      uses: nickg/setup-nvc@v1
+      with:
+        version: r1.16.0
 
     - name: Run benchmark
       env:
