@@ -1,0 +1,1 @@
+Fixed :class:`~cocotb.types.LogicArray` equality treating ``L`` and ``H`` as ``0`` and ``1`` after the array had been converted to an integer, for example with :meth:`~cocotb.types.LogicArray.to_unsigned`.
