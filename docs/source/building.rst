@@ -29,6 +29,23 @@ Make Phases
 Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.
 This allows for a rapid re-running of a simulator if none of the :term:`RTL` source files have changed and therefore the simulator does not need to recompile the RTL.
 
+Environment Variables and the Makefiles
+=======================================
+
+cocotb is configured with environment variables, which are read inside the simulator process.
+A variable that you only define in your Makefile is just a Make variable,
+so the simulator won't necessarily see it.
+If you want a variable to reliably reach the simulator, ``export`` it:
+
+.. code-block:: make
+
+   export COCOTB_ENABLE_PROFILING = 1
+
+   include $(shell cocotb-config --makefiles)/Makefile.sim
+
+This goes for any variable, whether it's one of cocotb's own or one that your testbench reads.
+Variables set in your shell, or on the ``make`` command line, reach the simulator too.
+
 Make Variables
 ==============
 

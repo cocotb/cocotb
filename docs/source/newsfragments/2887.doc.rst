@@ -1,0 +1,1 @@
+Clarified that variables defined in a Makefile need to be exported to reliably reach the simulator.
