@@ -34,7 +34,6 @@ Python Test Runner
    :no-value:
 
 .. autoclass:: Runner
-    :members:
 
 .. autoclass:: VHDL
 
@@ -169,8 +168,6 @@ Marking and Generating Tests
 .. autoclass:: cocotb.Param
 
 .. autoclass:: cocotb.regression.TestFactory
-    :members:
-    :member-order: bysource
 
 .. autoclass:: cocotb.regression.SimFailure
 
@@ -367,7 +364,6 @@ Task Management
 .. autoclass:: ResultType
 
 .. autoclass:: Task
-    :members:
 
 .. autofunction:: current_task
 
@@ -390,28 +386,20 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
     :synopsis: Types for dealing with digital signal values.
 
 .. autoclass:: Logic
-    :members:
 
 .. autoclass:: Bit
-    :members:
 
 .. autoclass:: Range
-    :members:
     :exclude-members: count, index
 
 .. autoclass:: AbstractArray
-    :members:
 
 .. autoclass:: AbstractMutableArray
-    :members:
-    :show-inheritance:
 
 .. autoclass:: Array
-    :members:
     :inherited-members:
 
 .. autoclass:: LogicArray
-    :members:
     :inherited-members:
 
 .. envvar:: COCOTB_RESOLVE_X
@@ -457,37 +445,28 @@ Edge Triggers
 -------------
 
 .. autoclass:: RisingEdge
-    :members:
 
 .. autoclass:: FallingEdge
-    :members:
 
 .. autoclass:: ClockCycles
-    :members:
 
 .. autoclass:: ValueChange
-    :members:
 
 .. autoclass:: Edge
-    :members:
 
 
 Timing Triggers
 ---------------
 
 .. autoclass:: Timer
-    :members:
 
     .. autoattribute:: round_mode
 
 .. autoclass:: ReadOnly
-    :members:
 
 .. autoclass:: ReadWrite
-    :members:
 
 .. autoclass:: NextTimeStep
-    :members:
 
 
 Concurrency Triggers
@@ -498,21 +477,16 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 .. currentmodule:: None
 
 .. autoclass:: cocotb.task.Join
-    :members:
 
 .. autoclass:: cocotb.task.TaskComplete
-    :members:
 
 .. currentmodule:: cocotb.triggers
 
 .. autoclass:: NullTrigger
-    :members:
 
 .. autoclass:: Combine
-    :members:
 
 .. autoclass:: First
-    :members:
 
 .. autofunction:: wait
 
@@ -521,7 +495,6 @@ Triggers dealing with Tasks or running multiple Tasks concurrently.
 .. autofunction:: select
 
 .. autoclass:: TaskManager
-    :members:
 
 
 Synchronization Triggers
@@ -531,12 +504,8 @@ The following objects are not :class:`Trigger`\ s themselves, but contain method
 They are used to synchronize coroutines with each other.
 
 .. autoclass:: Event
-    :members:
-    :member-order: bysource
 
 .. autoclass:: Lock
-    :members:
-    :member-order: bysource
 
 .. autoclass:: SimTimeoutError
 
@@ -549,16 +518,10 @@ Abstract Triggers
 The following are internal classes used within ``cocotb``.
 
 .. autoclass:: Trigger
-    :members:
-    :member-order: bysource
 
 .. autoclass:: GPITrigger
-    :members:
-    :member-order: bysource
 
 .. autoclass:: Waitable
-    :members:
-    :member-order: bysource
     :private-members:
 
 
@@ -569,17 +532,13 @@ Clock Driver
 ------------
 
 .. automodule:: cocotb.clock
-    :members:
-    :member-order: bysource
     :synopsis: A single-ended clock driver.
 
 Asynchronous Queues
 -------------------
 
 .. automodule:: cocotb.queue
-    :members:
     :inherited-members:
-    :member-order: bysource
     :synopsis: Collection of asynchronous queues.
 
 
@@ -587,8 +546,6 @@ Simulation Time Utilities
 =========================
 
 .. automodule:: cocotb.simtime
-    :members:
-    :member-order: bysource
     :synopsis: Tools for dealing with simulated time.
 
 .. envvar:: COCOTB_SIMTIME_DEFAULT_ROUND_MODE
@@ -614,8 +571,6 @@ Simulation Time Utilities
     .. versionadded:: 2.2
 
 .. automodule:: cocotb.utils
-    :members:
-    :member-order: bysource
     :synopsis: Tools for dealing with simulated time.
     :ignore-module-all:
 
@@ -672,7 +627,6 @@ Adding Simulation Time to Logs
 ------------------------------
 
 .. autoclass:: SimTimeContextFilter
-    :show-inheritance:
     :no-members:
 
 .. currentmodule:: None
@@ -690,11 +644,9 @@ Log Formatting
 --------------
 
 .. autoclass:: SimLogFormatter
-    :show-inheritance:
     :no-members:
 
 .. autoclass:: SimColourLogFormatter
-    :show-inheritance:
     :no-members:
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
@@ -773,88 +725,58 @@ Simulator Objects
     :synopsis: Tools for discovering and manipulating :term:`simulator objects <simulator object>`.
 
 .. autoclass:: SimHandleBase
-    :members:
-    :member-order: bysource
 
 .. autoenum:: GPIDiscovery
 
 .. autoclass:: HierarchyObject
-    :members:
-    :member-order: bysource
     :special-members: __len__, __iter__
     :inherited-members: SimHandleBase
 
 .. autoclass:: HierarchyArrayObject
-    :members:
-    :member-order: bysource
     :special-members: __len__, __iter__
     :inherited-members: SimHandleBase
 
 .. autoclass:: ValueObjectBase
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase
 
 .. autoclass:: ArrayObject
-    :members:
-    :member-order: bysource
     :special-members: __len__, __iter__
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: LogicObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: LogicArrayObject
-    :members:
-    :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: PackedObject
 
 .. autoclass:: PackedArrayObject
-    :members:
-    :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
 
 .. autoclass:: PackedStructObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
 
 .. autoclass:: PackedUnionObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase, PackedObject
 
 .. autoclass:: StringObject
-    :members:
-    :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: FixedStringObject
-    :members:
-    :member-order: bysource
     :special-members: __len__
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: IntegerObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: RealObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. autoclass:: EnumObject
-    :members:
-    :member-order: bysource
     :inherited-members: SimHandleBase, ValueObjectBase
 
 .. envvar:: COCOTB_TRUST_INERTIAL_WRITES
@@ -1032,8 +954,6 @@ Preview Features
     .. versionadded:: 2.1
 
 .. automodule:: cocotb_previews
-    :members:
-    :member-order: bysource
     :synopsis: Previews of upcoming cocotb behavior that can be enabled or disabled.
 
 .. module:: cocotb.preview
@@ -1050,8 +970,6 @@ Debugging
 ---------
 
 .. automodule:: cocotb.debug
-    :members:
-    :member-order: bysource
     :synopsis: Features for debugging cocotb's concurrency system.
 
 .. envvar:: COCOTB_SCHEDULER_DEBUG
@@ -1206,8 +1124,6 @@ The Regression Manager
 .. autoenum:: RegressionMode
 
 .. autoclass:: RegressionManager
-    :members:
-    :member-order: bysource
 
 
 .. _pygpi:
@@ -1287,9 +1203,7 @@ The ``cocotb.simulator`` module is the Python :keyword:`import`-able interface t
 It should not be considered public API, but is documented here for developers of cocotb.
 
 .. automodule:: cocotb.simulator
-    :members:
     :undoc-members:
-    :member-order: bysource
     :synopsis: Interface to simulator.
 
 

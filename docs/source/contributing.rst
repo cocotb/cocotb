@@ -255,7 +255,7 @@ Have you fixed a bug in cocotb, or want to add new functionality to it?
 cocotb follows the typical `GitHub flow <https://guides.github.com/introduction/flow/>`__ and makes use of pull requests and reviews.
 Follow the steps below to get your changes merged, i.e. integrated into the main cocotb codebase.
 
-..note::
+.. note::
    Contributors with fewer than three PRs merged in ``cocotb/cocotb`` must be assigned an open issue by a maintainer before opening a PR.
    See :ref:`assigned-issue-requirement` for more details.
 
@@ -276,6 +276,8 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
    If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on `Gitter <https://gitter.im/cocotb/Lobby>`__ or email).
    If a maintainer asks you to explain or modify code, try to do so.
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the ``master`` branch.
+
+.. _assigned-issue-requirement:
 
 Assigned Issue Requirement
 --------------------------
